@@ -1,6 +1,6 @@
 import uuid
 import numpy as np
-from util import *
+from .util import *
 
 
 def _get_overlap(coeff1, coeff2, metric):
@@ -19,9 +19,12 @@ def _get_overlap(coeff1, coeff2, metric):
 class BasisBase:
     """Base class for Basis and RootBasis class."""
 
+    __next_id = 0
+
     def __init__(self):
-        self.id = str(uuid.uuid4())
-        self.root = self.get_root()
+        #self.id = str(uuid.uuid4())
+        self.id = self.__class__.__next_id
+        self.__class__.__next_id += 1
 
     def make_basis(self, coeff=None, indices=None, **kwargs):
         """Make a new basis with coefficients or indices in reference to the current basis."""
@@ -32,7 +35,8 @@ class BasisBase:
         """Compare if to bases are the same based on their UUID."""
         # Cannot compare bases in different spaces
         if self.root is not other.root:
-            raise ValueError("Cannot check identity of bases with different RootBasis.")
+            return False
+            #raise ValueError("Cannot check identity of bases with different RootBasis.")
         return (self.id == other.id)
 
     def __repr__(self):
@@ -51,13 +55,6 @@ class BasisBase:
             parents = parents[:-1]
         return parents
 
-    def get_root(self):
-        """Get root basis."""
-        root = self
-        while root.parent is not None:
-            root = root.parent
-        return root
-
     def find_common_parent(self, other):
         """Find lowest common ancestor between two bases."""
         if self.root is not other.root:
@@ -72,7 +69,7 @@ class BasisBase:
         return parent
 
     def get_overlap_with(self, other, metric=None):
-        """Get overlap matrix as a BasisArray with another basis."""
+        """Get overlap matrix as a Array with another basis."""
         # Find lowest common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
         coeff1 = self.coeff_in_basis(parent)
@@ -85,7 +82,7 @@ class BasisBase:
         value = _get_overlap(coeff1, coeff2, metric=metric)
         # Hack, overlap matrix should be fully covariant:
         contravariant = (True, False)
-        return BasisArray(value, basis=(self, other), contravariant=contravariant)
+        return Array(value, basis=(self, other), contravariant=contravariant)
 
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
@@ -114,6 +111,10 @@ class RootBasis(BasisBase):
     def parent(self):
         return None
 
+    @property
+    def root(self):
+        return self
+
     def coeff_in_basis(self, basis):
         if basis is not self:
             raise ValueError
@@ -127,7 +128,6 @@ class Basis(BasisBase):
     def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
         self.parent = parent
         super().__init__()
-        #self.root = self.get_root()
 
         if coeff is None and indices is None:
             raise ValueError
@@ -154,6 +154,10 @@ class Basis(BasisBase):
         """Number of basis functions."""
         return self.coeff.shape[1]
 
+    @property
+    def root(self):
+        return self.parent.root
+
     def coeff_in_basis(self, basis):
         """Express coefficient matrix in the basis of another parent instead of the direct parent."""
         if basis.root != self.root:
@@ -169,4 +173,5 @@ class Basis(BasisBase):
             raise RuntimeError
         return coeff
 
-from basisarray import BasisArray
+
+from .array import Array
