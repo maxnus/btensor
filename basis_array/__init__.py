@@ -19,6 +19,17 @@ Usage:
 
 """
 
-from .basis import Basis, RootBasis
+import numpy as np
+
+from .basis import Basis, RootBasis, NoBasis
 from .array import Array
 from .einsum import einsum
+
+A = Array
+
+def B(parent_or_size, rotation=None, **kwargs):
+    if rotation is None:
+        if not isinstance(parent_or_size, (int, np.integer)):
+            raise ValueError
+        return RootBasis(parent_or_size)
+    return Basis(parent_or_size, rotation=rotation, **kwargs)

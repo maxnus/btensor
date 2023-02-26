@@ -3,6 +3,8 @@ import numpy as np
 from .util import *
 
 
+NoBasis = None
+
 def _get_overlap(coeff1, coeff2, metric):
     """Calculate the overlap overlap = (coeff1 | metric | coeff2)."""
     operands = [op for op in (coeff1.T, metric, coeff2) if not isinstance(op, IdentityMatrix)]
@@ -23,8 +25,8 @@ class BasisBase:
 
     def __init__(self):
         #self.id = str(uuid.uuid4())
-        self.id = self.__class__.__next_id
-        self.__class__.__next_id += 1
+        self.id = BasisBase.__next_id
+        BasisBase.__next_id += 1
 
     def make_basis(self, coeff=None, indices=None, **kwargs):
         """Make a new basis with coefficients or indices in reference to the current basis."""
@@ -125,23 +127,35 @@ class Basis(BasisBase):
     """Basis class, requires a parent (another Basis or the RootBasis), coefficients or indices in terms of
     the parent basis."""
 
-    def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
+    #def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
+    def __init__(self, parent, rotation, orthonormal=None):
+
         self.parent = parent
         super().__init__()
 
-        if coeff is None and indices is None:
-            raise ValueError
-        if coeff is not None and indices is not None:
-            raise ValueError
+        #if coeff is None and indices is None:
+        #    raise ValueError
+        #if coeff is not None and indices is not None:
+        #    raise ValueError
         # Convert to 2D-matrix (for the time being)
-        if indices is not None:
-            coeff = np.eye(self.parent.size)[:,indices]
-        if coeff.shape[0] != self.parent.size:
-            raise ValueError
-        self.coeff = coeff
+        if isinstance(rotation, int):
+            if rotation >= self.parent.size:
+                raise ValueError
+            rotation = [rotation]
+        if isinstance(rotation, (tuple, list, slice)) or (getattr(rotation, 'ndim', None) == 1):
+        #if indices is not None:
+            rotation = np.eye(self.parent.size)[:,rotation]
+        elif isinstance(rotation, np.ndarray) and rotation.ndim == 2:
+            pass
+        else:
+            raise ValueError("Rotation %r of type %r" % (rotation, type(rotation)))
+
+        if rotation.shape[0] != self.parent.size:
+            raise ValueError("Invalid size: %d (expected %d)" % (rotation.shape[0], self.parent.size))
+        self.rotation = self.coeff = rotation
 
         # Calculate metric matrix for basis:
-        metric = _get_overlap(coeff, coeff, metric=self.parent.metric)
+        metric = _get_overlap(rotation, rotation, metric=self.parent.metric)
         ortherr = abs(metric-np.identity(self.size)).max()
         if (orthonormal or ortherr < 1e-12):
             if ortherr > 1e-8:
