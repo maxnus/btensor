@@ -1,5 +1,6 @@
 import operator
 import string
+import itertools
 import numpy as np
 from .util import *
 from .basis import Basis, BasisBase, NoBasis
@@ -10,6 +11,8 @@ class Array(OperatorTemplate):
     """NumPy array with bases attached for each dimension."""
 
     def __init__(self, value, basis, contravariant=False):
+        if basis is NoBasis or isinstance(basis, BasisBase):
+            basis = (basis,)
         if len(basis) != np.ndim(value):
             raise ValueError("Array with shape %r requires %d bases, %d given" % (
                 value.shape, np.ndim(value), len(basis)))
@@ -41,6 +44,8 @@ class Array(OperatorTemplate):
     def __repr__(self):
         return '%s(shape= %r)' % (self.__class__.__name__, self.shape)
 
+    # --- NumPy compatibility
+
     def __getattr__(self, name):
         """Inherit from NumPy"""
         if name in ['dtype', 'ndim', 'shape', '__array_interface__']:
@@ -50,7 +55,7 @@ class Array(OperatorTemplate):
     def __getitem__(self, key):
         """Construct and return sub-Array."""
         if isinstance(key, int):
-            return Array(self.value[key], basis=self.basis[1:])
+            return type(self)(self.value[key], basis=self.basis[1:])
         if key is Ellipsis:
             return self
         if isinstance(key, slice):
@@ -68,8 +73,22 @@ class Array(OperatorTemplate):
                 else:
                     basis.append(Basis(b, rotation=k))
             basis = tuple(basis)
-            return Array(self.value[key], basis=basis)
+            return type(self)(self.value[key], basis=basis)
         raise NotImplementedError("Key= %r of type %r" % (key, type(key)))
+
+    def transpose(self, axes=None):
+        values = self.value.transpose(axes)
+        if axes is None:
+            basis = self.basis[::-1]
+        else:
+            basis = tuple(self.basis[ax] for ax in axes)
+        return type(self)(values, basis=basis)
+
+    @property
+    def T(self):
+        return self.transpose()
+
+    # ---
 
     def as_basis(self, basis, inplace=False):
         """Transform to different set of basis.
@@ -112,7 +131,7 @@ class Array(OperatorTemplate):
             self.value = value
             self._basis = basis_out
             return self
-        return Array(value, basis=basis, contravariant=self.contravariant)
+        return type(self)(value, basis=basis, contravariant=self.contravariant)
 
     #def __rshift__(self, basis):
     #    """To allow basis transformation as array >> basis"""
@@ -148,6 +167,13 @@ class Array(OperatorTemplate):
                 return False
         return True
 
+    #def non_compatible_axes(self, other):
+    #    axes = []
+    #    for b1, b2 in itertools.zip_longest(self.basis, other.basis, fillvalue=0):
+    #        if b1.root != b2.root:
+    #            return False
+    #    return axes
+
     def common_basis(self, other):
         basis = []
         if not self.is_compatible(other):
@@ -163,7 +189,7 @@ class Array(OperatorTemplate):
     def _operator(self, operator, *other):
         # Unary operator
         if len(other) == 0:
-            return Array(operator(self.value), basis=self.basis)
+            return type(self)(operator(self.value), basis=self.basis)
         # Ternary+ operator
         if len(other) > 1:
             raise NotImplementedError
@@ -179,4 +205,4 @@ class Array(OperatorTemplate):
             v2 = other.as_basis(basis).value
         else:
             raise ValueError
-        return Array(operator(v1, v2), basis=basis)
+        return type(self)(operator(v1, v2), basis=basis)

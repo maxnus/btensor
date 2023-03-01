@@ -57,10 +57,17 @@ class BasisBase:
             parents = parents[:-1]
         return parents
 
+    def same_root(self, other):
+        return self.root == other.root
+
+    def check_same_root(self, other):
+        if self.same_root(other):
+            return
+        raise BasisError("Bases %s and %s do not derive from the same root basis." % (self, other))
+
     def find_common_parent(self, other):
         """Find lowest common ancestor between two bases."""
-        if self.root is not other.root:
-            raise ValueError("Cannot find common parent of bases with different RootBasis.")
+        self.check_same_root(other)
         parents1 = self.get_parents(include_self=True)[::-1]
         parents2 = other.get_parents(include_self=True)[::-1]
         assert (parents1[0] is parents2[0])
@@ -72,6 +79,7 @@ class BasisBase:
 
     def get_overlap_with(self, other, metric=None):
         """Get overlap matrix as a Array with another basis."""
+        self.check_same_root(other)
         # Find lowest common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
         coeff1 = self.coeff_in_basis(parent)

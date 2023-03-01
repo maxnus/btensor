@@ -23,7 +23,8 @@ import numpy as np
 
 from .basis import Basis, RootBasis, NoBasis
 from .array import Array
-from .einsum import einsum
+from .functions import dot
+from .functions import einsum
 
 A = Array
 

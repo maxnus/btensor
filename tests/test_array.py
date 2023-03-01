@@ -36,6 +36,9 @@ class TestCase(unittest.TestCase):
             e.args = (message, *args)
             raise
 
+    def setUp(self):
+        np.random.seed(0)
+
 
 class ArithmetricTestsSameBasis(TestCase):
 
