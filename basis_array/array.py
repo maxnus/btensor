@@ -88,6 +88,15 @@ class Array(OperatorTemplate):
     def T(self):
         return self.transpose()
 
+    def sum(self, axis=None):
+        value = self.value.sum(axis=axis)
+        if axis is None:
+            return value
+        if isinstance(axis, (int, np.integer)):
+            axis = (axis,)
+        basis = [self.basis[ax] for ax in range(self.ndim) if ax not in axis]
+        return type(self)(value, basis=basis)
+
     # ---
 
     def as_basis(self, basis, inplace=False):
