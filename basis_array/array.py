@@ -5,6 +5,13 @@ import numpy as np
 from .util import *
 from .basis import Basis, BasisBase, NoBasis
 from .optemplate import OperatorTemplate
+from . import functions
+
+
+def value_if_scalar(array):
+    if array.ndim > 0:
+        return array
+    return array.value
 
 
 class Array(OperatorTemplate):
@@ -89,13 +96,13 @@ class Array(OperatorTemplate):
         return self.transpose()
 
     def sum(self, axis=None):
-        value = self.value.sum(axis=axis)
-        if axis is None:
-            return value
-        if isinstance(axis, (int, np.integer)):
-            axis = (axis,)
-        basis = [self.basis[ax] for ax in range(self.ndim) if ax not in axis]
-        return type(self)(value, basis=basis)
+        return functions.sum(self, axis=axis)
+
+    def trace(self, axis1=0, axis2=1):
+        return functions.trace(self, axis1=axis1, axis2=axis2)
+
+    def dot(self, b):
+        return functions.dot(self, b)
 
     # ---
 
@@ -141,6 +148,13 @@ class Array(OperatorTemplate):
             self._basis = basis_out
             return self
         return type(self)(value, basis=basis, contravariant=self.contravariant)
+
+    def as_basis_at(self, index, basis, **kwargs):
+        if index < 0:
+            index += self.ndim
+        basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
+        return self.as_basis(basis_new, **kwargs)
+
 
     #def __rshift__(self, basis):
     #    """To allow basis transformation as array >> basis"""

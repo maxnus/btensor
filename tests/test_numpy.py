@@ -6,6 +6,13 @@ import basis_array as basis
 from test_array import TestCase, rand_orth_mat
 
 
+def powerset(iterable):
+    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+    s = list(iterable)
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
+
+MAXDIM = 4
+
 class Tests(TestCase):
 
     @classmethod
@@ -28,6 +35,10 @@ class Tests(TestCase):
         cls.d_nm = d_nm = np.random.rand(n, m)
         cls.a_nn = basis.Array(d_nn, basis=(bn, bn))
         cls.a_nm = basis.Array(d_nm, basis=(bn, bm))
+        # 2D Hermition
+        cls.dh_nn = dh_nn = np.random.rand(n, n)
+        cls.dh_nn = dh_nn = (dh_nn + dh_nn.T)
+        cls.ah_nn = basis.Array(dh_nn, basis=(bn, bn))
         # 3D
         cls.d_nnn = d_nnn = np.random.rand(n, n, n)
         cls.d_nmk = d_nmk = np.random.rand(n, m, k)
@@ -41,47 +52,70 @@ class Tests(TestCase):
 
         # --- Subspaces
 
-        cls.ns = ns = 11
+        cls.n2 = n2 = 11
+        #cls.m2 = m2 = 12
+        #cls.k2 = k2 = 13
+        #cls.l2 = l2 = 14
+        cls.bn2 = bn2 = basis.B(bn, rotation=rand_orth_mat(n, n2))
 
-        cls.bns = bns = basis.B(bn, rand_orth_mat(n, ns))
+        cls.numpy_arrays_sq = [None, cls.d_n, cls.d_nn, cls.d_nnn, cls.d_nnnn]
+        cls.basis_arrays_sq = [None, cls.a_n, cls.a_nn, cls.a_nnn, cls.a_nnnn]
+        cls.numpy_arrays_rt = [None, cls.d_n, cls.d_nm, cls.d_nmk, cls.d_nmkl]
+        cls.basis_arrays_rt = [None, cls.a_n, cls.a_nm, cls.a_nmk, cls.a_nmkl]
 
-    def test_transpose(self):
-        # 1D
-        self.assertAllclose(self.a_n.T, self.d_n.T)
-        # 2D
-        self.assertAllclose(self.a_nn.T, self.d_nn.T)
-        self.assertAllclose(self.a_nm.T, self.d_nm.T)
-        # 3D
-        self.assertAllclose(self.a_nnn.T, self.d_nnn.T)
-        self.assertAllclose(self.a_nmk.T, self.d_nmk.T)
-        # 4D
-        self.assertAllclose(self.a_nnnn.T, self.d_nnnn.T)
-        self.assertAllclose(self.a_nmkl.T, self.d_nmkl.T)
 
-    def test_transpose_axes(self):
-        # 1D
-        self.assertAllclose(self.a_n.transpose([0]), self.d_n.transpose([0]))
-        # 2D
-        for axes in itertools.permutations((1, 0)):
-            self.assertAllclose(self.a_nn.transpose(axes), self.d_nn.transpose(axes))
-            self.assertAllclose(self.a_nm.transpose(axes), self.d_nm.transpose(axes))
-        # 3D
-        for axes in itertools.permutations((0, 1, 2)):
-            self.assertAllclose(self.a_nnn.transpose(axes), self.d_nnn.transpose(axes))
-            self.assertAllclose(self.a_nmk.transpose(axes), self.d_nmk.transpose(axes))
-        # 4D
-        for axes in itertools.permutations((0, 1, 2, 3)):
-            self.assertAllclose(self.a_nnnn.transpose(axes), self.d_nnnn.transpose(axes))
-            self.assertAllclose(self.a_nmkl.transpose(axes), self.d_nmkl.transpose(axes))
+    def test_transpose_property(self):
+        for ndim in range(1, 5):
+            self.assertAllclose(self.basis_arrays_sq[ndim].T, self.numpy_arrays_sq[ndim].T)
+            self.assertAllclose(self.basis_arrays_rt[ndim].T, self.numpy_arrays_rt[ndim].T)
 
-    def test_sum(self):
-        # 2D
-        for axis in (None, 0, 1, (0, 1)):
-            self.assertAllclose(self.a_nm.sum(axis=axis), self.d_nm.sum(axis=axis))
-        # 3D
-        self.assertAllclose(self.a_nmk.sum(), self.d_nmk.sum())
-        for axis in (None, 0, 1, 2, (0, 1), (0, 2), (1, 2), (0, 1, 2)):
-            self.assertAllclose(self.a_nmk.sum(axis=axis), self.d_nmk.sum(axis=axis))
+    def test_transpose_square(self):
+        for ndim in range(1, 5):
+            for axes in itertools.permutations(range(ndim)):
+                self.assertAllclose(self.basis_arrays_sq[ndim].transpose(axes), self.numpy_arrays_sq[ndim].transpose(axes))
+
+    def test_transpose_rect(self):
+        for ndim in range(1, 5):
+            for axes in itertools.permutations(range(ndim)):
+                self.assertAllclose(self.basis_arrays_rt[ndim].transpose(axes), self.numpy_arrays_rt[ndim].transpose(axes))
+
+    def test_sum_square(self):
+        for ndim in range(1, 5):
+            for axis in powerset(range(ndim)):
+                self.assertAllclose(self.basis_arrays_sq[ndim].sum(axis=axis),
+                                    self.numpy_arrays_sq[ndim].sum(axis=axis))
+
+    def test_sum_rect(self):
+        for ndim in range(1, 5):
+            for axis in powerset(range(ndim)):
+                self.assertAllclose(self.basis_arrays_rt[ndim].sum(axis=axis),
+                                    self.numpy_arrays_rt[ndim].sum(axis=axis))
+
+    def test_trace_square(self):
+        for ndim in range(2, 5):
+            for axis1, axis2 in itertools.permutations(range(ndim), 2):
+                self.assertAllclose(self.basis_arrays_sq[ndim].trace(axis1=axis1, axis2=axis2),
+                                    self.numpy_arrays_sq[ndim].trace(axis1=axis1, axis2=axis2))
+
+    def test_trace_rect(self):
+        for ndim in range(2, 5):
+            for axis1, axis2 in itertools.permutations(range(ndim), 2):
+                with self.assertRaises(basis.util.BasisError):
+                    self.assertAllclose(self.basis_arrays_rt[ndim].trace(axis1=axis1, axis2=axis2),
+                                        self.numpy_arrays_rt[ndim].trace(axis1=axis1, axis2=axis2))
+
+    def test_trace_subspace(self):
+        tr1 = self.a_nn.as_basis((self.bn2, self.bn2)).trace()
+        tr2 = self.a_nn.as_basis((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
+        self.assertAllclose(tr1, tr2, atol=1e-14, rtol=0)
+
+    def test_eigh(self):
+        # NumPy
+        e, v = np.linalg.eigh(self.dh_nn)
+        self.assertAllclose(np.einsum('ai,i,bi->ab', v, e, v), self.dh_nn)
+        # Basis Array
+        e, v = basis.linalg.eigh(self.ah_nn)
+        self.assertAllclose(basis.einsum('ai,i,bi->ab', v, e, v), self.ah_nn)
 
 
 class DotTests(TestCase):
@@ -217,8 +251,6 @@ class EinsumTests(TestCase):
         ab = basis.Array(b, basis=(bk, bl))
         ac = basis.einsum(contract, aa, ab)
         self.assertAllclose(ac, c)
-
-
 
 
 if __name__ == '__main__':

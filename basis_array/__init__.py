@@ -23,8 +23,10 @@ import numpy as np
 
 from .basis import Basis, RootBasis, NoBasis
 from .array import Array
+from .functions import sum
 from .functions import dot
 from .functions import einsum
+from .functions import linalg
 
 A = Array
 

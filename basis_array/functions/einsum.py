@@ -2,7 +2,6 @@ import copy
 import string
 import numpy as np
 from basis_array.util import *
-from basis_array.array import Array
 
 
 def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
@@ -73,4 +72,5 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
     values = einsumfunc(subscripts_out, *operands_out, **kwargs)
     basis_out = tuple([basis_dict[idx] for idx in result])
 
-    return Array(values, basis_out)
+    cls = type(operands[0])
+    return cls(values, basis_out)

@@ -1,2 +1,8 @@
+from .core import sum
+from .core import dot
+from .core import trace
+
 from .einsum import einsum
-from .dot import dot
+
+#from .eigh import eigh
+from . import linalg
