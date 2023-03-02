@@ -11,7 +11,6 @@ def powerset(iterable):
     s = list(iterable)
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
 
-MAXDIM = 4
 
 class Tests(TestCase):
 
@@ -109,13 +108,43 @@ class Tests(TestCase):
         tr2 = self.a_nn.as_basis((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
         self.assertAllclose(tr1, tr2, atol=1e-14, rtol=0)
 
+    def test_getitem_with_ellipsis(self):
+        for ndim in range(2, 5):
+            self.assertAllclose(self.basis_arrays_rt[ndim][...],
+                                self.numpy_arrays_rt[ndim][...])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0,...],
+                                self.numpy_arrays_rt[ndim][0,...])
+            self.assertAllclose(self.basis_arrays_rt[ndim][...,0],
+                                self.numpy_arrays_rt[ndim][...,0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0,...,0],
+                                self.numpy_arrays_rt[ndim][0,...,0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:,...],
+                                self.numpy_arrays_rt[ndim][:,...])
+            self.assertAllclose(self.basis_arrays_rt[ndim][...,:],
+                                self.numpy_arrays_rt[ndim][...,:])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:,...,0],
+                                self.numpy_arrays_rt[ndim][:,...,0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0,...,:],
+                                self.numpy_arrays_rt[ndim][0,...,:])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:,...,:],
+                                self.numpy_arrays_rt[ndim][:,...,:])
+
+    def test_newaxis(self):
+        self.assertAllclose(self.a_nn[None].value, self.d_nn[None])
+        self.assertTrue(self.a_nn[None].shape == self.d_nn[None].shape)
+        self.assertAllclose(self.a_nn[:,None].value, self.d_nn[:,None])
+        self.assertTrue(self.a_nn[:,None].shape == self.d_nn[:,None].shape)
+
     def test_eigh(self):
         # NumPy
         e, v = np.linalg.eigh(self.dh_nn)
         self.assertAllclose(np.einsum('ai,i,bi->ab', v, e, v), self.dh_nn)
+        self.assertAllclose(np.dot(v*e[None,:], v.T), self.dh_nn)
         # Basis Array
         e, v = basis.linalg.eigh(self.ah_nn)
         self.assertAllclose(basis.einsum('ai,i,bi->ab', v, e, v), self.ah_nn)
+        #self.assertAllclose(np.dot(v*e[None,:], v.T), self.ah_nn)
+        v * e[None,:]
 
 
 class DotTests(TestCase):

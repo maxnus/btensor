@@ -23,10 +23,6 @@ import numpy as np
 
 from .basis import Basis, RootBasis, NoBasis
 from .array import Array
-from .functions import sum
-from .functions import dot
-from .functions import einsum
-from .functions import linalg
 
 A = Array
 
@@ -36,3 +32,8 @@ def B(parent_or_size, rotation=None, **kwargs):
             raise ValueError
         return RootBasis(parent_or_size)
     return Basis(parent_or_size, rotation=rotation, **kwargs)
+
+from .numpy_functions import sum
+from .numpy_functions import dot
+from .numpy_functions import einsum
+from .numpy_functions import linalg

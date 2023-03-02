@@ -87,8 +87,8 @@ class ArithmetricTestsSameBasis(TestCase):
         self.assertAllclose(self.a1[...].value, self.d1[...])
 
     def test_getitem_tuple(self):
-        self.assertAllclose(self.a1[0,2].value, self.d1[0,2])
-        self.assertAllclose(self.a1[-1,2].value, self.d1[-1,2])
+        self.assertAllclose(self.a1[0,2], self.d1[0,2])
+        self.assertAllclose(self.a1[-1,2], self.d1[-1,2])
         self.assertAllclose(self.a1[:2,3:].value, self.d1[:2,3:])
         self.assertAllclose(self.a1[::2,::-1].value, self.d1[::2,::-1])
         self.assertAllclose(self.a1[0,:2].value, self.d1[0,:2])

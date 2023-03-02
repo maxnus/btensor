@@ -35,6 +35,9 @@ class BasisBase:
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their UUID."""
+        if not isinstance(other, BasisBase):
+            return False
+
         # Cannot compare bases in different spaces
         if self.root is not other.root:
             return False
@@ -59,6 +62,9 @@ class BasisBase:
 
     def same_root(self, other):
         return self.root == other.root
+
+    def compatible(self, other):
+        return other is None or self.same_root(other)
 
     def check_same_root(self, other):
         if self.same_root(other):
@@ -141,22 +147,17 @@ class Basis(BasisBase):
         self.parent = parent
         super().__init__()
 
-        #if coeff is None and indices is None:
-        #    raise ValueError
-        #if coeff is not None and indices is not None:
-        #    raise ValueError
-        # Convert to 2D-matrix (for the time being)
         if isinstance(rotation, int):
             if rotation >= self.parent.size:
                 raise ValueError
             rotation = [rotation]
+        # Convert to 2D-matrix (for the time being)
         if isinstance(rotation, (tuple, list, slice)) or (getattr(rotation, 'ndim', None) == 1):
-        #if indices is not None:
             rotation = np.eye(self.parent.size)[:,rotation]
         elif isinstance(rotation, np.ndarray) and rotation.ndim == 2:
             pass
         else:
-            raise ValueError("Rotation %r of type %r" % (rotation, type(rotation)))
+            raise ValueError("Invalid rotation: %r of type %r" % (rotation, type(rotation)))
 
         if rotation.shape[0] != self.parent.size:
             raise ValueError("Invalid size: %d (expected %d)" % (rotation.shape[0], self.parent.size))

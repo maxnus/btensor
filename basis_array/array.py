@@ -1,11 +1,12 @@
 import operator
 import string
 import itertools
+import copy
 import numpy as np
 from .util import *
 from .basis import Basis, BasisBase, NoBasis
 from .optemplate import OperatorTemplate
-from . import functions
+from . import numpy_functions
 
 
 def value_if_scalar(array):
@@ -65,22 +66,37 @@ class Array(OperatorTemplate):
             return type(self)(self.value[key], basis=self.basis[1:])
         if key is Ellipsis:
             return self
-        if isinstance(key, slice):
+        if isinstance(key, slice) or key is None:
             key = (key,)
         if isinstance(key, tuple):
-            key = key + (self.ndim-len(key)) * (slice(None),)
-            basis = []
-            for b, k in zip(self.basis, key):
-                if isinstance(k, int):
-                    continue
-                if b is NoBasis:
-                    basis.append(NoBasis)
-                elif k is Ellipsis:
-                    basis.append(b)
+            value = self.value[key]
+            if value.ndim == 0:
+                return value
+
+            # Add NoBasis for each newaxis (None) key
+            newaxis_indices = [i for (i, k) in enumerate(key) if (k is np.newaxis)]
+            basis = list(self.basis)
+            for i in newaxis_indices:
+                basis.insert(i, NoBasis)
+
+            # Replace Ellipsis with multiple slice(None)
+            if Ellipsis in key:
+                idx = key.index(Ellipsis)
+                ellipsis_size = len(basis) - len(key) + 1
+                key = key[:idx] + ellipsis_size*(slice(None),) + key[idx+1:]
+
+            for i, ki in enumerate(reversed(key), start=1):
+                idx = len(key) - i
+                if isinstance(ki, (int, np.integer)):
+                    del basis[idx]
+                elif isinstance(ki, slice):
+                    basis[idx] = Basis(basis[idx], rotation=ki)
+                elif ki is None:
+                    pass
                 else:
-                    basis.append(Basis(b, rotation=k))
+                    raise ValueError("key %r of type %r" % (ki, type(ki)))
             basis = tuple(basis)
-            return type(self)(self.value[key], basis=basis)
+            return type(self)(value, basis=basis)
         raise NotImplementedError("Key= %r of type %r" % (key, type(key)))
 
     def transpose(self, axes=None):
@@ -96,13 +112,13 @@ class Array(OperatorTemplate):
         return self.transpose()
 
     def sum(self, axis=None):
-        return functions.sum(self, axis=axis)
+        return numpy_functions.sum(self, axis=axis)
 
     def trace(self, axis1=0, axis2=1):
-        return functions.trace(self, axis1=axis1, axis2=axis2)
+        return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
     def dot(self, b):
-        return functions.dot(self, b)
+        return numpy_functions.dot(self, b)
 
     # ---
 
@@ -127,6 +143,7 @@ class Array(OperatorTemplate):
         for i, bas in enumerate(basis):
             if bas is None or (bas == self.basis[i]):
                 result += subscripts[i]
+                #if bas is None:
                 if bas is None:
                     basis_out[i] = self.basis[i]
                 continue
@@ -183,30 +200,34 @@ class Array(OperatorTemplate):
     # Arithmetric
 
     def is_compatible(self, other):
-        if self.ndim != other.ndim:
-            return False
-        for b1, b2 in zip(self.basis, other.basis):
-            if b1.root != b2.root:
-                return False
-        return True
+        return all(self.compatible_axes(other))
 
-    #def non_compatible_axes(self, other):
-    #    axes = []
-    #    for b1, b2 in itertools.zip_longest(self.basis, other.basis, fillvalue=0):
-    #        if b1.root != b2.root:
-    #            return False
-    #    return axes
+    def compatible_axes(self, other):
+        axes = []
+        for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
+            if (b1 is None or b2 is None) and (self.shape[i] == other.shape[i]):
+                axes.append(True)
+            elif b1.compatible(b2):
+                axes.append(True)
+            else:
+                axes.append(False)
+        if self.ndim > other.ndim:
+            axes += (self.ndim-other.ndim)*[False]
+        return axes
 
     def common_basis(self, other):
         basis = []
         if not self.is_compatible(other):
             raise ValueError
         for b1, b2 in zip(self.basis, other.basis):
-            if b1 is NoBasis:
+            if b1 is NoBasis and b2 is NoBasis:
                 basis.append(NoBasis)
-                continue
-            b = b1.find_common_parent(b2)
-            basis.append(b)
+            elif b1 is NoBasis:
+                basis.append(b2)
+            elif b2 is NoBasis:
+                basis.append(b1)
+            else:
+                basis.append(b1.find_common_parent(b2))
         return tuple(basis)
 
     def _operator(self, operator, *other):
