@@ -2,12 +2,15 @@ import numpy as np
 
 
 __all__ = [
+        'nobasis',
         'IdentityMatrix',
         'BasisError',
         'ndot',
         'overlap',
         ]
 
+
+nobasis = type('NoBasis', (object,), {})()
 
 class IdentityMatrix:
     """Represents the identity matrix of shape size x size."""
@@ -33,10 +36,10 @@ def ndot(*args):
 
 
 def overlap(a, b):
-    if a is None and b is None:
+    if a is nobasis and b is nobasis:
         return IdentityMatrix()
 
-    if  a is None or b is None:
+    if  a is nobasis or b is nobasis:
         raise BasisError
 
     return (a | b)

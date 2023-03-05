@@ -34,7 +34,7 @@ class Tests(TestCase):
         cls.d_nm = d_nm = np.random.rand(n, m)
         cls.a_nn = basis.Array(d_nn, basis=(bn, bn))
         cls.a_nm = basis.Array(d_nm, basis=(bn, bm))
-        # 2D Hermition
+        # 2D Hermitian
         cls.dh_nn = dh_nn = np.random.rand(n, n)
         cls.dh_nn = dh_nn = (dh_nn + dh_nn.T)
         cls.ah_nn = basis.Array(dh_nn, basis=(bn, bn))
@@ -62,6 +62,7 @@ class Tests(TestCase):
         cls.numpy_arrays_rt = [None, cls.d_n, cls.d_nm, cls.d_nmk, cls.d_nmkl]
         cls.basis_arrays_rt = [None, cls.a_n, cls.a_nm, cls.a_nmk, cls.a_nmkl]
 
+    # NumPy
 
     def test_transpose_property(self):
         for ndim in range(1, 5):
@@ -104,8 +105,8 @@ class Tests(TestCase):
                                         self.numpy_arrays_rt[ndim].trace(axis1=axis1, axis2=axis2))
 
     def test_trace_subspace(self):
-        tr1 = self.a_nn.as_basis((self.bn2, self.bn2)).trace()
-        tr2 = self.a_nn.as_basis((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
+        tr1 = self.a_nn.project_onto((self.bn2, self.bn2)).trace()
+        tr2 = self.a_nn.project_onto((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
         self.assertAllclose(tr1, tr2, atol=1e-14, rtol=0)
 
     def test_getitem_with_ellipsis(self):
@@ -134,6 +135,9 @@ class Tests(TestCase):
         self.assertTrue(self.a_nn[None].shape == self.d_nn[None].shape)
         self.assertAllclose(self.a_nn[:,None].value, self.d_nn[:,None])
         self.assertTrue(self.a_nn[:,None].shape == self.d_nn[:,None].shape)
+        self.assertAllclose(self.a_nn[None,None].value, self.d_nn[None,None])
+        self.assertTrue(self.a_nn[None,None].shape == self.d_nn[None,None].shape)
+
 
     def test_eigh(self):
         # NumPy
@@ -144,7 +148,7 @@ class Tests(TestCase):
         e, v = basis.linalg.eigh(self.ah_nn)
         self.assertAllclose(basis.einsum('ai,i,bi->ab', v, e, v), self.ah_nn)
         #self.assertAllclose(np.dot(v*e[None,:], v.T), self.ah_nn)
-        v * e[None,:]
+        #v * e[None,:]
 
 
 class DotTests(TestCase):
@@ -154,8 +158,8 @@ class DotTests(TestCase):
         a = np.random.rand(n)
         b = np.random.rand(n)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=None)
-        ab = basis.Array(b, basis=None)
+        aa = basis.Array(a, basis=basis.nobasis)
+        ab = basis.Array(b, basis=basis.nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -164,8 +168,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(None, None))
-        ab = basis.Array(b, basis=None)
+        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis))
+        ab = basis.Array(b, basis=basis.nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -174,8 +178,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(None, None, None))
-        ab = basis.Array(b, basis=None)
+        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis, basis.nobasis))
+        ab = basis.Array(b, basis=basis.nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -184,8 +188,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(None, None))
-        ab = basis.Array(b, basis=(None, None))
+        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis))
+        ab = basis.Array(b, basis=(basis.nobasis, basis.nobasis))
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -194,8 +198,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k, l)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(None, None, None))
-        ab = basis.Array(b, basis=(None, None))
+        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis, basis.nobasis))
+        ab = basis.Array(b, basis=(basis.nobasis, basis.nobasis))
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 

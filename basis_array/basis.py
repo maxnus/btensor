@@ -3,8 +3,6 @@ import numpy as np
 from .util import *
 
 
-NoBasis = None
-
 def _get_overlap(coeff1, coeff2, metric):
     """Calculate the overlap overlap = (coeff1 | metric | coeff2)."""
     operands = [op for op in (coeff1.T, metric, coeff2) if not isinstance(op, IdentityMatrix)]
@@ -64,7 +62,7 @@ class BasisBase:
         return self.root == other.root
 
     def compatible(self, other):
-        return other is None or self.same_root(other)
+        return other is nobasis or self.same_root(other)
 
     def check_same_root(self, other):
         if self.same_root(other):
@@ -110,6 +108,15 @@ class BasisBase:
     @property
     def is_orthonormal(self):
         return isinstance(self.metric, IdentityMatrix)
+
+    def is_subbasis(self, other, inclusive=True):
+        for parent in self.get_parents(include_self=inclusive):
+            if other == parent:
+                return True
+        return False
+
+    def is_superbasis(self, other, inclusive=True):
+        return other.is_subbasis(self, inclusive=inclusive)
 
 
 class RootBasis(BasisBase):

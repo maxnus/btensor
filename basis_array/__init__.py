@@ -21,7 +21,8 @@ Usage:
 
 import numpy as np
 
-from .basis import Basis, RootBasis, NoBasis
+from .util import nobasis
+from .basis import Basis, RootBasis
 from .array import Array
 
 A = Array

@@ -4,7 +4,7 @@ import itertools
 import copy
 import numpy as np
 from .util import *
-from .basis import Basis, BasisBase, NoBasis
+from .basis import Basis, BasisBase
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -16,19 +16,19 @@ def value_if_scalar(array):
 
 
 class Array(OperatorTemplate):
-    """NumPy array with bases attached for each dimension."""
+    """NumPy array with basis attached for each dimension."""
 
     def __init__(self, value, basis, contravariant=False):
-        if basis is NoBasis or isinstance(basis, BasisBase):
+        if basis is nobasis or isinstance(basis, BasisBase):
             basis = (basis,)
         if len(basis) != np.ndim(value):
             raise ValueError("Array with shape %r requires %d bases, %d given" % (
                 value.shape, np.ndim(value), len(basis)))
         for i, b in enumerate(basis):
-            if b is NoBasis:
+            if b is nobasis:
                 continue
             if not isinstance(b, BasisBase):
-                raise ValueError("Basis instance or None required")
+                raise ValueError("Basis instance or nobasis required")
             if value.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
                     i+1, value.shape[i], b.size))
@@ -45,6 +45,7 @@ class Array(OperatorTemplate):
     @basis.setter
     def basis(self, value):
         self.as_basis(value, inplace=True)
+        #self.project_onto(value, inplace=True)
 
     def copy(self):
         return type(self)(self.value.copy(), basis=self.basis)
@@ -66,18 +67,18 @@ class Array(OperatorTemplate):
             return type(self)(self.value[key], basis=self.basis[1:])
         if key is Ellipsis:
             return self
-        if isinstance(key, slice) or key is None:
+        if isinstance(key, slice) or key is np.newaxis:
             key = (key,)
         if isinstance(key, tuple):
             value = self.value[key]
             if value.ndim == 0:
                 return value
 
-            # Add NoBasis for each newaxis (None) key
+            # Add nobasis for each newaxis (None) key
             newaxis_indices = [i for (i, k) in enumerate(key) if (k is np.newaxis)]
             basis = list(self.basis)
             for i in newaxis_indices:
-                basis.insert(i, NoBasis)
+                basis.insert(i, nobasis)
 
             # Replace Ellipsis with multiple slice(None)
             if Ellipsis in key:
@@ -91,7 +92,7 @@ class Array(OperatorTemplate):
                     del basis[idx]
                 elif isinstance(ki, slice):
                     basis[idx] = Basis(basis[idx], rotation=ki)
-                elif ki is None:
+                elif ki is np.newaxis:
                     pass
                 else:
                     raise ValueError("key %r of type %r" % (ki, type(ki)))
@@ -100,12 +101,12 @@ class Array(OperatorTemplate):
         raise NotImplementedError("Key= %r of type %r" % (key, type(key)))
 
     def transpose(self, axes=None):
-        values = self.value.transpose(axes)
+        value = self.value.transpose(axes)
         if axes is None:
             basis = self.basis[::-1]
         else:
             basis = tuple(self.basis[ax] for ax in axes)
-        return type(self)(values, basis=basis)
+        return type(self)(value, basis=basis)
 
     @property
     def T(self):
@@ -122,7 +123,39 @@ class Array(OperatorTemplate):
 
     # ---
 
+    def index_non_subbasis(self, basis, inclusive=True):
+        """Index of first element of basis which is not a subbasis of the corresponding array basis element."""
+        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
+            if not b1.is_subbasis(b0, inclusive=inclusive):
+                return i
+        return -1
+
+    def index_non_superbasis(self, basis, inclusive=True):
+        """Index of first element of basis which is not a superbasis of the corresponding array basis element."""
+        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
+            if not b1.is_superbasis(b0, inclusive=inclusive):
+                return i
+        return -1
+
+    def is_subbasis(self, basis, inclusive=True):
+        return (self.index_non_subbasis(basis, inclusive=inclusive) == -1)
+
+    def is_superbasis(self, basis, inclusive=True):
+        return (self.index_non_superbasis(basis, inclusive=inclusive) == -1)
+
+    def has_subbasis(self, other, inclusive=True):
+        return self.is_subbasis(other.basis, inclusive=inclusive)
+
+    def has_superbasis(self, other, inclusive=True):
+        return self.is_superbasis(other.basis, inclusive=inclusive)
+
     def as_basis(self, basis, inplace=False):
+        i = self.index_non_superbasis(basis)
+        if i != -1:
+            raise BasisError("%s is not superbasis of %s" % (basis[i], self.basis[i]))
+        return self.project_onto(basis, inplace=inplace)
+
+    def project_onto(self, basis, inplace=False):
         """Transform to different set of basis.
 
         None can be used to indicate no transformation.
@@ -133,7 +166,7 @@ class Array(OperatorTemplate):
         if len(basis) != len(self.basis):
             raise ValueError
         for bas in basis:
-            if not (isinstance(bas, BasisBase) or bas is NoBasis):
+            if not (isinstance(bas, BasisBase) or bas is nobasis):
                 raise ValueError
 
         subscripts = string.ascii_lowercase[:self.ndim]
@@ -147,6 +180,18 @@ class Array(OperatorTemplate):
                 if bas is None:
                     basis_out[i] = self.basis[i]
                 continue
+            # Remove basis:
+            if bas is nobasis:
+                result += subscripts[i]
+                basis_out[i] = nobasis
+                continue
+            # Add basis:
+            # Buggy
+            if self.basis[i] is nobasis:
+                result += subscripts[i]
+                basis_out[i] = bas
+                continue
+
             # If self.basis[i] is covariant and bas is contravariant (or vice versa), the order
             # of bases in the overlap matters:
             if not self.contravariant[i]:
@@ -171,7 +216,6 @@ class Array(OperatorTemplate):
             index += self.ndim
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.as_basis(basis_new, **kwargs)
-
 
     #def __rshift__(self, basis):
     #    """To allow basis transformation as array >> basis"""
@@ -205,7 +249,7 @@ class Array(OperatorTemplate):
     def compatible_axes(self, other):
         axes = []
         for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
-            if (b1 is None or b2 is None) and (self.shape[i] == other.shape[i]):
+            if (b1 is nobasis or b2 is nobasis) and (self.shape[i] == other.shape[i]):
                 axes.append(True)
             elif b1.compatible(b2):
                 axes.append(True)
@@ -220,11 +264,11 @@ class Array(OperatorTemplate):
         if not self.is_compatible(other):
             raise ValueError
         for b1, b2 in zip(self.basis, other.basis):
-            if b1 is NoBasis and b2 is NoBasis:
-                basis.append(NoBasis)
-            elif b1 is NoBasis:
+            if b1 is nobasis and b2 is nobasis:
+                basis.append(nobasis)
+            elif b1 is nobasis:
                 basis.append(b2)
-            elif b2 is NoBasis:
+            elif b2 is nobasis:
                 basis.append(b1)
             else:
                 basis.append(b1.find_common_parent(b2))
