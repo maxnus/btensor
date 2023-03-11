@@ -21,11 +21,12 @@ class BasisBase:
 
     __next_id = 0
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, dual=False):
         #self.id = str(uuid.uuid4())
         self.id = BasisBase.__next_id
         BasisBase.__next_id += 1
         self.name = name
+        self._dual = dual
 
     def make_basis(self, coeff=None, indices=None, **kwargs):
         """Make a new basis with coefficients or indices in reference to the current basis."""
@@ -108,6 +109,10 @@ class BasisBase:
             return NotImplemented
         return other.as_basis(self)
 
+    def dual(self):
+        if self.is_orthonormal:
+            return self
+
     @property
     def is_orthonormal(self):
         return isinstance(self.metric, IdentityMatrix)
@@ -132,8 +137,8 @@ class RootBasis(BasisBase):
     """Root basis, which has to be created before any other basis are defined.
     The root basis does not have any coefficients, only a size and, optionally, a metric."""
 
-    def __init__(self, size, metric=None, name=None):
-        super().__init__(name=name)
+    def __init__(self, size, metric=None, name=None, dual=False):
+        super().__init__(name=name, dual=dual)
         self.size = size
         if metric is None:
             metric = IdentityMatrix(size)
@@ -158,10 +163,10 @@ class Basis(BasisBase):
     the parent basis."""
 
     #def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
-    def __init__(self, parent, rotation, orthonormal=None, name=None):
+    def __init__(self, parent, rotation, orthonormal=None, name=None, dual=False):
 
         self.parent = parent
-        super().__init__(name=name)
+        super().__init__(name=name, dual=dual)
 
         if isinstance(rotation, int):
             if rotation >= self.parent.size:

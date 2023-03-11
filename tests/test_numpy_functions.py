@@ -5,13 +5,7 @@ import string
 import numpy as np
 
 import basis_array as basis
-from test_array import TestCase, rand_orth_mat
-
-
-def powerset(iterable):
-    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
-    s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
+from testing import TestCase, rand_orth_mat, powerset
 
 
 class Tests(TestCase):
