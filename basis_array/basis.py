@@ -86,36 +86,27 @@ class BasisBase:
             parent = p
         return parent
 
-    def get_overlap_with(self, other, metric=None):
+    def as_basis(self, other, metric=None):
         """Get overlap matrix as a Array with another basis."""
         self.check_same_root(other)
         # Find lowest common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
-        coeff1 = self.coeff_in_basis(parent)
-        coeff2 = other.coeff_in_basis(parent)
-        # Hack to implement (AO|MO) != (MO|AO):
-        #if not self.is_orthonormal and other.is_orthonormal:
-        #    metric = IdentityMatrix(parent.size)
-        #else:
-        #    metric = parent.metric
-        if not other.is_orthonormal:
-            metric = parent.metric
-        else:
-            metric = IdentityMatrix(parent.size)
-            #coeff2 = np.dot(parent.metric, coeff2)
+        c_left = other.coeff_in_basis(parent)
+        c_right = self.coeff_in_basis(parent)
+        value = _get_overlap(c_left, c_right, metric=parent.metric)
 
-        value = _get_overlap(coeff1, coeff2, metric)
-        # Hack, overlap matrix should be fully covariant:
-        contravariant = (True, False)
-        #contravariant = (True, True)
-        return Array(value, basis=(self, other), contravariant=contravariant)
+        if not other.is_orthonormal:
+            m_left = other.metric
+            value = np.dot(np.linalg.inv(m_left), value)
+
+        return Array(value, basis=(other, self), variance=(-1, 1))
 
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
         if not isinstance(other, BasisBase):
             return NotImplemented
-        return self.get_overlap_with(other)
+        return other.as_basis(self)
 
     @property
     def is_orthonormal(self):

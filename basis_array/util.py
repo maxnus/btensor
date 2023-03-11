@@ -12,6 +12,7 @@ __all__ = [
 
 nobasis = type('NoBasis', (object,), {})()
 
+
 class IdentityMatrix:
     """Represents the identity matrix of shape size x size."""
 

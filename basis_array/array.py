@@ -18,25 +18,23 @@ def value_if_scalar(array):
 class Array(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, value, basis, contravariant=False):
-        if basis is nobasis or isinstance(basis, BasisBase):
-            basis = (basis,)
-        if len(basis) != np.ndim(value):
-            raise ValueError("Array with shape %r requires %d bases, %d given" % (
-                value.shape, np.ndim(value), len(basis)))
-        for i, b in enumerate(basis):
-            if b is nobasis:
-                continue
-            if not isinstance(b, BasisBase):
-                raise ValueError("Basis instance or nobasis required")
-            if value.shape[i] != b.size:
-                raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
-                    i+1, value.shape[i], b.size))
+    def __init__(self, value, basis, variance=1):
+        #if basis is nobasis or isinstance(basis, BasisBase):
+        #    basis = (basis,)
+        #if len(basis) != np.ndim(value):
+        #    raise ValueError("Array with shape %r requires %d bases, %d given" % (
+        #        value.shape, np.ndim(value), len(basis)))
+        #for i, b in enumerate(basis):
+        #    if b is nobasis:
+        #        continue
+        #    if not isinstance(b, BasisBase):
+        #        raise ValueError("Basis instance or nobasis required")
+        #    if value.shape[i] != b.size:
+        #        raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
+        #            i+1, value.shape[i], b.size))
         self.value = value
-        self._basis = basis
-        if np.ndim(contravariant) == 0:
-            contravariant = self.ndim * [contravariant]
-        self.contravariant = contravariant
+        self.basis = basis
+        self.variance = variance
 
     @property
     def basis(self):
@@ -44,14 +42,57 @@ class Array(OperatorTemplate):
 
     @basis.setter
     def basis(self, value):
-        self.as_basis(value, inplace=True)
+        if value is nobasis or isinstance(value, BasisBase):
+            value = (value,)
+        if len(value) != self.ndim:
+            raise ValueError("%d-dimensional Array requires %d basis elements (%d given)" % (
+                             self.ndim, self.ndim, len(value)))
+        for i, b in enumerate(value):
+            if b is nobasis:
+                continue
+            if not isinstance(b, BasisBase):
+                raise ValueError("Basis instance or nobasis required")
+            if self.shape[i] != b.size:
+                raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
+                                 i+1, self.shape[i], b.size))
+        if not hasattr(self, '_basis'):
+            self._basis = value
+        else:
+            self.as_basis(value, inplace=True)
         #self.project_onto(value, inplace=True)
 
+    @property
+    def variance(self):
+        return self._variance
+
+    @variance.setter
+    def variance(self, value):
+        if np.ndim(value) == 0:
+            value = self.ndim * (value,)
+        if len(value) != self.ndim:
+            raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
+                             self.ndim, self.ndim, len(value)))
+        self._variance = value
+
+    @property
+    def covariant(self):
+        return tuple(np.asarray(self.variance) == 1)
+
+    @property
+    def contravariant(self):
+        return tuple(np.asarray(self.variance) == -1)
+
     def copy(self):
-        return type(self)(self.value.copy(), basis=self.basis)
+        return type(self)(self.value.copy(), basis=self.basis, variance=self.variance)
+
+    @property
+    def variance_str(self):
+        """String representation of variance tuple."""
+        symbols = {1: '+', -1: '-', 0: '*'}
+        return ''.join(symbols[x] for x in self.variance)
 
     def __repr__(self):
-        return '%s(shape= %r)' % (self.__class__.__name__, self.shape)
+        return '%s(shape= %r, variance= %r)' % (self.__class__.__name__, self.shape, self.variance_str)
 
     # --- NumPy compatibility
 
@@ -209,7 +250,7 @@ class Array(OperatorTemplate):
             self.value = value
             self._basis = basis_out
             return self
-        return type(self)(value, basis=basis, contravariant=self.contravariant)
+        return type(self)(value, basis=basis, variance=self.variance)
 
     def as_basis_at(self, index, basis, **kwargs):
         if index < 0:

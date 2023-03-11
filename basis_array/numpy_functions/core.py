@@ -21,16 +21,15 @@ def dot(a, b):
         return ndot(a.value, ovlp, b.value)
     if a.ndim == b.ndim == 2:
         ovlp = overlap(a.basis[-1], b.basis[0])
-        print(ovlp.value)
-        out = ndot(a.value.T, ovlp, b.value)
+        out = ndot(a.value, ovlp, b.value)
         basis = (a.basis[0], b.basis[1])
     elif b.ndim == 1:
         ovlp = overlap(a.basis[-1], b.basis[0])
-        out = ndot(a.value.T, ovlp, b.value)
+        out = ndot(a.value, ovlp, b.value)
         basis = a.basis[:-1]
     elif b.ndim >= 2:
         ovlp = overlap(a.basis[-1], b.basis[-2])
-        out = ndot(a.value.T, ovlp, b.value)
+        out = ndot(a.value, ovlp, b.value)
         basis = (a.basis[:-1] + b.basis[:-2] + b.basis[-1:])
     return type(a)(out, basis=basis)
 

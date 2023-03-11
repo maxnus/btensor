@@ -98,6 +98,7 @@ class ArithmetricTestsSameBasis(TestCase):
         self.assertAllclose(self.a1[...,:2], self.d1[...,:2])
         self.assertAllclose(self.a1[::-1,...], self.d1[::-1,...])
 
+
     #def test_getitem_boolean(self):
     #    mask = [True, True, False, False, True]
     #    self.assertAllclose(self.a1[mask].value, self.d1[mask])
