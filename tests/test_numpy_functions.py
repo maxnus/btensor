@@ -1,5 +1,7 @@
 import unittest
 import itertools
+import functools
+import string
 import numpy as np
 
 import basis_array as basis
@@ -17,10 +19,10 @@ class Tests(TestCase):
     @classmethod
     def setUpClass(cls):
         np.random.rand(0)
-        cls.n = n = 21
-        cls.m = m = 22
-        cls.k = k = 23
-        cls.l = l = 24
+        cls.n = n = 5
+        cls.m = m = 6
+        cls.k = k = 7
+        cls.l = l = 8
         cls.bn = bn = basis.B(n)
         cls.bm = bm = basis.B(m)
         cls.bk = bk = basis.B(k)
@@ -51,7 +53,7 @@ class Tests(TestCase):
 
         # --- Subspaces
 
-        cls.n2 = n2 = 11
+        cls.n2 = n2 = 3
         #cls.m2 = m2 = 12
         #cls.k2 = k2 = 13
         #cls.l2 = l2 = 14
@@ -151,6 +153,71 @@ class Tests(TestCase):
         #v * e[None,:]
 
 
+def loop_einsum_labels(ndim, start_label=0):
+    indices = list(string.ascii_lowercase)[start_label:start_label+ndim]
+    for nsum in range(0, ndim+1):
+        for sumindices in itertools.combinations(range(ndim), nsum):
+            contraction = indices.copy()
+            for sumidx in sumindices:
+                contraction[sumidx] = 'I'
+            contraction = ''.join(contraction)
+            yield contraction
+
+
+def generate_test_1array(contraction, ndim):
+    """Generator to avoid late-binding of contraction and ndim"""
+    def test(self):
+        self.assertAllclose(basis.einsum(contraction, self.basis_arrays_sq[ndim]),
+                               np.einsum(contraction, self.numpy_arrays_sq[ndim]))
+    return test
+
+
+def generate_test_2array(contraction, ndim1, ndim2):
+    """Generator to avoid late-binding of contraction and ndim"""
+    def test(self):
+        #print("RUNNING %s" % contraction)
+        self.assertAllclose(basis.einsum(contraction, self.basis_arrays_sq[ndim1], self.basis_arrays_sq[ndim2]),
+                               np.einsum(contraction, self.numpy_arrays_sq[ndim1], self.numpy_arrays_sq[ndim2]))
+    return test
+
+
+def generate_test_einsum_summation(cls, result=True):
+    """Summation over one index in one array: abi->ab, aii->a, ..."""
+    for ndim in range(1, 5):
+        for labels in loop_einsum_labels(ndim):
+            if result:
+                rhs = '->' + labels.replace('I', '')
+            else:
+                rhs = ''
+            contraction = labels + rhs
+            func = generate_test_1array(contraction, ndim)
+            funcname = 'test_einsum_summation_%s%s' % (labels, rhs.replace('->', '_to_'))
+            setattr(cls, funcname, func)
+            print("Adding function '%s'" % funcname)
+
+
+def generate_test_einsum_contraction(cls, result=True):
+    """Summation over one index in two arrays: ai,bi->ab, ..."""
+    for ndim1, ndim2 in itertools.product(range(1, 5), repeat=2):
+        for labels1 in loop_einsum_labels(ndim1):
+            for labels2 in loop_einsum_labels(ndim2, start_label=ndim1):
+                if result:
+                    rhs = '->' + (labels1 + labels2).replace('I', '')
+                else:
+                    rhs = ''
+                contraction = '%s,%s%s' % (labels1, labels2, rhs)
+                func = generate_test_2array(contraction, ndim1, ndim2)
+                funcname = 'test_einsum_contraction_%s_%s%s' % (labels1, labels2, rhs.replace('->', '_to_'))
+                setattr(cls, funcname, func)
+                print("Adding function '%s'" % funcname)
+
+
+generate_test_einsum_summation(Tests)
+# FIXME:
+#generate_test_einsum_summation(Tests, False)
+generate_test_einsum_contraction(Tests)
+
+
 class DotTests(TestCase):
 
     def test_dot_11(self):
@@ -205,26 +272,6 @@ class DotTests(TestCase):
 
 
 class EinsumTests(TestCase):
-
-    def test_sum(self):
-        n = 30
-        a = np.random.rand(n)
-        contract = 'i->'
-        b = np.einsum(contract, a)
-        bn = basis.B(n)
-        aa = basis.Array(a, basis=bn)
-        ab = basis.einsum(contract, aa)
-        self.assertAllclose(ab, b)
-
-    def test_trace(self):
-        n = 30
-        a = np.random.rand(n, n)
-        contract = 'ii->'
-        b = np.einsum(contract, a)
-        bn = basis.B(n)
-        aa = basis.Array(a, basis=(bn, bn))
-        ab = basis.einsum(contract, aa)
-        self.assertAllclose(ab, b)
 
     def test_matmul(self):
         n, m, k = 30, 40, 50

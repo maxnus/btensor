@@ -31,7 +31,7 @@ def B(parent_or_size, rotation=None, **kwargs):
     if rotation is None:
         if not isinstance(parent_or_size, (int, np.integer)):
             raise ValueError
-        return RootBasis(parent_or_size)
+        return RootBasis(parent_or_size, **kwargs)
     return Basis(parent_or_size, rotation=rotation, **kwargs)
 
 from .numpy_functions import sum

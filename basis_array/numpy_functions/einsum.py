@@ -9,6 +9,9 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
 
     The overlap matrices between non-matching dimensions are automatically added.
     """
+    if '...' in subscripts:
+        raise NotImplementedError
+
     # Remove spaces
     subscripts = subscripts.replace(' ', '')
     if '->' in subscripts:
