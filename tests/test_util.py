@@ -9,18 +9,20 @@ from testing import TestCase, powerset
 
 
 class UtilTests(TestCase):
+    pass
 
 
-    def test_chained_dot(self):
-        n = 10
-        i = util.IdentityMatrix(n)
-        a = np.random.rand(n, n)
-        b = np.random.rand(n, n)
 
-        m = util.Matrix(np.random.rand(n, n))
-        p = util.Matrix(np.random.rand(n, n))
+def generate_test_chained_dot(cls, atol=1e-10):
+    n = 10
+    i = util.IdentityMatrix(n)
+    a = np.random.rand(n, n)
+    b = np.random.rand(n, n)
+    ainv = util.InverseMatrix(a)
+    binv = util.InverseMatrix(b)
 
-        def assert_allclose(*args, atol):
+    def generate_test(*args):
+        def test(self):
             args_ref = [x for x in args if x is not None]
             args_ref = [getattr(x, 'values', x) for x in args_ref]
             if len(args_ref) == 0:
@@ -30,10 +32,16 @@ class UtilTests(TestCase):
             else:
                 ref = np.linalg.multi_dot(args_ref)
             self.assertAllclose(util.chained_dot(*args), ref, atol=atol, rtol=0)
+        return test
 
-        for args in powerset([None, i, a, b, m, m.inv, p, p.inv], include_empty=False):
-            for perm in itertools.permutations(args):
-                assert_allclose(*perm, atol=1e-10)
+    for i, args in enumerate(powerset([None, i, a, b, ainv, binv], include_empty=False)):
+        for j, perm in enumerate(itertools.permutations(args)):
+            funcname = 'test_chained_dot_set%d_perm%d' % (i, j)
+            print("Adding test '%s'" % funcname)
+            setattr(cls, funcname, generate_test(*perm))
+
+
+generate_test_chained_dot(UtilTests)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ def _get_overlap(coeff1, coeff2, metric=None):
     operands = [op for op in (coeff1.T, metric, coeff2) if not (isinstance(op, IdentityMatrix) or op is None)]
     if len(operands) == 0:
         assert coeff1.size == metric.size == coeff2.size
-        return coeff1.as_array()
+        return np.identity(coeff1.size)
     if len(operands) == 1:
         return operands[0]
     if len(operands) == 2:
@@ -17,7 +17,7 @@ def _get_overlap(coeff1, coeff2, metric=None):
 
 
 class BasisBase:
-    """Base class for Basis and RootBasis class."""
+    """Base class for Space and Basis class."""
 
     __next_id = 0
 
@@ -92,14 +92,21 @@ class BasisBase:
         self.check_same_root(other)
         # Find lowest common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
-        c_left = other.coeff_in_basis(parent)
-        c_right = self.coeff_in_basis(parent)
-        value = _get_overlap(c_left, c_right, metric=parent.metric)
 
+        #c_left = other.coeff_in_basis(parent)
+        #c_right = self.coeff_in_basis(parent)
+        #value = _get_overlap(c_left, c_right, metric=parent.metric)
+        #if not other.is_orthonormal:
+        #    m_left = other.metric
+        #    value = np.dot(np.linalg.inv(m_left), value)
+
+        matrices = [
+            other.coeff_in_basis(parent).T,
+            parent.metric,
+            self.coeff_in_basis(parent)]
         if not other.is_orthonormal:
-            m_left = other.metric
-            value = np.dot(np.linalg.inv(m_left), value)
-
+            matrices.insert(0, InverseMatrix(other.metric))
+        value = chained_dot(*matrices)
         return Array(value, basis=(other, self), variance=(-1, 1))
 
     def __or__(self, other):
@@ -109,9 +116,9 @@ class BasisBase:
             return NotImplemented
         return other.as_basis(self)
 
-    def dual(self):
-        if self.is_orthonormal:
-            return self
+    #def dual(self):
+    #    if self.is_orthonormal:
+    #        return self
 
     @property
     def is_orthonormal(self):
@@ -133,9 +140,9 @@ class BasisBase:
         return ortherr
 
 
-class RootBasis(BasisBase):
-    """Root basis, which has to be created before any other basis are defined.
-    The root basis does not have any coefficients, only a size and, optionally, a metric."""
+class Space(BasisBase):
+    """Space which has to be created before any other basis are defined.
+    The space does not have any coefficients, only a size and, optionally, a metric."""
 
     def __init__(self, size, metric=None, name=None, dual=False):
         super().__init__(name=name, dual=dual)
@@ -159,7 +166,7 @@ class RootBasis(BasisBase):
 
 
 class Basis(BasisBase):
-    """Basis class, requires a parent (another Basis or the RootBasis), coefficients or indices in terms of
+    """Basis class, requires a parent (another Basis or Space), coefficients or indices in terms of
     the parent basis."""
 
     #def __init__(self, parent, coeff=None, indices=None, orthonormal=None):

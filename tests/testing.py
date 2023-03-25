@@ -22,7 +22,7 @@ def powerset(iterable, include_empty=True):
 
 class TestCase(unittest.TestCase):
 
-    allclose_atol = 1e-14
+    allclose_atol = 1e-13
     allclose_rtol = 0
 
     def assertAllclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):

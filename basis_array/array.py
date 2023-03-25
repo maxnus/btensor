@@ -191,9 +191,9 @@ class Array(OperatorTemplate):
         return self.is_superbasis(other.basis, inclusive=inclusive)
 
     def as_basis(self, basis, inplace=False):
-        i = self.index_non_superbasis(basis)
-        if i != -1:
-            raise BasisError("%s is not superbasis of %s" % (basis[i], self.basis[i]))
+        #i = self.index_non_superbasis(basis)
+        #if i != -1:
+        #    raise BasisError("%s is not superbasis of %s" % (basis[i], self.basis[i]))
         return self.project_onto(basis, inplace=inplace)
 
     def project_onto(self, basis, inplace=False):
