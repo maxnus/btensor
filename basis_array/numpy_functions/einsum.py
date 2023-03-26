@@ -1,7 +1,6 @@
 import copy
 import string
 import numpy as np
-from basis_array.util import *
 
 
 def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):

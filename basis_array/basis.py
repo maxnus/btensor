@@ -1,6 +1,5 @@
-import uuid
 import numpy as np
-from .util import *
+from basis_array.util import *
 
 
 def _get_overlap(coeff1, coeff2, metric=None):

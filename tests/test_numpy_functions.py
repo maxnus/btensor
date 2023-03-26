@@ -1,6 +1,5 @@
 import unittest
 import itertools
-import functools
 import string
 import numpy as np
 

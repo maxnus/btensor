@@ -1,9 +1,6 @@
-import operator
 import string
-import itertools
-import copy
 import numpy as np
-from .util import *
+from basis_array.util import *
 from .basis import Basis, BasisBase
 from .optemplate import OperatorTemplate
 from . import numpy_functions

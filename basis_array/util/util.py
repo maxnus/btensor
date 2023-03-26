@@ -1,92 +1,16 @@
 import numpy as np
+from .matrix import Matrix, IdentityMatrix
 
 
 __all__ = [
         'nobasis',
-        'IdentityMatrix',
-        'InverseMatrix',
         'BasisError',
         'ndot',
-        'chained_dot',
         'overlap',
         ]
 
 
 nobasis = type('NoBasis', (object,), {})()
-
-
-class MatrixBase:
-
-    @property
-    def ndim(self):
-        return 2
-
-
-class SymmetricMatrix:
-
-    @property
-    def T(self):
-        return self
-
-
-class Matrix(MatrixBase):
-
-    def __init__(self, values):
-        self._values = values
-        self._inv = None
-
-    @property
-    def shape(self):
-        return self.values.shape
-
-    @property
-    def values(self):
-        return self._values
-
-    @property
-    def inv(self):
-        if self._inv is None:
-            self._inv = InverseMatrix(self)
-        return self._inv
-
-
-class InverseMatrix(MatrixBase):
-
-    def __init__(self, matrix):
-        self.matrix = matrix
-        self._values = None
-
-    @property
-    def shape(self):
-        return self.matrix.shape
-
-    @property
-    def values(self):
-        if self._values is None:
-            self._values = np.linalg.inv(getattr(self.matrix, 'values', self.matrix))
-        return self._values
-
-    @property
-    def inv(self):
-        return self.matrix
-
-
-class IdentityMatrix(MatrixBase, SymmetricMatrix):
-
-    def __init__(self, size=None):
-        self.size = size
-
-    @property
-    def shape(self):
-        return (self.size, self.size)
-
-    @property
-    def values(self):
-        return np.identity(self.size)
-
-    @property
-    def inv(self):
-        return self
 
 
 class BasisError(Exception):
@@ -135,7 +59,7 @@ def _remove_inverses(matrices):
 
 
 def _replace_matrices(matrices):
-    return [(m.values if isinstance(m, MatrixBase) else m) for m in matrices]
+    return [(m.values if isinstance(m, Matrix) else m) for m in matrices]
 
 
 def chained_dot(*matrices):

@@ -1,6 +1,6 @@
 import numpy as np
 import basis_array
-from basis_array.util import BasisError
+from basis_array.util.util import BasisError
 
 
 def eigh(a):
