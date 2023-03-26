@@ -1,53 +1,64 @@
 import unittest
 import numpy as np
-import pyscf
-import pyscf.gto
-import pyscf.scf
-import pyscf.cc
 import scipy
 import scipy.stats
-
+from collections import namedtuple
 import basis_array as basis
-from testing import TestCase
+from testing import TestCase, rand_orth_mat
 
 
-class PySCF_Tests(TestCase):
+scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock', 'dm'))
+cc_data = namedtuple('cc_data', ('dm',))
+
+
+def make_scf_data(nao):
+    np.random.seed(0)
+    nao = nmo = 20
+    nocc = 8
+    nvir = nmo - nocc
+    mo_coeff = rand_orth_mat(nao) + 0.1 * np.random.random((nao, nmo))
+    mo_energy = np.random.uniform(-3.0, 3.0, nmo)
+    mo_occ = np.asarray((nocc * [2] + nvir * [0]))
+    sinv = np.dot(mo_coeff, mo_coeff.T)
+    ovlp = np.linalg.inv(sinv)
+    # Test biorthogonality
+    csc = np.linalg.multi_dot((mo_coeff.T, ovlp, mo_coeff))
+    assert np.allclose(csc-np.identity(nao), 0)
+    fock = np.linalg.multi_dot((ovlp, mo_coeff, np.diag(mo_energy), mo_coeff.T, ovlp))
+    dm = np.dot(mo_coeff * mo_occ[None], mo_coeff.T)
+    return scf_data(nao, nmo, nocc, mo_coeff, mo_energy, mo_occ, ovlp, fock, dm)
+
+
+def make_cc_data(scf):
+    np.random.seed(100)
+    dm = np.diag(scf.mo_occ) + np.random.uniform(-0.1, 0.1, (scf.nmo, scf.nmo))
+    e, v = np.linalg.eigh(dm)
+    e = np.clip(e, 0.0, 2.0)
+    dm = np.dot(v*e[None], v.T)
+    return cc_data(dm)
+
+
+class SCF_Tests(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.mol = pyscf.gto.Mole()
-        cls.mol.atom = 'Li 0 0 0 ; Li 0 0 1.5'
-        #cls.mol.basis = 'cc-pVDZ'
-        cls.mol.basis = 'sto-3g'
-        cls.mol.build()
-        cls.mf = pyscf.scf.HF(cls.mol)
-        cls.mf.conv_tol = 1e-12
-        cls.mf.kernel()
-        cls.cc = pyscf.cc.CCSD(cls.mf)
-        cls.cc.kernel()
-
-        # Basis
-        cls.ovlp = cls.mf.get_ovlp()
-        cls.fock = cls.mf.get_fock()
-        cls.dm = cls.mf.make_rdm1()
-        cls.ao = basis.B(cls.mol.nao, metric=cls.ovlp, name='AO')
-        cls.mo = basis.B(cls.ao, rotation=cls.mf.mo_coeff, name='MO')
+        cls.scf = make_scf_data(20)
+        cls.cc = make_cc_data(cls.scf)
+        cls.ao = basis.B(cls.scf.nao, metric=cls.scf.ovlp, name='AO')
+        cls.mo = basis.B(cls.ao, rotation=cls.scf.mo_coeff, name='MO')
 
     def test_cc_dm_mo(self):
-        mf = self.mf
-        nocc = sum(mf.mo_occ>0)
+        nocc = sum(self.scf.mo_occ>0)
         occ = np.s_[:nocc]
         vir = np.s_[nocc:]
-        c_occ = mf.mo_coeff[:,occ]
-        c_vir = mf.mo_coeff[:,vir]
-
-        dm = self.cc.make_rdm1()
+        c_occ = self.scf.mo_coeff[:,occ]
+        c_vir = self.scf.mo_coeff[:,vir]
+        dm = self.cc.dm
         dm_oo = dm[occ,occ]
         dm_ov = dm[occ,vir]
         dm_vo = dm[vir,occ]
         dm_vv = dm[vir,vir]
-
-        mo = basis.B(len(mf.mo_occ))
+        mo = basis.B(len(self.scf.mo_occ))
         bo = basis.B(mo, occ)
         bv = basis.B(mo, vir)
         bdm_oo = basis.A(dm_oo, basis=(bo, bo))
@@ -55,62 +66,61 @@ class PySCF_Tests(TestCase):
         bdm_vo = basis.A(dm_vo, basis=(bv, bo))
         bdm_vv = basis.A(dm_vv, basis=(bv, bv))
         bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
-
         self.assertAllclose(bdm.value, dm)
 
     def test_ao_mo_transform(self):
         ao, mo = self.ao, self.mo
-        self.assertAllclose((ao|ao), np.identity(self.mol.nao))
-        self.assertAllclose((mo|mo), np.identity(self.mol.nao))
-        self.assertAllclose((ao|mo), self.mf.mo_coeff)
-        self.assertAllclose((mo|ao), np.dot(self.mf.mo_coeff.T, self.ovlp))
+        self.assertAllclose((ao|ao), np.identity(self.scf.nao))
+        self.assertAllclose((mo|mo), np.identity(self.scf.nao))
+        self.assertAllclose((ao|mo), self.scf.mo_coeff)
+        self.assertAllclose((mo|ao), np.dot(self.scf.mo_coeff.T, self.scf.ovlp))
 
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
         csc = np.dot((mo|ao), (ao|mo))
-        self.assertAllclose(csc, np.identity(self.mol.nao))
+        self.assertAllclose(csc, np.identity(self.scf.nao))
         csc = basis.dot((mo|ao), (ao|mo))
-        self.assertAllclose(csc, np.identity(self.mol.nao))
+        self.assertAllclose(csc, np.identity(self.scf.nao))
         csc = np.dot((ao|mo), (mo|ao))
-        self.assertAllclose(csc, np.identity(self.mol.nao))
+        self.assertAllclose(csc, np.identity(self.scf.nao))
         csc = basis.dot((ao|mo), (mo|ao))
-        self.assertAllclose(csc, np.identity(self.mol.nao))
+        self.assertAllclose(csc, np.identity(self.scf.nao))
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.A(self.ovlp, basis=(ao, ao))
-        self.assertAllclose(((mo|s)|mo), np.identity(self.mol.nao))
-        self.assertAllclose((mo|(s|mo)), np.identity(self.mol.nao))
+        s = basis.A(self.scf.ovlp, basis=(ao, ao))
+        self.assertAllclose(((mo|s)|mo), np.identity(self.scf.nao))
+        self.assertAllclose((mo|(s|mo)), np.identity(self.scf.nao))
 
     def test_mo2ao_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.A(np.identity(self.mol.nao), basis=(mo, mo))
-        self.assertAllclose(((ao|s)|ao), self.ovlp)
-        self.assertAllclose((ao|(s|ao)), self.ovlp)
+        s = basis.A(np.identity(self.scf.nao), basis=(mo, mo))
+        self.assertAllclose(((ao|s)|ao), self.scf.ovlp)
+        self.assertAllclose((ao|(s|ao)), self.scf.ovlp)
 
     def test_ao2mo_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.A(self.fock, basis=(ao, ao))
-        self.assertAllclose(((mo|f)|mo), np.diag(self.mf.mo_energy), atol=1e-9)
-        self.assertAllclose((mo|(f|mo)), np.diag(self.mf.mo_energy), atol=1e-9)
+        f = basis.A(self.scf.fock, basis=(ao, ao))
+        self.assertAllclose(((mo|f)|mo), np.diag(self.scf.mo_energy), atol=1e-9)
+        self.assertAllclose((mo|(f|mo)), np.diag(self.scf.mo_energy), atol=1e-9)
 
     def test_mo2ao_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.A(np.diag(self.mf.mo_energy), basis=(mo, mo))
-        self.assertAllclose(((ao|f)|ao), self.fock, atol=1e-9)
-        self.assertAllclose((ao|(f|ao)), self.fock, atol=1e-9)
+        f = basis.A(np.diag(self.scf.mo_energy), basis=(mo, mo))
+        self.assertAllclose(((ao|f)|ao), self.scf.fock, atol=1e-9)
+        self.assertAllclose((ao|(f|ao)), self.scf.fock, atol=1e-9)
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(self.dm, basis=(ao, ao), variance=(-1, -1))
-        self.assertAllclose(((mo|d)|mo), np.diag(self.mf.mo_occ))
-        self.assertAllclose((mo|(d|mo)), np.diag(self.mf.mo_occ))
+        d = basis.A(self.scf.dm, basis=(ao, ao), variance=(-1, -1))
+        self.assertAllclose(((mo|d)|mo), np.diag(self.scf.mo_occ))
+        self.assertAllclose((mo|(d|mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(np.diag(self.mf.mo_occ), basis=(mo, mo), variance=(-1, -1))
-        self.assertAllclose(((ao|d)|ao), self.dm)
-        self.assertAllclose((ao|(d|ao)), self.dm)
+        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo), variance=(-1, -1))
+        self.assertAllclose(((ao|d)|ao), self.scf.dm)
+        self.assertAllclose((ao|(d|ao)), self.scf.dm)
 
 
     def test_1(self):
