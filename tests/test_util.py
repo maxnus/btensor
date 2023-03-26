@@ -17,6 +17,7 @@ def generate_test_chained_dot(cls, atol=1e-10):
     i = util.IdentityMatrix(n)
     a = util.Matrix(np.random.rand(n, n))
     b = util.Matrix(np.random.rand(n, n))
+    p = util.PermutationMatrix(order=[2,8,0,1,3,7,5,4,6,9], size=n)
     ainv = util.InverseMatrix(a)
     binv = util.InverseMatrix(b)
 
@@ -33,11 +34,17 @@ def generate_test_chained_dot(cls, atol=1e-10):
             self.assertAllclose(util.chained_dot(*args), ref, atol=atol, rtol=0)
         return test
 
-    for i, args in enumerate(powerset([None, i, a, b, ainv, binv], include_empty=False)):
-        for j, perm in enumerate(itertools.permutations(args)):
-            funcname = 'test_chained_dot_set%d_perm%d' % (i, j)
+    matrices = {'x': None, 'i': i, 'a': a, 'b': b, 'ainv': ainv, 'binv': binv, 'p': p}
+    matrices = [(k, v) for (k, v) in matrices.items()]
+
+    for i, args in enumerate(powerset(matrices, include_empty=False)):
+        for perm in itertools.permutations(args):
+            mats = [p[1] for p in perm]
+            name = '_'.join([p[0] for p in perm])
+            funcname = 'test_chained_dot_%s' % name
             print("Adding test '%s'" % funcname)
-            setattr(cls, funcname, generate_test(*perm))
+            assert not hasattr(cls, funcname)
+            setattr(cls, funcname, generate_test(*mats))
 
 
 generate_test_chained_dot(UtilTests)
