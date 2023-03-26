@@ -7,7 +7,6 @@ import scipy.stats
 
 def rand_orth_mat(n, ncol=None):
     m = scipy.stats.ortho_group.rvs(n)
-    #return m
     if ncol is not None:
         m = m[:,:ncol]
     return m

@@ -42,7 +42,7 @@ class BasisBase:
         if self.root is not other.root:
             return False
             #raise ValueError("Cannot check identity of bases with different RootBasis.")
-        return (self.id == other.id)
+        return self.id == other.id
 
     def __repr__(self):
         name = (self.name or type(self).__name__)
@@ -88,7 +88,7 @@ class BasisBase:
         return parent
 
     def as_basis(self, other, metric=None):
-        """Get overlap matrix as a Array with another basis."""
+        """Get overlap matrix as an Array with another basis."""
         self.check_same_root(other)
         # Find lowest common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
@@ -110,7 +110,7 @@ class BasisBase:
         return Array(value, basis=(other, self), variance=(-1, 1))
 
     def __or__(self, other):
-        """Allows writing overlap as `(basis1 | basis2)`."""
+        """Allows writing overlap as `(basis1|basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
         if not isinstance(other, BasisBase):
             return NotImplemented

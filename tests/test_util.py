@@ -12,12 +12,11 @@ class UtilTests(TestCase):
     pass
 
 
-
 def generate_test_chained_dot(cls, atol=1e-10):
     n = 10
     i = util.IdentityMatrix(n)
-    a = np.random.rand(n, n)
-    b = np.random.rand(n, n)
+    a = util.Matrix(np.random.rand(n, n))
+    b = util.Matrix(np.random.rand(n, n))
     ainv = util.InverseMatrix(a)
     binv = util.InverseMatrix(b)
 

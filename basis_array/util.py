@@ -21,6 +21,14 @@ class MatrixBase:
     def ndim(self):
         return 2
 
+
+class SymmetricMatrix:
+
+    @property
+    def T(self):
+        return self
+
+
 class Matrix(MatrixBase):
 
     def __init__(self, values):
@@ -56,12 +64,6 @@ class InverseMatrix(MatrixBase):
     def values(self):
         if self._values is None:
             self._values = np.linalg.inv(getattr(self.matrix, 'values', self.matrix))
-            #import scipy
-            #import scipy.linalg
-            #e, vl, vr = scipy.linalg.eig(self.matrix.values, left=True)
-            #self._values = np.einsum('ai,i,bi->ab', vl, 1/e, vr).T
-            #print(np.linalg.norm(self._values - np.linalg.inv(self.matrix.values)))
-
         return self._values
 
     @property
@@ -69,7 +71,7 @@ class InverseMatrix(MatrixBase):
         return self.matrix
 
 
-class IdentityMatrix(MatrixBase):
+class IdentityMatrix(MatrixBase, SymmetricMatrix):
 
     def __init__(self, size=None):
         self.size = size
@@ -84,10 +86,6 @@ class IdentityMatrix(MatrixBase):
 
     @property
     def inv(self):
-        return self
-
-    @property
-    def T(self):
         return self
 
 
@@ -118,25 +116,8 @@ def _remove_identity(matrices):
     return matrices_out
 
 
-#def _remove_inverses(matrices):
-#    """old"""
-#    if not matrices:
-#        return matrices
-#    matrices_out = [matrices[0]]
-#    for i, m in enumerate(matrices[1:], start=1):
-#        if hasattr(m, 'inv') and m.inv is matrices[i-1]:
-#            matrices_out.pop()
-#            # restart removal process
-#            matrices_out += matrices[i+1:]
-#            break
-#        matrices_out.append(m)
-#    else:
-#        return matrices_out
-#    return _remove_inverses(matrices_out)
-
-
 def _remove_inverses(matrices):
-    matrices_out = matrices.copy()
+    matrices = matrices.copy()
     for i, m in enumerate(matrices):
         if not hasattr(m, 'inv'):
             continue
@@ -158,7 +139,6 @@ def _replace_matrices(matrices):
 
 
 def chained_dot(*matrices):
-    nin = len(matrices)
     matrices = [m for m in matrices if (m is not None)]
     if len(matrices) == 0:
         return None
@@ -166,7 +146,7 @@ def chained_dot(*matrices):
     matrices = _remove_identity(matrices)
     matrices = _remove_inverses(matrices)
     matrices = _replace_matrices(matrices)
-    print("Chained dot with %d matrices" % len(matrices))
+    #print("Chained dot with %d matrices" % len(matrices))
     if len(matrices) == 0:
         assert shape_out[0] == shape_out[1]
         return np.identity(shape_out[0])
@@ -178,8 +158,6 @@ def chained_dot(*matrices):
 def overlap(a, b):
     if a is nobasis and b is nobasis:
         return IdentityMatrix()
-
-    if  a is nobasis or b is nobasis:
+    if a is nobasis or b is nobasis:
         raise BasisError
-
     return (a | b)
