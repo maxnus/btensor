@@ -48,16 +48,16 @@ class SCF_Tests(TestCase):
         cls.mo = basis.B(cls.ao, rotation=cls.scf.mo_coeff, name='MO')
 
     def test_cc_dm_mo(self):
-        nocc = sum(self.scf.mo_occ>0)
+        nocc = self.scf.nocc
         occ = np.s_[:nocc]
         vir = np.s_[nocc:]
-        c_occ = self.scf.mo_coeff[:,occ]
-        c_vir = self.scf.mo_coeff[:,vir]
+        c_occ = self.scf.mo_coeff[:, occ]
+        c_vir = self.scf.mo_coeff[:, vir]
         dm = self.cc.dm
-        dm_oo = dm[occ,occ]
-        dm_ov = dm[occ,vir]
-        dm_vo = dm[vir,occ]
-        dm_vv = dm[vir,vir]
+        dm_oo = dm[occ, occ]
+        dm_ov = dm[occ, vir]
+        dm_vo = dm[vir, occ]
+        dm_vv = dm[vir, vir]
         mo = basis.B(len(self.scf.mo_occ))
         bo = basis.B(mo, occ)
         bv = basis.B(mo, vir)
@@ -70,70 +70,69 @@ class SCF_Tests(TestCase):
 
     def test_ao_mo_transform(self):
         ao, mo = self.ao, self.mo
-        self.assertAllclose((ao|ao), np.identity(self.scf.nao))
-        self.assertAllclose((mo|mo), np.identity(self.scf.nao))
-        self.assertAllclose((ao|mo), self.scf.mo_coeff)
-        self.assertAllclose((mo|ao), np.dot(self.scf.mo_coeff.T, self.scf.ovlp))
+        self.assertAllclose((ao | ao), np.identity(self.scf.nao))
+        self.assertAllclose((mo | mo), np.identity(self.scf.nao))
+        self.assertAllclose((ao | mo), self.scf.mo_coeff)
+        self.assertAllclose((mo | ao), np.dot(self.scf.mo_coeff.T, self.scf.ovlp))
 
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
-        csc = np.dot((mo|ao), (ao|mo))
+        csc = np.dot((mo | ao), (ao | mo))
         self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = basis.dot((mo|ao), (ao|mo))
+        csc = basis.dot((mo | ao), (ao | mo))
         self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = np.dot((ao|mo), (mo|ao))
+        csc = np.dot((ao | mo), (mo | ao))
         self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = basis.dot((ao|mo), (mo|ao))
+        csc = basis.dot((ao | mo), (mo | ao))
         self.assertAllclose(csc, np.identity(self.scf.nao))
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo
         s = basis.A(self.scf.ovlp, basis=(ao, ao))
-        self.assertAllclose(((mo|s)|mo), np.identity(self.scf.nao))
-        self.assertAllclose((mo|(s|mo)), np.identity(self.scf.nao))
+        self.assertAllclose(((mo | s) | mo), np.identity(self.scf.nao))
+        self.assertAllclose((mo | (s | mo)), np.identity(self.scf.nao))
 
     def test_mo2ao_ovlp(self):
         ao, mo = self.ao, self.mo
         s = basis.A(np.identity(self.scf.nao), basis=(mo, mo))
-        self.assertAllclose(((ao|s)|ao), self.scf.ovlp)
-        self.assertAllclose((ao|(s|ao)), self.scf.ovlp)
+        self.assertAllclose(((ao | s) | ao), self.scf.ovlp)
+        self.assertAllclose((ao | (s | ao)), self.scf.ovlp)
 
     def test_ao2mo_fock(self):
         ao, mo = self.ao, self.mo
         f = basis.A(self.scf.fock, basis=(ao, ao))
-        self.assertAllclose(((mo|f)|mo), np.diag(self.scf.mo_energy), atol=1e-9)
-        self.assertAllclose((mo|(f|mo)), np.diag(self.scf.mo_energy), atol=1e-9)
+        self.assertAllclose(((mo | f) | mo), np.diag(self.scf.mo_energy), atol=1e-9)
+        self.assertAllclose((mo | (f | mo)), np.diag(self.scf.mo_energy), atol=1e-9)
 
     def test_mo2ao_fock(self):
         ao, mo = self.ao, self.mo
         f = basis.A(np.diag(self.scf.mo_energy), basis=(mo, mo))
-        self.assertAllclose(((ao|f)|ao), self.scf.fock, atol=1e-9)
-        self.assertAllclose((ao|(f|ao)), self.scf.fock, atol=1e-9)
+        self.assertAllclose(((ao | f) | ao), self.scf.fock, atol=1e-9)
+        self.assertAllclose((ao | (f | ao)), self.scf.fock, atol=1e-9)
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
         d = basis.A(self.scf.dm, basis=(ao, ao), variance=(-1, -1))
-        self.assertAllclose(((mo|d)|mo), np.diag(self.scf.mo_occ))
-        self.assertAllclose((mo|(d|mo)), np.diag(self.scf.mo_occ))
+        self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
+        self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
         d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo), variance=(-1, -1))
-        self.assertAllclose(((ao|d)|ao), self.scf.dm)
-        self.assertAllclose((ao|(d|ao)), self.scf.dm)
+        self.assertAllclose(((ao | d) | ao), self.scf.dm)
+        self.assertAllclose((ao | (d | ao)), self.scf.dm)
 
-
+    @unittest.skip("Old test")
     def test_1(self):
-        return
         t2x = ccsd.t2
         mo_coeff_x = mf.mo_coeff
-        occ = mf.mo_occ>0
-        vir = mf.mo_occ==0
-        mo_coeff_occ_x = mf.mo_coeff[:,mf.mo_occ>0]
-        mo_coeff_vir_x = mf.mo_coeff[:,mf.mo_occ==0]
+        occ = mf.mo_occ > 0
+        vir = mf.mo_occ == 0
+        mo_coeff_occ_x = mf.mo_coeff[:, mf.mo_occ > 0]
+        mo_coeff_vir_x = mf.mo_coeff[:, mf.mo_occ == 0]
 
         # Random unitary rotation:
-        u_occ = scipy.stats.ortho_group.rvs(mo_coeff_occ_x.shape[1])#[:,:2]
+        u_occ = scipy.stats.ortho_group.rvs(mo_coeff_occ_x.shape[1])
         u_vir = scipy.stats.ortho_group.rvs(mo_coeff_vir_x.shape[1])
         mo_coeff_occ_y = np.dot(mo_coeff_occ_x, u_occ)
         mo_coeff_vir_y = np.dot(mo_coeff_vir_x, u_vir)
@@ -166,164 +165,8 @@ class SCF_Tests(TestCase):
         #result2 = basis_einsum('iiab,ijaB->bB', t2x, t2y)
         #result2 = basis_einsum('ijab,ijab', t2x, t2y)
 
-        c = (ao | occ_x)
-        #print(np.linalg.norm(c - mo_coeff_occ_x))
-        print(c.contravariant)
-
-        #dm = c.as_basis((None, ao))
-        dm = ((ao | occ_x) | ao)
-        dm1 = mf.make_rdm1()
-        print(np.linalg.norm(dm - dm1))
-        #print(np.linalg.norm(dm - np.linalg.multi_dot((c.value))))
-
-        1/0
-
-        #ovlp = (c.basis[1] | ao)
-        #print(ovlp.value.T - np.dot(ovlp_ao, mo_coeff_occ_x))
-
-        ovlp = (ao | c.basis[1])
-        print(ovlp.value - mo_coeff_occ_x)
-
-        1/0
-
-        # DM
-        #dm = ((ao | occ_x)  | ao)
-        dm = (ao | occ_x | ao)
-        #dm1 = np.dot(ovlp_ao, dm1).dot(ovlp_ao)
-        print(np.linalg.norm(dm - dm1))
-        1/0
-
-
-        assert np.allclose(result, result2.value)
-
-        mat = np.random.rand(mol.nao, mol.nao)
-        e, v = np.linalg.eigh(mat)
-        c_frag = v[:,:3]
-
-        frag = root.make_basis(c_frag)
-
-        #print(ovlp)
-        #print(ovlp.basis)
-
-        print(ao.is_orthonormal)
-        print(mo.is_orthonormal)
-
-        ovlp = (ao|ao) # C_ai
-        print(np.linalg.norm(ovlp - ovlp_ao))
-
-        ovlp = (ao|mo) >> ao
-        print(np.linalg.norm(ovlp - np.eye(ao.size)))
-
-        ovlp = ao << (mo|ao)
-        print(np.linalg.norm(ovlp - np.eye(ao.size)))
-
-        ovlp = (ao|mo) >> ao
-        print(np.linalg.norm(ovlp - np.eye(ao.size)))
-
-        ovlp = (ao|mo) # C_ai
-
-        print(np.linalg.norm(ovlp - mf.mo_coeff))
-        #print(np.linalg.norm(ovlp - np.dot(ovlp_ao, mf.mo_coeff)))
-
-        ovlp = (mo|ao) # C_ai * Sab
-        #print(np.linalg.norm(ovlp - mf.mo_coeff.T))
-        print(np.linalg.norm(ovlp - np.dot(ovlp_ao, mf.mo_coeff).T))
-
-        ovlp = (mo|ao) >> mo
-        print(np.linalg.norm(ovlp - np.eye(ao.size)))
-        print(ovlp.contravariant)
-
-        ovlp = mo << (ao|mo)
-        print(np.linalg.norm(ovlp - np.eye(ao.size)))
-        print(ovlp.contravariant)
-
-        (mo|frag) >> mo
-
-        hcore = mf.get_hcore()
-        hcore_mo = np.linalg.multi_dot((mf.mo_coeff.T, hcore, mf.mo_coeff))
-
-        h1e = basis.Array(hcore, (ao, ao))
-        h1e_mo = basis.Array(hcore_mo, (mo, mo))
-
-        test = (ao | h1e_mo | ao)
-        test = h1e_mo >> (ao, ao)
-
-        print(np.linalg.norm(test.value - h1e))
-        print(test.contravariant)
-
-        test = (mo | h1e | mo)
-        print(np.linalg.norm(test.value - h1e_mo))
-        print(test.contravariant)
-
-        dm1_ao = mf.make_rdm1()
-        dm1_mo = np.zeros_like(dm1_ao)
-        nocc = np.count_nonzero(mf.mo_occ > 0)
-        dm1_mo[np.diag_indices(nocc)] = 2
-
-        bdm1_ao = basis.Array(dm1_ao, (ao, ao), contravariant=True)
-        bdm1_mo = basis.Array(dm1_mo, (mo, mo), contravariant=True)
-
-        dm1_half = np.einsum('ab,bc,ci->ai', dm1_ao, ovlp_ao, mf.mo_coeff)
-        test = (bdm1_ao | mo)
-        print(np.linalg.norm(test.value - dm1_half))
-
-        test = (mo | bdm1_ao)
-        print(np.linalg.norm(test.value - dm1_half.T))
-
-        test = (ao | bdm1_mo | ao)
-        print(np.linalg.norm(test.value - dm1_ao))
-
-        test = (mo | bdm1_ao | mo)
-        print(np.linalg.norm(test.value - dm1_mo))
-
-
-        #ref = mf.mo_coeff[:,:3]
-
-        #print(ovlp.shape)
-        #print(ref.shape)
-        #1/0
-
-        #print('yyyy')
-        #test = (occ_x | h1e_mo | vir_x)
-        #print(test.value.shape)
-        #print((hcore_mo[occ][:,vir]).shape)
-        #print(np.linalg.norm(test.value - hcore_mo[occ][:,vir]))
-        #1/0
-
-
-        #ovlp = (mo_x | ao)
-        #ovlp = (ao | mo_x)
-        #ovlp2 = (mo_x | ao)
-
-        #print(np.linalg.norm(ovlp.value - ovlp2.value.T))
-        #1/0
-
-
-        #print(type(ovlp))
-        #print(ovlp.value)
-        #print(np.linalg.norm(ovlp.value - np.dot(ovlp_ao, mo_x.coeff)))
-
-
-        #1/0
-
-        ovlp1 = (mo_x | frag) | mo_x
-        ovlp2 = mo_x | (frag | mo_x)
-        ovlp3 = (mo_x | frag | mo_x)
-
-        proj = (mo | frag) >> (None, mo)
-
-        #test = (occ_x, occ_x) | t2x | (vir_x, vir_x)
-        #test = t2x | (occ_y, occ_y, vir_y, vir_y)
-        #test = (occ_y, occ_y, vir_y, vir_y) | t2x
-        #
-        #test = (None, None) | t2x | (None, None)
-        t2x_ao = (ao, ao) | t2x | (ao, ao)
-
-        #r_occ = np.dot(ovlp_ao, mo_coeff_occ_x)
-        #r_vir = np.dot(ovlp_ao, mo_coeff_vir_x)
         r_occ = mo_coeff_occ_x
         r_vir = mo_coeff_vir_x
-
         # ERIs are transformed without S, T is transformed with S!
         ref = np.einsum('ijab,pi,qj,ra,sb->pqrs', t2x, r_occ, r_occ, r_vir, r_vir, optimize=True)
 
@@ -331,49 +174,9 @@ class SCF_Tests(TestCase):
 
         t2x_mo = (occ_x, occ_x) | t2x_ao | (vir_x, vir_x)
 
-
         #t2x_mo = t2x_ao @ (vir_x, vir_x)
 
-
         print(np.linalg.norm(t2x_mo.value - t2x.value))
-
-        print(ovlp1.shape)
-        print(ovlp2.shape)
-
-        print(np.linalg.norm(ovlp1.value - ovlp2.value))
-        print(np.linalg.norm(ovlp1.value - ovlp3.value))
-
-        #t_ij^ab * t_IJ^AB
-
-
-        1/0
-
-        # Test
-        print(result.shape)
-        print(result2.shape)
-        print(np.linalg.norm(result - result2.value))
-
-        print(result2.basis)
-        assert np.allclose(result, result2)
-
-        result3 = result2.as_basis((mo_x, mo_x))
-
-        print(result3.shape)
-        #print(result3.value)
-        #assert np.allclose(result, result3)
-
-        ovlp = (occ_y | occ_x)
-        print(id(ovlp))
-
-        ovlp = (occ_y | occ_x)
-        print(id(ovlp))
-
-        1/0
-
-        #diff = (result2 - result)
-        #print(np.linalg.norm(result - result2))
-        #print(type(diff))
-        print(result2.shape)
 
 
 if __name__ == '__main__':
