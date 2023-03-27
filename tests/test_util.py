@@ -1,9 +1,6 @@
-
 import unittest
 import itertools
 import numpy as np
-
-import basis_array as basis
 from basis_array import util
 from testing import TestCase, powerset
 
