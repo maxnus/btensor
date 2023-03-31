@@ -50,7 +50,7 @@ class Tests(TestCase):
         #cls.m2 = m2 = 12
         #cls.k2 = k2 = 13
         #cls.l2 = l2 = 14
-        cls.bn2 = bn2 = basis.B(rotation_or_size=rand_orth_mat(n, n2), parent=bn)
+        cls.bn2 = bn2 = basis.B(rand_orth_mat(n, n2), parent=bn)
 
         cls.numpy_arrays_sq = [None, cls.d_n, cls.d_nn, cls.d_nnn, cls.d_nnnn]
         cls.basis_arrays_sq = [None, cls.a_n, cls.a_nn, cls.a_nnn, cls.a_nnnn]

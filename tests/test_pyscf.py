@@ -45,7 +45,7 @@ class SCF_Tests(TestCase):
         cls.scf = make_scf_data(20)
         cls.cc = make_cc_data(cls.scf)
         cls.ao = basis.B(cls.scf.nao, metric=cls.scf.ovlp, name='AO')
-        cls.mo = basis.B(rotation_or_size=cls.scf.mo_coeff, parent=cls.ao, name='MO')
+        cls.mo = basis.B(cls.scf.mo_coeff, parent=cls.ao, name='MO')
 
     def test_cc_dm_mo(self):
         nocc = self.scf.nocc

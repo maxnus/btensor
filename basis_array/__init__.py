@@ -22,18 +22,12 @@ Usage:
 import numpy as np
 
 from basis_array.util.util import nobasis
-from .basis import RootBasis
 from .basis import Basis
 from .array import Array
 
 
 A = Array
-
-
-def B(rotation_or_size=None, parent=None, **kwargs):
-    if parent is None:
-        return RootBasis(rotation_or_size, **kwargs)
-    return Basis(rotation_or_size, parent=parent, **kwargs)
+B = Basis
 
 
 from .numpy_functions import sum
