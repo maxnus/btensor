@@ -4,10 +4,10 @@ the different bases are automatically taken into account.
 
 Usage:
 
->>> root = Space(mol.nao, metric=mf.get_ovlp())
->>> mo = Space.add_basis(mf.mo_coeff, name='mo')
->>> mo_occ = Space.add_basis(mf.mo_coeff[:,occ], name='mo-occ')
->>> mo_vir = Space.add_basis(mf.mo_coeff[:,vir], name='mo-vir')
+>>> root = RootBasis(mol.nao, metric=mf.get_ovlp())
+>>> mo = RootBasis.add_basis(mf.mo_coeff, name='mo')
+>>> mo_occ = RootBasis.add_basis(mf.mo_coeff[:,occ], name='mo-occ')
+>>> mo_vir = RootBasis.add_basis(mf.mo_coeff[:,vir], name='mo-vir')
 >>> fov = BasisArray(fock[occ,vir], basis=(mo_occ, mo_vir))
 >>> # View in different basis:
 >>> print(fov.as_basis((mo, mo)))
@@ -22,7 +22,7 @@ Usage:
 import numpy as np
 
 from basis_array.util.util import nobasis
-from .basis import Space
+from .basis import RootBasis
 from .basis import Basis
 from .array import Array
 
@@ -30,12 +30,10 @@ from .array import Array
 A = Array
 
 
-def B(parent_or_size, rotation=None, **kwargs):
-    if rotation is None:
-        if not isinstance(parent_or_size, (int, np.integer)):
-            raise ValueError
-        return Space(parent_or_size, **kwargs)
-    return Basis(parent_or_size, rotation=rotation, **kwargs)
+def B(rotation_or_size=None, parent=None, **kwargs):
+    if parent is None:
+        return RootBasis(rotation_or_size, **kwargs)
+    return Basis(rotation_or_size, parent=parent, **kwargs)
 
 
 from .numpy_functions import sum

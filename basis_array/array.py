@@ -129,7 +129,7 @@ class Array(OperatorTemplate):
                 if isinstance(ki, (int, np.integer)):
                     del basis[idx]
                 elif isinstance(ki, slice):
-                    basis[idx] = Basis(basis[idx], rotation=ki)
+                    basis[idx] = Basis(rotation=ki, parent=basis[idx])
                 elif ki is np.newaxis:
                     pass
                 else:

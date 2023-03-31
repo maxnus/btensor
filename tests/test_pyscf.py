@@ -45,7 +45,7 @@ class SCF_Tests(TestCase):
         cls.scf = make_scf_data(20)
         cls.cc = make_cc_data(cls.scf)
         cls.ao = basis.B(cls.scf.nao, metric=cls.scf.ovlp, name='AO')
-        cls.mo = basis.B(cls.ao, rotation=cls.scf.mo_coeff, name='MO')
+        cls.mo = basis.B(rotation_or_size=cls.scf.mo_coeff, parent=cls.ao, name='MO')
 
     def test_cc_dm_mo(self):
         nocc = self.scf.nocc
@@ -59,8 +59,8 @@ class SCF_Tests(TestCase):
         dm_vo = dm[vir, occ]
         dm_vv = dm[vir, vir]
         mo = basis.B(len(self.scf.mo_occ))
-        bo = basis.B(mo, occ)
-        bv = basis.B(mo, vir)
+        bo = basis.B(occ, parent=mo)
+        bv = basis.B(vir, parent=mo)
         bdm_oo = basis.A(dm_oo, basis=(bo, bo))
         bdm_ov = basis.A(dm_ov, basis=(bo, bv))
         bdm_vo = basis.A(dm_vo, basis=(bv, bo))

@@ -1,5 +1,6 @@
 import numpy as np
 from basis_array.util import *
+from basis_array.space import Space
 
 
 def _get_overlap(coeff1, coeff2, metric=None):
@@ -16,16 +17,20 @@ def _get_overlap(coeff1, coeff2, metric=None):
 
 
 class BasisBase:
-    """Base class for Space and Basis class."""
+    """Base class for Basis class."""
 
     __next_id = 0
 
     def __init__(self, name=None, dual=False):
-        #self.id = str(uuid.uuid4())
-        self.id = BasisBase.__next_id
-        BasisBase.__next_id += 1
+        self.id = self.get_next_id()
         self.name = name
         self._dual = dual
+
+    @staticmethod
+    def get_next_id():
+        next_id = BasisBase.__next_id
+        BasisBase.__next_id += 1
+        return next_id
 
     def make_basis(self, coeff=None, indices=None, **kwargs):
         """Make a new basis with coefficients or indices in reference to the current basis."""
@@ -139,7 +144,7 @@ class BasisBase:
         return ortherr
 
 
-class Space(BasisBase):
+class RootBasis(BasisBase):
     """Space which has to be created before any other basis are defined.
     The space does not have any coefficients, only a size and, optionally, a metric."""
 
@@ -169,7 +174,7 @@ class Basis(BasisBase):
     the parent basis."""
 
     #def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
-    def __init__(self, parent, rotation, orthonormal=None, name=None, dual=False):
+    def __init__(self, rotation, parent=None, orthonormal=None, name=None, dual=False):
 
         self.parent = parent
         super().__init__(name=name, dual=dual)
@@ -205,7 +210,10 @@ class Basis(BasisBase):
 
     @property
     def root(self):
-        return self.parent.root
+        return getattr(self.parent, 'root', None)
+
+    def is_root(self):
+        return self.parent is None
 
     def coeff_in_basis(self, basis):
         """Express coefficient matrix in the basis of another parent instead of the direct parent."""
