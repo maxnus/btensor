@@ -1,7 +1,7 @@
 import string
 import numpy as np
 from basis_array.util import *
-from .basis import Basis, BasisBase
+from .basis import Basis
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -39,7 +39,7 @@ class Array(OperatorTemplate):
 
     @basis.setter
     def basis(self, value):
-        if value is nobasis or isinstance(value, BasisBase):
+        if value is nobasis or isinstance(value, Basis):
             value = (value,)
         if len(value) != self.ndim:
             raise ValueError("%d-dimensional Array requires %d basis elements (%d given)" % (
@@ -47,7 +47,7 @@ class Array(OperatorTemplate):
         for i, b in enumerate(value):
             if b is nobasis:
                 continue
-            if not isinstance(b, BasisBase):
+            if not isinstance(b, Basis):
                 raise ValueError("Basis instance or nobasis required")
             if self.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
@@ -204,7 +204,7 @@ class Array(OperatorTemplate):
         if len(basis) != len(self.basis):
             raise ValueError
         for bas in basis:
-            if not (isinstance(bas, BasisBase) or bas is nobasis):
+            if not (isinstance(bas, Basis) or bas is nobasis):
                 raise ValueError
 
         subscripts = string.ascii_lowercase[:self.ndim]
@@ -265,7 +265,7 @@ class Array(OperatorTemplate):
 
     def __or__(self, basis):
         """To allow basis transformation as (array | basis)"""
-        if isinstance(basis, BasisBase):
+        if isinstance(basis, Basis):
             basis = (basis,)
         if isinstance(basis, tuple):
             basis = self.basis[:-len(basis)] + basis
@@ -273,7 +273,7 @@ class Array(OperatorTemplate):
 
     def __ror__(self, basis):
         """To allow basis transformation as (basis | array)"""
-        if isinstance(basis, BasisBase):
+        if isinstance(basis, Basis):
             basis = (basis,)
         if isinstance(basis, tuple):
             basis = basis + self.basis[len(basis):]

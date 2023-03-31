@@ -4,7 +4,7 @@ from basis_array.space import Space
 
 
 def _get_overlap(coeff1, coeff2, metric=None):
-    """Calculate the overlap overlap = (coeff1 | metric | coeff2)."""
+    """Calculate the overlap = (coeff1 | metric | coeff2)."""
     operands = [op for op in (coeff1.T, metric, coeff2) if not (isinstance(op, IdentityMatrix) or op is None)]
     if len(operands) == 0:
         assert coeff1.size == metric.size == coeff2.size
@@ -16,20 +16,82 @@ def _get_overlap(coeff1, coeff2, metric=None):
     return np.linalg.multi_dot(operands)
 
 
-class BasisBase:
+class Basis:
     """Base class for Basis class."""
 
     __next_id = 0
 
-    def __init__(self, name=None, dual=False):
+    def __init__(self, rotation, parent=None, metric=None, orthonormal=None, name=None, dual=False):
+        self.parent = parent
         self.id = self.get_next_id()
         self.name = name
         self._dual = dual
 
+        # RootBasis
+        if isinstance(rotation, (int, np.integer)):
+            rotation = IdentityMatrix(rotation)
+
+        #if isinstance(rotation, int):
+        #    if rotation >= self.parent.size:
+        #        raise ValueError
+        #    rotation = [rotation]
+        # Convert to 2D-matrix (for the time being)
+        if isinstance(rotation, (tuple, list, slice)) or (getattr(rotation, 'ndim', None) == 1):
+            rotation = np.eye(self.parent.size)[:,rotation]
+        elif isinstance(rotation, (np.ndarray, Matrix)) and rotation.ndim == 2:
+            pass
+        else:
+            raise ValueError("Invalid rotation: %r of type %r" % (rotation, type(rotation)))
+
+        if not self.is_root() and rotation.shape[0] != self.parent.size:
+            raise ValueError("Invalid size: %d (expected %d)" % (rotation.shape[0], self.parent.size))
+        self.rotation = self.coeff = rotation
+
+        # Calculate metric matrix for basis:
+        if self.is_root():
+            self.metric = metric if metric is not None else IdentityMatrix(self.size)
+        else:
+            self.metric = _get_overlap(rotation, rotation, metric=self.parent.metric)
+            ortherr = self.get_orthonormal_error()
+            if (orthonormal or ortherr < 1e-12):
+                if ortherr > 1e-8:
+                    raise ValueError("Basis is not orthonormal:  error= %.3e" % ortherr)
+                self.metric = IdentityMatrix(self.size)
+
+    @property
+    def size(self):
+        """Number of basis functions."""
+        return self.coeff.shape[1]
+
+    @property
+    def root(self):
+        if self.parent is None:
+            return None
+        if self.parent.root is None:
+            return self.parent
+        return self.parent.root
+
+    def is_root(self):
+        return self.parent is None
+
+    def coeff_in_basis(self, basis):
+        """Express coefficient matrix in the basis of another parent instead of the direct parent."""
+        self.check_same_root(basis)
+        coeff = self.coeff
+        if basis == self:
+            return IdentityMatrix(self.size)
+        for p in self.get_parents():
+            if p == basis:
+                break
+            coeff = np.dot(p.coeff, coeff)
+        else:
+            raise RuntimeError
+        return coeff
+
     @staticmethod
     def get_next_id():
-        next_id = BasisBase.__next_id
-        BasisBase.__next_id += 1
+        next_id = Basis.__next_id
+        Basis.__next_id += 1
         return next_id
 
     def make_basis(self, coeff=None, indices=None, **kwargs):
@@ -39,7 +101,7 @@ class BasisBase:
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their UUID."""
-        if not isinstance(other, BasisBase):
+        if not isinstance(other, Basis):
             return False
 
         # Cannot compare bases in different spaces
@@ -125,7 +187,7 @@ class BasisBase:
     def __or__(self, other):
         """Allows writing overlap as `(basis1|basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
-        if not isinstance(other, BasisBase):
+        if not isinstance(other, Basis):
             return NotImplemented
         return other.as_basis(self)
 
@@ -151,78 +213,6 @@ class BasisBase:
     def get_orthonormal_error(self):
         ortherr = abs(self.metric-np.identity(self.size)).max()
         return ortherr
-
-
-class Basis(BasisBase):
-    """Basis class, requires a parent (another Basis or Space), coefficients or indices in terms of
-    the parent basis."""
-
-    #def __init__(self, parent, coeff=None, indices=None, orthonormal=None):
-    def __init__(self, rotation, parent=None, metric=None, orthonormal=None, name=None, dual=False):
-
-        self.parent = parent
-        super().__init__(name=name, dual=dual)
-
-        # RootBasis
-        if isinstance(rotation, (int, np.integer)):
-            rotation = IdentityMatrix(rotation)
-
-        #if isinstance(rotation, int):
-        #    if rotation >= self.parent.size:
-        #        raise ValueError
-        #    rotation = [rotation]
-        # Convert to 2D-matrix (for the time being)
-        if isinstance(rotation, (tuple, list, slice)) or (getattr(rotation, 'ndim', None) == 1):
-            rotation = np.eye(self.parent.size)[:,rotation]
-        elif isinstance(rotation, (np.ndarray, Matrix)) and rotation.ndim == 2:
-            pass
-        else:
-            raise ValueError("Invalid rotation: %r of type %r" % (rotation, type(rotation)))
-
-        if not self.is_root() and rotation.shape[0] != self.parent.size:
-            raise ValueError("Invalid size: %d (expected %d)" % (rotation.shape[0], self.parent.size))
-        self.rotation = self.coeff = rotation
-
-        # Calculate metric matrix for basis:
-        if self.is_root():
-            self.metric = metric if metric is not None else IdentityMatrix(self.size)
-        else:
-            self.metric = _get_overlap(rotation, rotation, metric=self.parent.metric)
-            ortherr = self.get_orthonormal_error()
-            if (orthonormal or ortherr < 1e-12):
-                if ortherr > 1e-8:
-                    raise ValueError("Basis is not orthonormal:  error= %.3e" % ortherr)
-                self.metric = IdentityMatrix(self.size)
-
-    @property
-    def size(self):
-        """Number of basis functions."""
-        return self.coeff.shape[1]
-
-    @property
-    def root(self):
-        if self.parent is None:
-            return None
-        if self.parent.root is None:
-            return self.parent
-        return self.parent.root
-
-    def is_root(self):
-        return self.parent is None
-
-    def coeff_in_basis(self, basis):
-        """Express coefficient matrix in the basis of another parent instead of the direct parent."""
-        self.check_same_root(basis)
-        coeff = self.coeff
-        if basis == self:
-            return IdentityMatrix(self.size)
-        for p in self.get_parents():
-            if p == basis:
-                break
-            coeff = np.dot(p.coeff, coeff)
-        else:
-            raise RuntimeError
-        return coeff
 
 
 from .array import Array
