@@ -27,6 +27,9 @@ class TestCase(unittest.TestCase):
     def assertAllclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):
         if actual is desired is None:
             return True
+        # TODO: Floats in set
+        if isinstance(actual, set) and isinstance(desired, set):
+            return actual == desired
         # Compare multiple pairs of arrays:
         if isinstance(actual, (tuple, list)):
             for i in range(len(actual)):

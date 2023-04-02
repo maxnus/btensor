@@ -4,7 +4,12 @@ import string
 import numpy as np
 
 import basis_array as basis
+from basis_array import nobasis
 from testing import TestCase, rand_orth_mat, powerset
+
+
+MAXDIM = 4
+#MAXDIM = 3
 
 
 class Tests(TestCase):
@@ -60,40 +65,42 @@ class Tests(TestCase):
     # NumPy
 
     def test_transpose_property(self):
-        for ndim in range(1, 5):
+        for ndim in range(1, MAXDIM+1):
             self.assertAllclose(self.basis_arrays_sq[ndim].T, self.numpy_arrays_sq[ndim].T)
             self.assertAllclose(self.basis_arrays_rt[ndim].T, self.numpy_arrays_rt[ndim].T)
 
     def test_transpose_square(self):
-        for ndim in range(1, 5):
+        for ndim in range(1, MAXDIM+1):
             for axes in itertools.permutations(range(ndim)):
-                self.assertAllclose(self.basis_arrays_sq[ndim].transpose(axes), self.numpy_arrays_sq[ndim].transpose(axes))
+                self.assertAllclose(self.basis_arrays_sq[ndim].transpose(axes),
+                                    self.numpy_arrays_sq[ndim].transpose(axes))
 
     def test_transpose_rect(self):
-        for ndim in range(1, 5):
+        for ndim in range(1, MAXDIM+1):
             for axes in itertools.permutations(range(ndim)):
-                self.assertAllclose(self.basis_arrays_rt[ndim].transpose(axes), self.numpy_arrays_rt[ndim].transpose(axes))
+                self.assertAllclose(self.basis_arrays_rt[ndim].transpose(axes),
+                                    self.numpy_arrays_rt[ndim].transpose(axes))
 
     def test_sum_square(self):
-        for ndim in range(1, 5):
+        for ndim in range(1, MAXDIM+1):
             for axis in powerset(range(ndim)):
                 self.assertAllclose(self.basis_arrays_sq[ndim].sum(axis=axis),
                                     self.numpy_arrays_sq[ndim].sum(axis=axis))
 
     def test_sum_rect(self):
-        for ndim in range(1, 5):
+        for ndim in range(1, MAXDIM+1):
             for axis in powerset(range(ndim)):
                 self.assertAllclose(self.basis_arrays_rt[ndim].sum(axis=axis),
                                     self.numpy_arrays_rt[ndim].sum(axis=axis))
 
     def test_trace_square(self):
-        for ndim in range(2, 5):
+        for ndim in range(2, MAXDIM+1):
             for axis1, axis2 in itertools.permutations(range(ndim), 2):
                 self.assertAllclose(self.basis_arrays_sq[ndim].trace(axis1=axis1, axis2=axis2),
                                     self.numpy_arrays_sq[ndim].trace(axis1=axis1, axis2=axis2))
 
     def test_trace_rect(self):
-        for ndim in range(2, 5):
+        for ndim in range(2, MAXDIM+1):
             for axis1, axis2 in itertools.permutations(range(ndim), 2):
                 with self.assertRaises(basis.util.BasisError):
                     self.assertAllclose(self.basis_arrays_rt[ndim].trace(axis1=axis1, axis2=axis2),
@@ -105,34 +112,33 @@ class Tests(TestCase):
         self.assertAllclose(tr1, tr2, atol=1e-14, rtol=0)
 
     def test_getitem_with_ellipsis(self):
-        for ndim in range(2, 5):
+        for ndim in range(2, MAXDIM+1):
             self.assertAllclose(self.basis_arrays_rt[ndim][...],
                                 self.numpy_arrays_rt[ndim][...])
-            self.assertAllclose(self.basis_arrays_rt[ndim][0,...],
-                                self.numpy_arrays_rt[ndim][0,...])
-            self.assertAllclose(self.basis_arrays_rt[ndim][...,0],
-                                self.numpy_arrays_rt[ndim][...,0])
-            self.assertAllclose(self.basis_arrays_rt[ndim][0,...,0],
-                                self.numpy_arrays_rt[ndim][0,...,0])
-            self.assertAllclose(self.basis_arrays_rt[ndim][:,...],
-                                self.numpy_arrays_rt[ndim][:,...])
-            self.assertAllclose(self.basis_arrays_rt[ndim][...,:],
-                                self.numpy_arrays_rt[ndim][...,:])
-            self.assertAllclose(self.basis_arrays_rt[ndim][:,...,0],
-                                self.numpy_arrays_rt[ndim][:,...,0])
-            self.assertAllclose(self.basis_arrays_rt[ndim][0,...,:],
-                                self.numpy_arrays_rt[ndim][0,...,:])
-            self.assertAllclose(self.basis_arrays_rt[ndim][:,...,:],
-                                self.numpy_arrays_rt[ndim][:,...,:])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0, ...],
+                                self.numpy_arrays_rt[ndim][0, ...])
+            self.assertAllclose(self.basis_arrays_rt[ndim][..., 0],
+                                self.numpy_arrays_rt[ndim][..., 0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0, ..., 0],
+                                self.numpy_arrays_rt[ndim][0, ..., 0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:, ...],
+                                self.numpy_arrays_rt[ndim][:, ...])
+            self.assertAllclose(self.basis_arrays_rt[ndim][..., :],
+                                self.numpy_arrays_rt[ndim][..., :])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:, ..., 0],
+                                self.numpy_arrays_rt[ndim][:, ..., 0])
+            self.assertAllclose(self.basis_arrays_rt[ndim][0, ..., :],
+                                self.numpy_arrays_rt[ndim][0, ..., :])
+            self.assertAllclose(self.basis_arrays_rt[ndim][:, ..., :],
+                                self.numpy_arrays_rt[ndim][:, ..., :])
 
     def test_newaxis(self):
         self.assertAllclose(self.a_nn[None].value, self.d_nn[None])
         self.assertTrue(self.a_nn[None].shape == self.d_nn[None].shape)
-        self.assertAllclose(self.a_nn[:,None].value, self.d_nn[:,None])
-        self.assertTrue(self.a_nn[:,None].shape == self.d_nn[:,None].shape)
-        self.assertAllclose(self.a_nn[None,None].value, self.d_nn[None,None])
-        self.assertTrue(self.a_nn[None,None].shape == self.d_nn[None,None].shape)
-
+        self.assertAllclose(self.a_nn[:, None].value, self.d_nn[:, None])
+        self.assertTrue(self.a_nn[:, None].shape == self.d_nn[:, None].shape)
+        self.assertAllclose(self.a_nn[None, None].value, self.d_nn[None, None])
+        self.assertTrue(self.a_nn[None, None].shape == self.d_nn[None, None].shape)
 
     def test_eigh(self):
         # NumPy
@@ -176,7 +182,7 @@ def generate_test_2array(contraction, ndim1, ndim2):
 
 def generate_test_einsum_summation(cls, result=True):
     """Summation over one index in one array: abi->ab, aii->a, ..."""
-    for ndim in range(1, 5):
+    for ndim in range(1, MAXDIM+1):
         for labels in loop_einsum_labels(ndim):
             if result:
                 rhs = '->' + labels.replace('I', '')
@@ -191,7 +197,7 @@ def generate_test_einsum_summation(cls, result=True):
 
 def generate_test_einsum_contraction(cls, result=True):
     """Summation over one index in two arrays: ai,bi->ab, ..."""
-    for ndim1, ndim2 in itertools.product(range(1, 5), repeat=2):
+    for ndim1, ndim2 in itertools.product(range(1, MAXDIM+1), repeat=2):
         for labels1 in loop_einsum_labels(ndim1):
             for labels2 in loop_einsum_labels(ndim2, start_label=ndim1):
                 if result:
@@ -218,8 +224,8 @@ class DotTests(TestCase):
         a = np.random.rand(n)
         b = np.random.rand(n)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=basis.nobasis)
-        ab = basis.Array(b, basis=basis.nobasis)
+        aa = basis.Array(a, basis=nobasis)
+        ab = basis.Array(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -228,8 +234,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis))
-        ab = basis.Array(b, basis=basis.nobasis)
+        aa = basis.Array(a, basis=(nobasis, nobasis))
+        ab = basis.Array(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -238,8 +244,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis, basis.nobasis))
-        ab = basis.Array(b, basis=basis.nobasis)
+        aa = basis.Array(a, basis=(nobasis, nobasis, nobasis))
+        ab = basis.Array(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -248,8 +254,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis))
-        ab = basis.Array(b, basis=(basis.nobasis, basis.nobasis))
+        aa = basis.Array(a, basis=(nobasis, nobasis))
+        ab = basis.Array(b, basis=(nobasis, basis.nobasis))
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 

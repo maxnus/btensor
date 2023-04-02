@@ -31,7 +31,7 @@ class Array(OperatorTemplate):
         #            i+1, value.shape[i], b.size))
         self.value = value
         self.basis = basis
-        self.variance = variance
+        self.replace_variance(variance)
 
     @property
     def basis(self):
@@ -58,38 +58,71 @@ class Array(OperatorTemplate):
             self.as_basis(value, inplace=True)
         #self.project_onto(value, inplace=True)
 
+    def replace_basis(self, basis):
+        """Replace basis with new basis."""
+        if basis is nobasis or isinstance(basis, Basis):
+            value = (basis,)
+        new_basis = list(self.basis)
+        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
+            if b1 is None:
+                continue
+            if (b1 is not nobasis) and (b1.size != self.shape[i]):
+                raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
+                                 i+1, self.shape[i], b1.size))
+            new_basis[i] = b1
+        assert len(new_basis) == len(self.basis)
+        self._basis = tuple(new_basis)
+
     @property
     def variance(self):
         return self._variance
 
-    @variance.setter
-    def variance(self, value):
-        if np.ndim(value) == 0:
-            value = self.ndim * (value,)
-        if len(value) != self.ndim:
+    #@variance.setter
+    #def variance(self, value):
+    #    if np.ndim(value) == 0:
+    #        value = self.ndim * (value,)
+    #    if len(value) != self.ndim:
+    #        raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
+    #                         self.ndim, self.ndim, len(value)))
+    #    self._variance = value
+
+    def _check_variance(self, variance):
+        if np.ndim(variance) == 0:
+            variance = self.ndim * (variance,)
+        if len(variance) != self.ndim:
             raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
-                             self.ndim, self.ndim, len(value)))
-        self._variance = value
+                             self.ndim, self.ndim, len(variance)))
+        return variance
+
+    def replace_variance(self, variance):
+        self._variance = self._check_variance(variance)
+
+    #def as_variance(self, variance):
+    #    variance = self._check_variance(variance)
+    #    for i, (v0, v1) in enumerate(zip(self.variance, variance)):
+    #        if v0 == v1:
+    #            continue
+    #    return type(self)(value, basis=basis, variance=variance)
 
     @property
-    def covariant(self):
+    def covariant_axes(self):
         return tuple(np.asarray(self.variance) == 1)
 
     @property
-    def contravariant(self):
+    def contravariant_axes(self):
         return tuple(np.asarray(self.variance) == -1)
 
     def copy(self):
         return type(self)(self.value.copy(), basis=self.basis, variance=self.variance)
 
     @property
-    def variance_str(self):
+    def variance_string(self):
         """String representation of variance tuple."""
         symbols = {1: '+', -1: '-', 0: '*'}
         return ''.join(symbols[x] for x in self.variance)
 
     def __repr__(self):
-        return '%s(shape= %r, variance= %r)' % (self.__class__.__name__, self.shape, self.variance_str)
+        return '%s(shape= %r, variance= %r)' % (self.__class__.__name__, self.shape, self.variance_string)
 
     # --- NumPy compatibility
 
@@ -129,7 +162,7 @@ class Array(OperatorTemplate):
                 if isinstance(ki, (int, np.integer)):
                     del basis[idx]
                 elif isinstance(ki, slice):
-                    basis[idx] = Basis(rotation=ki, parent=basis[idx])
+                    basis[idx] = Basis(a=ki, parent=basis[idx])
                 elif ki is np.newaxis:
                     pass
                 else:
@@ -232,7 +265,7 @@ class Array(OperatorTemplate):
 
             # If self.basis[i] is covariant and bas is contravariant (or vice versa), the order
             # of bases in the overlap matters:
-            if not self.contravariant[i]:
+            if not self.contravariant_axes[i]:
                 ovlp = (self.basis[i] | bas).value
             else:
                 ovlp = (bas | self.basis[i]).value.T

@@ -51,14 +51,14 @@ class SCF_Tests(TestCase):
         nocc = self.scf.nocc
         occ = np.s_[:nocc]
         vir = np.s_[nocc:]
-        c_occ = self.scf.mo_coeff[:, occ]
-        c_vir = self.scf.mo_coeff[:, vir]
         dm = self.cc.dm
         dm_oo = dm[occ, occ]
         dm_ov = dm[occ, vir]
         dm_vo = dm[vir, occ]
         dm_vv = dm[vir, vir]
         mo = basis.B(len(self.scf.mo_occ))
+        #occ = np.arange(self.scf.nmo)[occ]
+        #vir = np.arange(self.scf.nmo)[vir]
         bo = basis.B(occ, parent=mo)
         bv = basis.B(vir, parent=mo)
         bdm_oo = basis.A(dm_oo, basis=(bo, bo))

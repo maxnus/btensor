@@ -24,7 +24,7 @@ def ndot(*args):
 
 def overlap(a, b):
     if a is nobasis and b is nobasis:
-        return IdentityMatrix()
+        return IdentityMatrix(None)
     if a is nobasis or b is nobasis:
         raise BasisError
     return (a | b)
