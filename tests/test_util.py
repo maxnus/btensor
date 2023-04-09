@@ -14,23 +14,17 @@ class UtilTests(TestCase):
         pc2 = np.random.permutation(range(m))[:k]
         c1 = util.ColumnPermutationMatrix(permutation=pc1, size=n)  # n x m
         c2 = util.ColumnPermutationMatrix(permutation=pc2, size=m)  # m x k
-        #self.assertAllclose(util.chained_dot(c1, c2), np.dot(c1.to_array(), c2.to_array()))
         self.assertAllclose(util.MatrixProduct((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
         # Row-row
         pr1 = np.random.permutation(range(n))[:m]
         pr2 = np.random.permutation(range(m))[:k]
         r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
         r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
-        #self.assertAllclose(util.chained_dot(r2, r1), np.dot(r2.to_array(), r1.to_array()))
         self.assertAllclose(util.MatrixProduct((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
         # Column-row
-        #self.assertAllclose(util.chained_dot(c1, r1), np.dot(c1.to_array(), r1.to_array()))
-        #self.assertAllclose(util.chained_dot(c2, r2), np.dot(c2.to_array(), r2.to_array()))
         self.assertAllclose(util.MatrixProduct((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
         self.assertAllclose(util.MatrixProduct((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
         # Row-column
-        #self.assertAllclose(util.chained_dot(r1, c1), np.dot(r1.to_array(), c1.to_array()))
-        #self.assertAllclose(util.chained_dot(r2, c2), np.dot(r2.to_array(), c2.to_array()))
         self.assertAllclose(util.MatrixProduct((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
         self.assertAllclose(util.MatrixProduct((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
 
@@ -107,7 +101,7 @@ def generate_test_chained_dot(cls, atol=1e-10):
 
     #matrices = {'x': None, 'i': i, 'a': a, 'b': b, 'ainv': ainv, 'binv': binv, 'c': c, 'r': r}
 
-    a = util.Matrix(np.random.rand(n, n))
+    a = util.GeneralMatrix(np.random.rand(n, n))
     matrices = {'x': None,
                 'i': util.IdentityMatrix(n),
                 'a': a,
@@ -133,8 +127,8 @@ def generate_test_chained_dot(cls, atol=1e-10):
 
 
 
-#generate_test_permutation_matrix(UtilTests)
-#generate_test_permutation_matrix(UtilTests, column=False)
+generate_test_permutation_matrix(UtilTests)
+generate_test_permutation_matrix(UtilTests, column=False)
 generate_test_chained_dot(UtilTests)
 
 

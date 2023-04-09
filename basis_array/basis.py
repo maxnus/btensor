@@ -1,7 +1,5 @@
 import numpy as np
 from basis_array.util import *
-from basis_array.util.matrix import to_array
-from basis_array.space import Space
 
 
 class BasisClass:
@@ -47,12 +45,12 @@ class Basis(BasisClass):
 
     Parameters
     ----------
-    a: Array, List, Int
+    argument: Array, List, Int
     """
 
     __next_id = 1
 
-    def __init__(self, a, parent=None, metric=None, orthonormal=None, name=None, dual=None, debug=False):
+    def __init__(self, argument, parent=None, metric=None, orthonormal=None, name=None, dual=None, debug=False):
         self.parent = parent
         self._id = self._get_next_id()
         self.name = name
@@ -60,20 +58,19 @@ class Basis(BasisClass):
         self.debug = debug or getattr(parent, 'debug', False)
 
         # Root basis:
-        if isinstance(a, (int, np.integer)):
-            a = IdentityMatrix(a)
+        if isinstance(argument, (int, np.integer)):
+            argument = IdentityMatrix(argument)
         # Permutation + selection
-        if isinstance(a, (tuple, list, slice)) or (getattr(a, 'ndim', None) == 1):
-            #a = np.eye(self.parent.size)[:, a]
-            a = ColumnPermutationMatrix(self.parent.size, a)
-        elif isinstance(a, (np.ndarray, Matrix)) and a.ndim == 2:
+        if isinstance(argument, (tuple, list, slice)) or (getattr(argument, 'ndim', None) == 1):
+            argument = ColumnPermutationMatrix(self.parent.size, argument)
+        elif isinstance(argument, (np.ndarray, Matrix)) and argument.ndim == 2:
             pass
         else:
-            raise ValueError("Invalid rotation: %r of type %r" % (a, type(a)))
+            raise ValueError("Invalid rotation: %r of type %r" % (argument, type(argument)))
 
-        if not self.is_root() and (a.shape[0] != self.parent.size):
-            raise ValueError("Invalid size: %d (expected %d)" % (a.shape[0], self.parent.size))
-        self._coeff = a
+        if not self.is_root() and (argument.shape[0] != self.parent.size):
+            raise ValueError("Invalid size: %d (expected %d)" % (argument.shape[0], self.parent.size))
+        self._coeff = argument
 
         # Calculate metric matrix for basis:
         if self.is_root():
@@ -81,7 +78,7 @@ class Basis(BasisClass):
         else:
             if metric is not None:
                 raise ValueError
-            self.metric = MatrixProduct((a.T, self.parent.metric, a)).evaluate()
+            self.metric = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
             if self.debug or __debug__:
                 cond = np.linalg.cond(self.metric)
                 if cond > 1e14:
@@ -141,7 +138,6 @@ class Basis(BasisClass):
         #    print(basis.metric.shape)
         #    matrices.append(basis.metric)
         #matrices = [to_array(x) for x in matrices]
-        print([type(x) for x in matrices])
 
         return matrices
 

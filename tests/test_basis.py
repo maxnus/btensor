@@ -32,7 +32,6 @@ class TestBasis(TestCase):
             while parent.size > 1:
                 if permutation:
                     t = np.random.permutation(range(parent.size))[:parent.size-1]
-                    #print(np.identity(parent.size)[:,t].shape)
                     trafos.append(np.identity(parent.size)[:,t])
                 else:
                     t = rand_orth_mat(parent.size, parent.size-1)
@@ -95,7 +94,6 @@ class TestBasis(TestCase):
                     expected = np.identity(b1.size)
                 else:
                     mats = self.trafos_b[j:i]
-                    print([x.shape for x in mats])
                     if len(mats) == 1:
                         expected = mats[0]
                     else:
