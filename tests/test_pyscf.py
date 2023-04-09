@@ -97,14 +97,49 @@ class SCF_Tests(TestCase):
 
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
-        csc = np.dot((mo | ao), (ao | mo))
-        self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = basis.dot((mo | ao), (ao | mo))
-        self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = np.dot((ao | mo), (mo | ao))
-        self.assertAllclose(csc, np.identity(self.scf.nao))
-        csc = basis.dot((ao | mo), (mo | ao))
-        self.assertAllclose(csc, np.identity(self.scf.nao))
+        i = np.identity(self.scf.nao)
+        # NumPy
+        # 1
+        self.assertAllclose(np.dot((~ao| mo), ( mo|ao)), i)
+        self.assertAllclose(np.dot((~ao|~mo), ( mo|ao)), i)
+        self.assertAllclose(np.dot((~ao| mo), (~mo|ao)), i)
+        self.assertAllclose(np.dot((~ao|~mo), (~mo|ao)), i)
+        # 2
+        self.assertAllclose(np.dot(( mo|~ao), (ao| mo)), i)
+        self.assertAllclose(np.dot((~mo|~ao), (ao| mo)), i)
+        self.assertAllclose(np.dot(( mo|~ao), (ao|~mo)), i)
+        self.assertAllclose(np.dot((~mo|~ao), (ao|~mo)), i)
+        # 3
+        self.assertAllclose(np.dot(( mo|ao), (~ao| mo)), i)
+        self.assertAllclose(np.dot((~mo|ao), (~ao| mo)), i)
+        self.assertAllclose(np.dot(( mo|ao), (~ao|~mo)), i)
+        self.assertAllclose(np.dot((~mo|ao), (~ao|~mo)), i)
+        # 4
+        self.assertAllclose(np.dot((ao| mo), ( mo|~ao)), i)
+        self.assertAllclose(np.dot((ao|~mo), ( mo|~ao)), i)
+        self.assertAllclose(np.dot((ao| mo), (~mo|~ao)), i)
+        self.assertAllclose(np.dot((ao|~mo), (~mo|~ao)), i)
+
+        # basis
+        self.assertAllclose(basis.dot((~ao| mo), ( mo|ao)), i)
+        self.assertAllclose(basis.dot((~ao|~mo), ( mo|ao)), i)
+        self.assertAllclose(basis.dot((~ao| mo), (~mo|ao)), i)
+        self.assertAllclose(basis.dot((~ao|~mo), (~mo|ao)), i)
+        # 2
+        self.assertAllclose(basis.dot(( mo|~ao), (ao| mo)), i)
+        self.assertAllclose(basis.dot((~mo|~ao), (ao| mo)), i)
+        self.assertAllclose(basis.dot(( mo|~ao), (ao|~mo)), i)
+        self.assertAllclose(basis.dot((~mo|~ao), (ao|~mo)), i)
+        # 3
+        self.assertAllclose(basis.dot(( mo|ao), (~ao| mo)), i)
+        self.assertAllclose(basis.dot((~mo|ao), (~ao| mo)), i)
+        self.assertAllclose(basis.dot(( mo|ao), (~ao|~mo)), i)
+        self.assertAllclose(basis.dot((~mo|ao), (~ao|~mo)), i)
+        # 4
+        self.assertAllclose(basis.dot((ao| mo), ( mo|~ao)), i)
+        self.assertAllclose(basis.dot((ao|~mo), ( mo|~ao)), i)
+        self.assertAllclose(basis.dot((ao| mo), (~mo|~ao)), i)
+        self.assertAllclose(basis.dot((ao|~mo), (~mo|~ao)), i)
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo

@@ -14,13 +14,16 @@ class BasisClass:
             return False
         return self.id == other.id
 
-    def __invert__(self):
-        return self.dual()
-
     def dual(self):
         raise NotImplementedError
 
+    def __invert__(self):
+        return self.dual()
+
     def get_nondual(self):
+        raise NotImplementedError
+
+    def as_basis(self, other):
         raise NotImplementedError
 
     def __or__(self, other):
@@ -113,7 +116,7 @@ class Basis(BasisClass):
     def is_root(self):
         return self.parent is None
 
-    def matrices_for_coeff_in_basis(self, basis):
+    def coeff_in_basis(self, basis):
         """Express coeffients in different (parent) basis (rather than the direct parent).
 
         Was BUGGY before, now fixed?"""
@@ -130,6 +133,13 @@ class Basis(BasisClass):
             if p == nondual:
                 break
             matrices.append(p.coeff)
+
+        if basis.is_dual():
+            raise NotImplementedError
+        #    print(matrices[-1].shape)
+        #    print(basis.metric.shape)
+            #matrices.append(basis.metric)
+
         matrices = matrices[::-1]
         matrices.append(self.coeff)
 
@@ -168,8 +178,10 @@ class Basis(BasisClass):
 
     def find_common_parent(self, other):
         """Find first common ancestor between two bases."""
-        a = self.get_nondual()
-        b = other.get_nondual()
+        a = self
+        b = other
+        #a = self.get_nondual()
+        #b = other.get_nondual()
         a.check_same_root(b)
         parents1 = a.get_parents(include_self=True)[::-1]
         parents2 = b.get_parents(include_self=True)[::-1]
@@ -184,11 +196,11 @@ class Basis(BasisClass):
         """Get overlap matrix as an Array with another basis."""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
-        parent = self.find_common_parent(other)
+        parent = self.find_common_parent(other.get_nondual())
 
-        matrices = [x.T for x in other.matrices_for_coeff_in_basis(parent)]
+        matrices = [x.T for x in other.coeff_in_basis(parent)]
         matrices.append(parent.metric)
-        matrices.extend(self.matrices_for_coeff_in_basis(parent))
+        matrices.extend(self.coeff_in_basis(parent))
         # This is now done in the DualBasis
         #if other.is_dual():
         #    matrices.insert(0, other.metric)
@@ -260,12 +272,13 @@ class DualBasis(BasisClass):
     def root(self):
         return self.dual().root
 
-    def get_parents(self, include_root=True, include_self=False):
-        return self.dual().get_parents(include_root=include_root, include_self=include_self)
+    #def get_parents(self, include_root=True, include_self=False):
+    #    return self.dual().get_parents(include_root=include_root, include_self=include_self)
 
-    def matrices_for_coeff_in_basis(self, basis):
-        matrices = self.get_nondual().matrices_for_coeff_in_basis(basis)
-
+    def coeff_in_basis(self, basis):
+        matrices = self.get_nondual().coeff_in_basis(basis)
+        matrices.append(self.metric)
+        return matrices
 
     @property
     def metric(self):
@@ -273,8 +286,7 @@ class DualBasis(BasisClass):
 
     def as_basis(self, other):
         c = self.dual().as_basis(other)
-        value = MatrixProduct((self.metric, c.value)).evaluate()
+        value = MatrixProduct((c.value, self.metric)).evaluate()
         return Array(value, basis=(other, self))
-        #return c
 
 from .array import Array
