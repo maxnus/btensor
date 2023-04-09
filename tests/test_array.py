@@ -94,6 +94,36 @@ class ArithmetricTestsDifferentBasis(TestCase):
         cls.t1 = np.linalg.multi_dot((cls.c11, cls.d1, cls.c21.T))
         cls.t2 = np.linalg.multi_dot((cls.c12, cls.d2, cls.c22.T))
 
+    # --- Scalar
+
+    def test_scalar_addition(self):
+        self.assertAllclose((self.a1 + 2).value, self.d1 + 2)
+        self.assertAllclose((2 + self.a1).value, self.d1 + 2)
+
+    def test_scalar_subtraction(self):
+        self.assertAllclose((self.a1 - 2).value, self.d1 - 2)
+        self.assertAllclose((2 - self.a1).value, 2 - self.d1)\
+
+    def test_scalar_multiplication(self):
+        self.assertAllclose((self.a1 * 2).value, self.d1 * 2)
+        self.assertAllclose((2 * self.a1).value, 2 * self.d1)
+
+    def test_scalar_division(self):
+        self.assertAllclose((self.a1 / 2).value, self.d1 / 2)
+        self.assertAllclose((2 / self.a1).value, 2 / self.d1)
+
+    def test_scalar_floor_division(self):
+        val = 0.02
+        self.assertAllclose((self.a1 // val).value, self.d1 // val)
+        self.assertAllclose((val // self.a1).value, val // self.d1)
+
+    def test_scalar_power(self):
+        val = 0.02
+        self.assertAllclose((self.a1 // val).value, self.d1 // val)
+        self.assertAllclose((val // self.a1).value, val // self.d1)
+
+    # --- Other
+
     def test_addition(self):
         self.assertAllclose((self.a1 + self.a2).value, self.t1 + self.t2)
 
@@ -105,6 +135,12 @@ class ArithmetricTestsDifferentBasis(TestCase):
 
     def test_division(self):
         self.assertAllclose((self.a1 / self.a2).value, self.t1 / self.t2)
+
+    def test_floor_division(self):
+        self.assertAllclose((self.a1 // self.a2).value, self.t1 // self.t2)
+
+    def test_power(self):
+        self.assertAllclose((self.a1 ** self.a2).value, self.t1 ** self.t2)
 
 
 class SubbasisTests(TestCase):

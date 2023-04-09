@@ -1,3 +1,4 @@
+import numbers
 import string
 import numpy as np
 from basis_array.util import *
@@ -328,7 +329,7 @@ class Array(OperatorTemplate):
                 basis.append(b1.find_common_parent(b2))
         return tuple(basis)
 
-    def _operator(self, operator, *other):
+    def _operator(self, operator, *other, swap=False):
         # Unary operator
         if len(other) == 0:
             return type(self)(operator(self.value), basis=self.basis)
@@ -337,14 +338,22 @@ class Array(OperatorTemplate):
             raise NotImplementedError
         # Binary operator
         other = other[0]
-        if (self.basis == other.basis):
-            basis = self.basis
-            v1 = self.value
-            v2 = other.value
-        elif self.is_compatible(other):
-            basis = self.common_basis(other)
-            v1 = self.as_basis(basis).value
-            v2 = other.as_basis(basis).value
+
+        basis = self.basis
+        v1 = self.value
+        if isinstance(other, numbers.Number):
+            v2 = other
+        elif isinstance(other, Array):
+            if self.basis == other.basis:
+                v2 = other.value
+            elif self.is_compatible(other):
+                basis = self.common_basis(other)
+                v1 = self.as_basis(basis).value
+                v2 = other.as_basis(basis).value
+            else:
+                raise ValueError
         else:
-            raise ValueError
+            return NotImplemented
+        if swap:
+            v1, v2 = (v2, v1)
         return type(self)(operator(v1, v2), basis=basis)

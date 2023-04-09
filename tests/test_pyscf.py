@@ -8,7 +8,7 @@ from testing import TestCase, rand_orth_mat
 
 
 scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock', 'dm'))
-cc_data = namedtuple('cc_data', ('dm',))
+cc_data = namedtuple('cc_data', ('dm', 't2'))
 
 
 def make_scf_data(nao):
@@ -35,7 +35,9 @@ def make_cc_data(scf):
     e, v = np.linalg.eigh(dm)
     e = np.clip(e, 0.0, 2.0)
     dm = np.dot(v*e[None], v.T)
-    return cc_data(dm)
+    nvir = scf.nmo - scf.nocc
+    t2 = np.random.random((scf.nocc, scf.nocc, nvir, nvir))
+    return cc_data(dm, t2)
 
 
 class SCF_Tests(TestCase):
@@ -121,6 +123,7 @@ class SCF_Tests(TestCase):
         self.assertAllclose(np.dot((ao|~mo), (~mo|~ao)), i)
 
         # basis
+        # 1
         self.assertAllclose(basis.dot((~ao| mo), ( mo|ao)), i)
         self.assertAllclose(basis.dot((~ao|~mo), ( mo|ao)), i)
         self.assertAllclose(basis.dot((~ao| mo), (~mo|ao)), i)
@@ -176,6 +179,52 @@ class SCF_Tests(TestCase):
         d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))
         self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
         self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
+        d = basis.A(np.diag(self.scf.mo_occ), basis=(~mo, ~mo))
+        self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
+        self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
+
+    def test_mo2mo_t2(self):
+        ao, mo = self.ao, self.mo
+        mo_occ = basis.B(slice(self.scf.nocc), parent=mo)
+        mo_vir = basis.B(slice(self.scf.nocc, self.scf.nmo), parent=mo)
+        t2s = basis.A(self.cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
+
+        t2b = (mo, mo) | t2s | (mo, mo)
+        # Add
+        self.assertAllclose(t2s + t2b, 2 * t2b)
+        self.assertAllclose(t2b + t2s, 2 * t2b)
+        # Subtract
+        self.assertAllclose(t2s - t2b, 0)
+        self.assertAllclose(t2b - t2s, 0)
+        # Multiply
+        self.assertAllclose(t2s * t2b, t2b * t2b)
+        self.assertAllclose(t2b * t2s, t2b * t2b)
+        # Divide
+        self.assertAllclose(t2s / (abs(t2b) + 1), t2b / (abs(t2b) + 1))
+        # Floor Divide
+        self.assertAllclose(t2s // (abs(t2b) + 1), t2b // (abs(t2b) + 1))
+        # Modulus
+        self.assertAllclose(t2s % t2b, t2b % t2b)
+        self.assertAllclose(t2b % t2s, t2b % t2b)
+        # Power
+        self.assertAllclose(t2s ** t2b, t2b ** t2b)
+        self.assertAllclose(t2b ** t2s, t2b ** t2b)
+
+        # Preserved trace
+        self.assertAllclose(t2s.trace().trace(), (t2s | (mo, mo)).trace().trace())
+        self.assertAllclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())
+        self.assertAllclose(t2s.trace().trace(), t2b.trace().trace())
+
+        # Restore
+        t2r = (mo_occ, mo_occ) | t2b | (mo_vir, mo_vir)
+        self.assertAllclose(t2s.value, t2r.value)
+
+        # Empty array for orthogonal basis
+        t2e = (mo_vir, mo_vir) | t2s | (mo_occ, mo_occ)
+        self.assertAllclose(t2e, 0)
+        t2e = (mo_vir, mo_vir) | t2b | (mo_occ, mo_occ)
+        self.assertAllclose(t2e, 0)
+
 
     @unittest.skip("Old test")
     def test_1(self):

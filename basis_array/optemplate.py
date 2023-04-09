@@ -3,7 +3,7 @@ import operator
 
 class OperatorTemplate:
 
-    def _operator(self, operator, *other):
+    def _operator(self, operator, *other, swap=False):
         raise NotImplementedError
 
     # --- Binary operators
@@ -25,6 +25,29 @@ class OperatorTemplate:
 
     def __mod__(self, other):
         return self._operator(operator.mod, other)
+
+    def __pow__(self, other):
+        return self._operator(operator.pow, other)
+
+    # Right-sided
+
+    def __radd__(self, other):
+        return self._operator(operator.add, other, swap=True)
+
+    def __rsub__(self, other):
+        return self._operator(operator.sub, other, swap=True)
+
+    def __rmul__(self, other):
+        return self._operator(operator.mul, other, swap=True)
+
+    def __rtruediv__(self, other):
+        return self._operator(operator.truediv, other, swap=True)
+
+    def __rfloordiv__(self, other):
+        return self._operator(operator.floordiv, other, swap=True)
+
+    def __rpow__(self, other):
+        return self._operator(operator.pow, other, swap=True)
 
     # Comparisons
 
