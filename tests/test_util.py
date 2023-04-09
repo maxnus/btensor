@@ -7,12 +7,11 @@ from testing import TestCase, powerset
 
 class UtilTests(TestCase):
 
-    def test_permutation_matrix(self):
+    def test_column_permutation_matrix(self):
         n = 10
         m = 5
-        d = np.random.random((n, m,))
         perm = np.random.permutation(range(n))[:m]
-        p = util.PermutationMatrix(permutation=perm, size=n)
+        p = util.ColumnPermutationMatrix(permutation=perm, size=n)
         pt = p.T
         self.assertAllclose(p.to_array().T, pt.to_array())
         self.assertAllclose(pt.to_array().dot(p.to_array()), np.identity(m))
@@ -21,12 +20,11 @@ class UtilTests(TestCase):
         nonzero = np.diag(ppt).nonzero()[0]
         self.assertAllclose(set(nonzero), set(perm.tolist()))
 
-    def test_permutation_matrix_axis0(self):
+    def test_row_permutation_matrix(self):
         n = 5
         m = 10
-        d = np.random.random((n, m))
         perm = np.random.permutation(range(m))[:n]
-        p = util.PermutationMatrix(permutation=perm, size=m, axis=0)
+        p = util.RowPermutationMatrix(permutation=perm, size=m)
         pt = p.T
         self.assertAllclose(p.to_array().T, pt.to_array())
         self.assertAllclose(p.to_array().dot(pt.to_array()), np.identity(n))
@@ -35,13 +33,39 @@ class UtilTests(TestCase):
         nonzero = np.diag(ptp).nonzero()[0]
         self.assertAllclose(set(nonzero), set(perm.tolist()))
 
+    def test_combine_permutation_matrices(self):
+        n, m, k = 10, 8, 6
+        # Column-column
+        pc1 = np.random.permutation(range(n))[:m]
+        pc2 = np.random.permutation(range(m))[:k]
+        c1 = util.ColumnPermutationMatrix(permutation=pc1, size=n)  # n x m
+        c2 = util.ColumnPermutationMatrix(permutation=pc2, size=m)  # m x k
+        self.assertAllclose(util.chained_dot(c1, c2), np.dot(c1.to_array(), c2.to_array()))
+        # Row-row
+        pr1 = np.random.permutation(range(n))[:m]
+        pr2 = np.random.permutation(range(m))[:k]
+        r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
+        r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
+        self.assertAllclose(util.chained_dot(r2, r1), np.dot(r2.to_array(), r1.to_array()))
+        # Column-row
+        self.assertAllclose(util.chained_dot(c1, r1), np.dot(c1.to_array(), r1.to_array()))
+        self.assertAllclose(util.chained_dot(c2, r2), np.dot(c2.to_array(), r2.to_array()))
+        # Row-column
+        self.assertAllclose(util.chained_dot(r1, c1), np.dot(r1.to_array(), c1.to_array()))
+        self.assertAllclose(util.chained_dot(r2, c2), np.dot(r2.to_array(), c2.to_array()))
+
+
+
 
 def generate_test_chained_dot(cls, atol=1e-10):
     n = 10
     i = util.IdentityMatrix(n)
     a = util.Matrix(np.random.rand(n, n))
     b = util.Matrix(np.random.rand(n, n))
-    p = util.PermutationMatrix(permutation=[2, 8, 0, 1, 3, 7, 5, 4, 6, 9], size=n)
+    r = util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n)
+    #c = util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n)
+    c = util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n)
+    #r = util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n)
     ainv = util.InverseMatrix(a)
     binv = util.InverseMatrix(b)
 
@@ -58,7 +82,8 @@ def generate_test_chained_dot(cls, atol=1e-10):
             self.assertAllclose(util.chained_dot(*args), ref, atol=atol, rtol=0)
         return test
 
-    matrices = {'x': None, 'i': i, 'a': a, 'b': b, 'ainv': ainv, 'binv': binv, 'p': p}
+    #matrices = {'x': None, 'i': i, 'a': a, 'b': b, 'ainv': ainv, 'binv': binv, 'c': c, 'r': r}
+    matrices = {'x': None, 'i': i, 'a': a, 'ainv': ainv, 'c': c, 'r': r}
     matrices = [(k, v) for (k, v) in matrices.items()]
 
     for i, args in enumerate(powerset(matrices, include_empty=False)):

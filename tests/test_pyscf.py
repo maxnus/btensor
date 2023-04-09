@@ -70,10 +70,30 @@ class SCF_Tests(TestCase):
 
     def test_ao_mo_transform(self):
         ao, mo = self.ao, self.mo
-        self.assertAllclose((ao | ao), np.identity(self.scf.nao))
-        self.assertAllclose((mo | mo), np.identity(self.scf.nao))
-        self.assertAllclose((ao | mo), self.scf.mo_coeff)
-        self.assertAllclose((mo | ao), np.dot(self.scf.mo_coeff.T, self.scf.ovlp))
+        c = self.scf.mo_coeff
+        s = self.scf.ovlp
+        i = np.identity(self.scf.nao)
+
+        # Normal-normal
+        self.assertAllclose((ao | ao), s)
+        self.assertAllclose((mo | mo), i)
+        self.assertAllclose((ao | mo), s.dot(c))
+        self.assertAllclose((mo | ao), c.T.dot(s.T))
+        # Dual-normal
+        self.assertAllclose((~ao | ao), i)
+        self.assertAllclose((~mo | mo), i)
+        self.assertAllclose((~ao | mo), c)
+        self.assertAllclose((~mo | ao), c.T.dot(s.T))
+        # Normal-dual
+        self.assertAllclose((ao | ~ao), i)
+        self.assertAllclose((mo | ~mo), i)
+        self.assertAllclose((ao | ~mo), s.dot(c))
+        self.assertAllclose((mo | ~ao), c.T)
+        # Dual-dual
+        self.assertAllclose((~ao | ~ao), np.linalg.inv(s))
+        self.assertAllclose((~mo | ~mo), i)
+        self.assertAllclose((~ao | ~mo), c)
+        self.assertAllclose((~mo | ~ao), c.T)
 
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
@@ -112,15 +132,15 @@ class SCF_Tests(TestCase):
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(self.scf.dm, basis=(ao, ao), variance=(-1, -1))
+        d = basis.A(self.scf.dm, basis=(~ao, ~ao))#, variance=(-1, -1))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo), variance=(-1, -1))
-        self.assertAllclose(((ao | d) | ao), self.scf.dm)
-        self.assertAllclose((ao | (d | ao)), self.scf.dm)
+        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))#, variance=(-1, -1))
+        self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
+        self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
 
     @unittest.skip("Old test")
     def test_1(self):

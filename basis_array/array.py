@@ -1,7 +1,7 @@
 import string
 import numpy as np
 from basis_array.util import *
-from .basis import Basis
+from .basis import Basis, BasisClass
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -39,7 +39,7 @@ class Array(OperatorTemplate):
 
     @basis.setter
     def basis(self, value):
-        if value is nobasis or isinstance(value, Basis):
+        if value is nobasis or isinstance(value, BasisClass):
             value = (value,)
         if len(value) != self.ndim:
             raise ValueError("%d-dimensional Array requires %d basis elements (%d given)" % (
@@ -47,7 +47,7 @@ class Array(OperatorTemplate):
         for i, b in enumerate(value):
             if b is nobasis:
                 continue
-            if not isinstance(b, Basis):
+            if not isinstance(b, BasisClass):
                 raise ValueError("Basis instance or nobasis required")
             if self.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
@@ -60,7 +60,7 @@ class Array(OperatorTemplate):
 
     def replace_basis(self, basis):
         """Replace basis with new basis."""
-        if basis is nobasis or isinstance(basis, Basis):
+        if basis is nobasis or isinstance(basis, BasisClass):
             value = (basis,)
         new_basis = list(self.basis)
         for i, (b0, b1) in enumerate(zip(self.basis, basis)):
@@ -75,6 +75,7 @@ class Array(OperatorTemplate):
 
     @property
     def variance(self):
+        raise NotImplementedError
         return self._variance
 
     #@variance.setter
@@ -237,7 +238,7 @@ class Array(OperatorTemplate):
         if len(basis) != len(self.basis):
             raise ValueError
         for bas in basis:
-            if not (isinstance(bas, Basis) or bas is nobasis):
+            if not (isinstance(bas, BasisClass) or bas is nobasis):
                 raise ValueError
 
         subscripts = string.ascii_lowercase[:self.ndim]
@@ -265,10 +266,11 @@ class Array(OperatorTemplate):
 
             # If self.basis[i] is covariant and bas is contravariant (or vice versa), the order
             # of bases in the overlap matters:
-            if not self.contravariant_axes[i]:
-                ovlp = (self.basis[i] | bas).value
-            else:
-                ovlp = (bas | self.basis[i]).value.T
+            #if not self.contravariant_axes[i]:
+            #    ovlp = (self.basis[i] | bas).value
+            #else:
+            #    ovlp = (bas | self.basis[i]).value.T
+            ovlp = (~self.basis[i] | bas).value
             operands.append(ovlp)
             sub_new = subscripts[i].upper()
             subscripts += (',%s%s' % (subscripts[i], sub_new))
@@ -280,7 +282,7 @@ class Array(OperatorTemplate):
             self.value = value
             self._basis = basis_out
             return self
-        return type(self)(value, basis=basis, variance=self.variance)
+        return type(self)(value, basis=basis)#, variance=self.variance)
 
     def as_basis_at(self, index, basis, **kwargs):
         if index < 0:
@@ -288,17 +290,9 @@ class Array(OperatorTemplate):
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.as_basis(basis_new, **kwargs)
 
-    #def __rshift__(self, basis):
-    #    """To allow basis transformation as array >> basis"""
-    #    return self.__or__(basis)
-
-    #def __rlshift__(self, basis):
-    #    """To allow basis transformation as basis << array"""
-    #    return self.__ror__(basis)
-
     def __or__(self, basis):
         """To allow basis transformation as (array | basis)"""
-        if isinstance(basis, Basis):
+        if isinstance(basis, BasisClass):
             basis = (basis,)
         if isinstance(basis, tuple):
             basis = self.basis[:-len(basis)] + basis
@@ -306,7 +300,7 @@ class Array(OperatorTemplate):
 
     def __ror__(self, basis):
         """To allow basis transformation as (basis | array)"""
-        if isinstance(basis, Basis):
+        if isinstance(basis, BasisClass):
             basis = (basis,)
         if isinstance(basis, tuple):
             basis = basis + self.basis[len(basis):]

@@ -7,8 +7,10 @@ __all__ = [
         'Matrix',
         'InverseMatrix',
         'IdentityMatrix',
-        'PermutationMatrix',
+        'RowPermutationMatrix',
+        'ColumnPermutationMatrix',
         'chained_dot',
+        'to_array',
         ]
 
 
@@ -16,6 +18,7 @@ def to_array(object):
     if hasattr(object, 'to_array'):
         return object.to_array()
     return object
+
 
 class Matrix:
 
@@ -98,53 +101,81 @@ class IdentityMatrix(SymmetricMatrix):
     def inv(self):
         return self
 
+    # def dot(self, other):
+    #     return self.__matmul__(other)
+    #
+    # def __matmul__(self, other):
+    #     if self.size != other.shape[0]:
+    #         raise ValueError
+    #     return other
+    #
+    # def __lmatmul__(self, other):
+    #     if self.size != other.shape[1]:
+    #         raise ValueError
+    #     return other
 
-class PermutationMatrix(Matrix):
 
-    def __init__(self, size, permutation, axis=1):
+class ColumnPermutationMatrix(Matrix):
+
+    def __init__(self, size, permutation):
         if isinstance(permutation, slice):
             shape = (size, len(np.arange(size)[permutation]))
         else:
             shape = (size, len(permutation))
-        if axis == 0:
-            shape = shape[::-1]
         self._shape = shape
         self._permutation = permutation
-        self._axis = axis
 
     def __repr__(self):
-        return '%s(shape= %r, axis= %d)' % (type(self).__name__, self.shape, self.axis)
+        return '%s(shape= %r)' % (type(self).__name__, self.shape)
 
     @property
     def shape(self):
         return self._shape
 
     @property
-    def axis(self):
-        return self._axis
+    def permutation(self):
+        return self._permutation
+
+    def to_array(self):
+        return np.identity(self.shape[0])[:, self.permutation]
+
+    @property
+    def T(self):
+        if isinstance(self.permutation, slice):
+            permutation = np.arange(self.shape[0])[self.permutation]
+        else:
+            permutation = self.permutation
+        return RowPermutationMatrix(self.shape[0], permutation)
+
+
+class RowPermutationMatrix(Matrix):
+
+    def __init__(self, size, permutation):
+        if isinstance(permutation, slice):
+            shape = (len(np.arange(size)[permutation]), size)
+        else:
+            shape = (len(permutation), size)
+        self._shape = shape
+        self._permutation = permutation
+
+    @property
+    def shape(self):
+        return self._shape
 
     @property
     def permutation(self):
         return self._permutation
 
     def to_array(self):
-        if self.axis == 1:
-            return np.identity(self.shape[0])[:, self.permutation]
-        if self.axis == 0:
-            return np.identity(self.shape[1])[self.permutation]
+        return np.identity(self.shape[1])[self.permutation]
 
     @property
     def T(self):
         if isinstance(self.permutation, slice):
-            axis = 0 if (self.axis == 1) else 1
-            permutation = np.arange(self.shape[axis])[self.permutation]
+            permutation = np.arange(self.shape[1])[self.permutation]
         else:
             permutation = self.permutation
-        if self.axis == 1:
-            p = PermutationMatrix(self.shape[0], permutation, axis=0)
-        elif self.axis == 0:
-            p = PermutationMatrix(self.shape[1], permutation, axis=1)
-        return p
+        return ColumnPermutationMatrix(self.shape[1], permutation)
 
 
 def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, remove_permutation=True):
@@ -160,18 +191,36 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
             assert(a.shape[0] == b.shape[1])
             return [IdentityMatrix(a.shape[0])]
     if remove_permutation:
-        if isinstance(a, PermutationMatrix):
-            if a.axis == 0:
-                return [Matrix(b.to_array()[a.permutation])]
-            elif a.axis == 1:
-                return [Matrix(b.to_array()[np.argsort(a.permutation)])]
-        if isinstance(b, PermutationMatrix):
-            if b.axis == 1:
-                return [Matrix(a.to_array()[:, b.permutation])]
-            elif b.axis == 0:
-                # NOT TESTED
-                #return [Matrix(a.to_array()[:. np.argsort(a.permutation)])]
-                raise NotImplementedError
+
+        # Combine permutation matrices
+        if isinstance(a, ColumnPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
+            permutation = a.permutation[b.permutation]
+            return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
+        if isinstance(a, RowPermutationMatrix) and isinstance(b, RowPermutationMatrix):
+            permutation = b.permutation[a.permutation]
+            return [RowPermutationMatrix(permutation=permutation, size=b.shape[1])]
+        # TODO
+        #if isinstance(a, RowPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
+        #    if a.shape[0] >= b.shape1[1]:
+        #        #permutation = np.argsort(a.permutation)[b.permutation]
+        #        print(a.permutation)
+        #        print(b.permutation)
+        #        permutation = np.argsort(a.permutation[np.argsort(b.permutation)])
+        #        print(permutation)
+        #        print(a.shape, b.shape)
+        #        return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
+        #if isinstance(a, ColumnPermutationMatrix) and isinstance(b, RowPermutationMatrix):
+        #    permutation = a.permutation[np.argsort(b.permutation)]
+        #    return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
+        #    #permutation = b.permutation[np.argsort(a.permutation)]
+        #    #return [RowPermutationMatrix(permutation=permutation, size=a.shape[1])]
+
+        # NEW
+        if isinstance(a, RowPermutationMatrix):
+            return [Matrix(to_array(b)[a.permutation])]
+        if isinstance(b, ColumnPermutationMatrix):
+            return [Matrix(to_array(a)[:, b.permutation])]
+
     return [a, b]
 
 
@@ -206,3 +255,44 @@ def chained_dot(*matrices):
     if len(matrices) == 1:
         return matrices[0]
     return np.linalg.multi_dot(matrices)
+
+
+class MatrixProductList:
+
+    def __init__(self, matrices):
+        self._matrices = [m for m in matrices if m is not None]
+
+    @property
+    def matrices(self):
+        return self._matrices
+
+    @property
+    def shape(self):
+        return (self.matrices[0].shape[0], self.matrices[-1].shape[-1])
+
+    def append(self, matrix):
+        self.matrices.append(matrix)
+
+    def insert(self, index, matrix):
+        self.matrices.insert(index, matrix)
+
+    def simplify(self):
+        if len(self.matrices) < 2:
+            return self
+        matrices = _simplify_n_matrix_products(self.matrices)
+        return MatrixProductList(matrices)
+
+    def __getitem__(self, item):
+        return self.matrices[item]
+
+    def __len__(self):
+        return len(self.matrices)
+
+    def __add__(self, other):
+        return MatrixProductList(self.matrices + getattr(other, 'matrices', other))
+
+    def evaluate(self):
+        matrices = [to_array(m) for m in self.simplify()]
+        if len(matrices) == 1:
+            return matrices[0]
+        return np.linalg.multi_dot(matrices)

@@ -16,6 +16,31 @@ class BasisClass:
             return False
         return self.id == other.id
 
+    def __invert__(self):
+        return self.dual()
+
+    def dual(self):
+        raise NotImplementedError
+
+    def get_nondual(self):
+        raise NotImplementedError
+
+    def __or__(self, other):
+        """Allows writing overlap as `(basis1 | basis2)`."""
+        # other might still implement __ror__, so return NotImplemented instead of raising an exception
+        if not isinstance(other, BasisClass):
+            return NotImplemented
+        return other.as_basis(self)
+
+    def same_root(self, other):
+        root1 = self.root or self.get_nondual()
+        root2 = other.root or other.get_nondual()
+        return root1 == root2
+
+    def check_same_root(self, other):
+        if not self.same_root(other):
+            raise BasisError("Bases %s and %s do not derive from the same root basis." % (self, other))
+
 
 class Basis(BasisClass):
     """Basis class.
@@ -40,7 +65,7 @@ class Basis(BasisClass):
         # Permutation + selection
         if isinstance(a, (tuple, list, slice)) or (getattr(a, 'ndim', None) == 1):
             #a = np.eye(self.parent.size)[:, a]
-            a = PermutationMatrix(self.parent.size, a)
+            a = ColumnPermutationMatrix(self.parent.size, a)
         elif isinstance(a, (np.ndarray, Matrix)) and a.ndim == 2:
             pass
         else:
@@ -91,19 +116,34 @@ class Basis(BasisClass):
     def is_root(self):
         return self.parent is None
 
-    def coeff_in_basis(self, basis):
-        """Express coefficient matrix in the basis of another parent instead of the direct parent."""
-        self.check_same_root(basis)
-        coeff = self.coeff
+    def matrices_for_coeff_in_basis(self, basis):
+        """Express coeffients in different (parent) basis (rather than the direct parent).
+
+        Was BUGGY before, now fixed?"""
         if basis == self:
-            return IdentityMatrix(self.size)
-        for p in self.get_parents():
-            if p == basis:
+            return [IdentityMatrix(self.size)]
+
+        self.check_same_root(basis)
+        parents = self.get_parents()
+        nondual = basis.get_nondual()
+        if nondual not in parents:
+            raise ValueError("%s is not superbasis of %r" % (basis, self))
+        matrices = []
+        for p in parents:
+            if p == nondual:
                 break
-            coeff = np.dot(p.coeff, coeff)
-        else:
-            raise RuntimeError
-        return coeff
+            matrices.append(p.coeff)
+        matrices = matrices[::-1]
+        matrices.append(self.coeff)
+
+        #if basis.is_dual():
+        #    print(matrices[-1].shape)
+        #    print(basis.metric.shape)
+        #    matrices.append(basis.metric)
+        #matrices = [to_array(x) for x in matrices]
+        print([type(x) for x in matrices])
+
+        return matrices
 
     @staticmethod
     def _get_next_id():
@@ -118,10 +158,8 @@ class Basis(BasisClass):
 
     def get_parents(self, include_root=True, include_self=False):
         """Get list of parent bases ordered from direct parent to root basis."""
-        parents = []
+        parents = [self] if include_self else []
         current = self
-        if include_self:
-            parents.append(current)
         while current.parent is not None:
             parents.append(current.parent)
             current = current.parent
@@ -129,23 +167,16 @@ class Basis(BasisClass):
             parents = parents[:-1]
         return parents
 
-    def same_root(self, other):
-        root1 = self.root or self
-        root2 = other.root or other
-        return root1 == root2
-
     def compatible(self, other):
         return other is nobasis or self.same_root(other)
 
-    def check_same_root(self, other):
-        if not self.same_root(other):
-            raise BasisError("Bases %s and %s do not derive from the same root basis." % (self, other))
-
     def find_common_parent(self, other):
         """Find first common ancestor between two bases."""
-        self.check_same_root(other)
-        parents1 = self.get_parents(include_self=True)[::-1]
-        parents2 = other.get_parents(include_self=True)[::-1]
+        a = self.get_nondual()
+        b = other.get_nondual()
+        a.check_same_root(b)
+        parents1 = a.get_parents(include_self=True)[::-1]
+        parents2 = b.get_parents(include_self=True)[::-1]
         assert (parents1[0] is parents2[0])
         for i, p in enumerate(parents1):
             if i >= len(parents2) or p != parents2[i]:
@@ -153,34 +184,20 @@ class Basis(BasisClass):
             parent = p
         return parent
 
-    def as_basis(self, other, metric=None):
+    def as_basis(self, other):
         """Get overlap matrix as an Array with another basis."""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other)
 
-        #c_left = other.coeff_in_basis(parent)
-        #c_right = self.coeff_in_basis(parent)
-        #value = _get_overlap(c_left, c_right, metric=parent.metric)
-        #if not other.is_orthonormal:
-        #    m_left = other.metric
-        #    value = np.dot(np.linalg.inv(m_left), value)
-
-        matrices = [
-            other.coeff_in_basis(parent).T,
-            parent.metric,
-            self.coeff_in_basis(parent)]
-        if not other.is_orthonormal:
-            matrices.insert(0, InverseMatrix(other.metric))
+        matrices = [x.T for x in other.matrices_for_coeff_in_basis(parent)]
+        matrices.append(parent.metric)
+        matrices.extend(self.matrices_for_coeff_in_basis(parent))
+        # This is now done in the DualBasis
+        #if other.is_dual():
+        #    matrices.insert(0, other.metric)
         value = chained_dot(*matrices)
         return Array(value, basis=(other, self), variance=(-1, 1))
-
-    def __or__(self, other):
-        """Allows writing overlap as `(basis1|basis2)`."""
-        # other might still implement __ror__, so return NotImplemented instead of raising an exception
-        if not isinstance(other, BasisClass):
-            return NotImplemented
-        return other.as_basis(self)
 
     def dual(self):
         if self.is_orthonormal:
@@ -189,24 +206,31 @@ class Basis(BasisClass):
             self._dual = DualBasis(self)
         return self._dual
 
+    @staticmethod
+    def is_dual():
+        return False
+
     @property
     def is_orthonormal(self):
         return isinstance(self.metric, IdentityMatrix)
 
-    def is_subbasis(self, other, inclusive=True):
-        """True if other is subbasis of given basis, else False."""
-        for parent in self.get_parents(include_self=inclusive):
-            if other == parent:
-                return True
-        return False
+    #def is_subbasis(self, other, inclusive=True):
+    #    """True if other is subbasis of given basis, else False."""
+    #    for parent in self.get_parents(include_self=inclusive):
+    #        if other == parent:
+    #            return True
+    #    return False
 
-    def is_superbasis(self, other, inclusive=True):
-        """True if other is superbasis of given basis, else False."""
-        return other.is_subbasis(self, inclusive=inclusive)
+    #def is_superbasis(self, other, inclusive=True):
+    #    """True if other is superbasis of given basis, else False."""
+    #    return other.is_subbasis(self, inclusive=inclusive)
 
     def get_orthonormal_error(self):
         ortherr = abs(self.metric-np.identity(self.size)).max()
         return ortherr
+
+    def get_nondual(self):
+        return self
 
 
 class DualBasis(BasisClass):
@@ -227,7 +251,34 @@ class DualBasis(BasisClass):
 
     @property
     def name(self):
-        return 'dual(%s)' % self.dual().name
+        return 'Dual(%s)' % self.dual().name
 
+    @staticmethod
+    def is_dual():
+        return True
+
+    def get_nondual(self):
+        return self.dual()
+
+    @property
+    def root(self):
+        return self.dual().root
+
+    def get_parents(self, include_root=True, include_self=False):
+        return self.dual().get_parents(include_root=include_root, include_self=include_self)
+
+    def matrices_for_coeff_in_basis(self, basis):
+        matrices = self.get_nondual().matrices_for_coeff_in_basis(basis)
+
+
+    @property
+    def metric(self):
+        return InverseMatrix(self.dual().metric)
+
+    def as_basis(self, other):
+        c = self.dual().as_basis(other)
+        value = chained_dot(self.metric, c.value)
+        return Array(value, basis=(other, self))
+        #return c
 
 from .array import Array
