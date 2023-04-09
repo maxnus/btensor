@@ -53,11 +53,10 @@ class Basis(BasisClass):
 
     __next_id = 1
 
-    def __init__(self, argument, parent=None, metric=None, orthonormal=None, name=None, dual=None, debug=False):
+    def __init__(self, argument, parent=None, metric=None, name=None, debug=False):
         self.parent = parent
         self._id = self._get_next_id()
         self.name = name
-        self._dual = dual
         self.debug = debug or getattr(parent, 'debug', False)
 
         # Root basis:
@@ -75,22 +74,30 @@ class Basis(BasisClass):
             raise ValueError("Invalid size: %d (expected %d)" % (argument.shape[0], self.parent.size))
         self._coeff = argument
 
-        # Calculate metric matrix for basis:
+        # Initialize metric matrix:
         if self.is_root():
-            self.metric = metric if metric is not None else IdentityMatrix(self.size)
+            if metric is None:
+                metric = IdentityMatrix(self.size)
         else:
-            if metric is not None:
-                raise ValueError
-            self.metric = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
-            if self.debug or __debug__:
-                cond = np.linalg.cond(self.metric)
-                if cond > 1e14:
-                    raise RuntimeError("Large condition number of metric matrix: %e" % cond)
-            ortherr = self.get_orthonormal_error()
-            if (orthonormal or ortherr < 1e-12):
-                if ortherr > 1e-8:
-                    raise ValueError("Basis is not orthonormal:  error= %.3e" % ortherr)
-                self.metric = IdentityMatrix(self.size)
+            metric_calc = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
+            if metric is None:
+                metric = metric_calc
+            else:
+                diff = abs(to_array(metric) - metric_calc)
+                if diff > 1e-8:
+                    raise ValueError(f"Large difference between provided and calculated metric matrix "
+                                     "(difference= {diff:.1e})")
+        self._metric = metric
+        if self.debug or __debug__:
+            cond = np.linalg.cond(to_array(self.metric))
+            if cond > 1e14:
+                raise ValueError("Large condition number of metric matrix: %e" % cond)
+
+        # Dual basis
+        if self.is_orthonormal:
+            self._dual = self
+        else:
+            self._dual = DualBasis(self)
 
     @property
     def id(self):
@@ -104,6 +111,10 @@ class Basis(BasisClass):
     @property
     def coeff(self):
         return self._coeff
+
+    @property
+    def metric(self):
+        return self._metric
 
     @property
     def root(self):
@@ -208,10 +219,6 @@ class Basis(BasisClass):
         return Array(value, basis=(other, self), variance=(-1, 1))
 
     def dual(self):
-        if self.is_orthonormal:
-            return self
-        if self._dual is None:
-            self._dual = DualBasis(self)
         return self._dual
 
     @staticmethod

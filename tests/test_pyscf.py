@@ -167,13 +167,13 @@ class SCF_Tests(TestCase):
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(self.scf.dm, basis=(~ao, ~ao))#, variance=(-1, -1))
+        d = basis.A(self.scf.dm, basis=(~ao, ~ao))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))#, variance=(-1, -1))
+        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))
         self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
         self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
 
