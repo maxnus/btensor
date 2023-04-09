@@ -136,7 +136,7 @@ class Basis(BasisClass):
 
         Was BUGGY before, now fixed?"""
         if basis == self:
-            return [IdentityMatrix(self.size)]
+            return MatrixProduct([IdentityMatrix(self.size)])
 
         self.check_same_root(basis)
         parents = self.get_parents()
@@ -151,20 +151,11 @@ class Basis(BasisClass):
 
         if basis.is_dual():
             raise NotImplementedError
-        #    print(matrices[-1].shape)
-        #    print(basis.metric.shape)
             #matrices.append(basis.metric)
 
         matrices = matrices[::-1]
         matrices.append(self.coeff)
-
-        #if basis.is_dual():
-        #    print(matrices[-1].shape)
-        #    print(basis.metric.shape)
-        #    matrices.append(basis.metric)
-        #matrices = [to_array(x) for x in matrices]
-
-        return matrices
+        return MatrixProduct(matrices)
 
     @staticmethod
     def _get_next_id():
@@ -211,14 +202,14 @@ class Basis(BasisClass):
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other.get_nondual())
 
-        matrices = [x.T for x in other.coeff_in_basis(parent)][::-1] # Reversion due to (ab...)^T = ... b^T a^T
+        #matrices = [x.T for x in other.coeff_in_basis(parent)][::-1] # Reversion due to (ab...)^T = ... b^T a^T
+        matrices = other.coeff_in_basis(parent).T
         matrices.append(parent.metric)
         matrices.extend(self.coeff_in_basis(parent))
         # This is now done in the DualBasis
         #if other.is_dual():
         #    matrices.insert(0, other.metric)
-        value = MatrixProduct(matrices).evaluate()
-        return Array(value, basis=(other, self))
+        return Array(matrices.evaluate(), basis=(other, self))
 
     def dual(self):
         return self._dual

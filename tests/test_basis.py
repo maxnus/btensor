@@ -65,7 +65,7 @@ class TestBasis(TestCase):
 
         def test(basis1, basis2, expected):
             mats = basis1.coeff_in_basis(basis2)
-            self.assertAllclose(util.to_array(util.MatrixProduct(mats).evaluate()), expected)
+            self.assertAllclose(mats.evaluate(), expected)
 
         test(self.rootbasis_a, self.rootbasis_a, np.identity(self.rootbasis_a.size))
         test(self.rootbasis_b, self.rootbasis_b, np.identity(self.rootbasis_b.size))

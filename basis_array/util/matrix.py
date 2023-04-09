@@ -271,6 +271,9 @@ class MatrixProduct:
     def append(self, matrix):
         self.matrices.append(matrix)
 
+    def extend(self, matrices):
+        self.matrices.extend(matrices)
+
     def insert(self, index, matrix):
         self.matrices.insert(index, matrix)
 
@@ -299,7 +302,7 @@ class MatrixProduct:
         return np.linalg.multi_dot(matrices)
 
     def transpose(self):
-        return
+        return MatrixProduct([m.T for m in reversed(self.matrices)])
 
     @property
     def T(self):
