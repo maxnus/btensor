@@ -91,31 +91,24 @@ def generate_test_chained_dot(cls, atol=1e-10):
                 ref = args_ref[0]
             else:
                 ref = np.linalg.multi_dot(args_ref)
-            #self.assertAllclose(util.chained_dot(*args), ref, atol=atol, rtol=0)
-
-            # NEW
             mpl = util.MatrixProduct(args)
             self.assertAllclose(mpl.evaluate(simplify=False), ref, atol=atol, rtol=0)
             self.assertAllclose(mpl.evaluate(simplify=True), ref, atol=atol, rtol=0)
         return test
 
-    #matrices = {'x': None, 'i': i, 'a': a, 'b': b, 'ainv': ainv, 'binv': binv, 'c': c, 'r': r}
-
     a = util.GeneralMatrix(np.random.rand(n, n))
     matrices = {'x': None,
                 'i': util.IdentityMatrix(n),
                 'a': a,
-                'ainv': util.InverseMatrix(a),
+                'ainv': a.inverse,
                 'c': util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n),
                 'r': util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
                 }
     matrices = [(k, v) for (k, v) in matrices.items()]
 
     for i, args in enumerate(powerset(matrices, include_empty=False)):
-
         if len(args) == 1 and ('x', None) in args:
             continue
-
         for perm in itertools.permutations(args):
             mats = [p[1] for p in perm]
             name = '_'.join([p[0] for p in perm])
@@ -125,10 +118,10 @@ def generate_test_chained_dot(cls, atol=1e-10):
             setattr(cls, funcname, generate_test(*mats))
 
 
-
-
 generate_test_permutation_matrix(UtilTests)
+
 generate_test_permutation_matrix(UtilTests, column=False)
+
 generate_test_chained_dot(UtilTests)
 
 

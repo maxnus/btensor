@@ -1,4 +1,6 @@
 import numpy as np
+import scipy
+import scipy.linalg
 
 
 DEBUG = True
@@ -6,6 +8,7 @@ DEBUG = True
 __all__ = [
         'Matrix',
         'GeneralMatrix',
+        'SymmetricMatrix',
         'InverseMatrix',
         'IdentityMatrix',
         'RowPermutationMatrix',
@@ -25,17 +28,16 @@ class Matrix:
 
     def __init__(self):
         self._inverse = None
-        self._transpose = None
 
     def __repr__(self):
-        return '%s(shape= %r)' % (type(self).__name__, self.shape)
+        return '%s%r' % (type(self).__name__, self.shape)
 
     @property
     def ndim(self):
         return 2
 
     @property
-    def inv(self):
+    def inverse(self):
         if self._inverse is None:
             self._inverse = InverseMatrix(self)
         return self._inverse
@@ -46,18 +48,25 @@ class Matrix:
     def shape(self):
         raise NotImplementedError
 
+    def transpose(self):
+        raise NotImplementedError
+
     @property
     def T(self):
-        raise NotImplementedError
+        return self.transpose()
 
     def to_array(self):
         raise NotImplementedError
+
+    def to_array2(self):
+        return self.to_array()
 
 
 class GeneralMatrix(Matrix):
 
     def __init__(self, values):
         super().__init__()
+        self._transpose = None
         self._values = values
 
     @property
@@ -67,30 +76,32 @@ class GeneralMatrix(Matrix):
     def to_array(self):
         return self._values
 
-    @property
-    def T(self):
+    def transpose(self):
         if self._transpose is None:
             self._transpose = GeneralMatrix(self.to_array().T)
         return self._transpose
 
 
-class SymmetricMatrix(Matrix):
+class Symmetric:
 
-    @property
-    def T(self):
+    def transpose(self):
         return self
+
+
+class SymmetricMatrix(Symmetric, GeneralMatrix):
+    pass
 
 
 class InverseMatrix(Matrix):
 
     def __init__(self, matrix):
         super().__init__()
-        if DEBUG:
-            cond = np.linalg.cond(to_array(matrix))
-            if cond > 1e14:
-                raise RuntimeError("Cannot invert matrix %r: condition number= %e" % (matrix, cond))
         self.matrix = matrix
         self._values = None
+        if DEBUG:
+            cond = np.linalg.cond(self.matrix.to_array())
+            if cond > 1e14:
+                raise RuntimeError("Cannot invert matrix %r: condition number= %e" % (self.matrix, cond))
 
     @property
     def shape(self):
@@ -99,21 +110,20 @@ class InverseMatrix(Matrix):
     def to_array(self):
         if self._values is None:
             if isinstance(self.matrix, IdentityMatrix):
-                self._values = self.matrix.inv.to_array()
+                self._values = self.matrix.inverse.to_array()
             else:
-                self._values = np.linalg.inv(to_array(self.matrix))
+                self._values = np.linalg.inv(self.matrix.to_array())
         return self._values
 
     @property
-    def inv(self):
+    def inverse(self):
         return self.matrix
 
-    @property
-    def T(self):
-        return InverseMatrix(self.matrix.T)
+    def transpose(self):
+        return self.matrix.T.inverse
 
 
-class IdentityMatrix(SymmetricMatrix):
+class IdentityMatrix(Symmetric, Matrix):
 
     def __init__(self, size):
         super().__init__()
@@ -127,7 +137,7 @@ class IdentityMatrix(SymmetricMatrix):
         return np.identity(self.size)
 
     @property
-    def inv(self):
+    def inverse(self):
         return self
 
 
@@ -156,8 +166,7 @@ class ColumnPermutationMatrix(PermutationMatrix):
     def to_array(self):
         return np.identity(self.shape[0])[:, self.permutation]
 
-    @property
-    def T(self):
+    def transpose(self):
         return RowPermutationMatrix(self.shape[0], self.permutation)
 
 
@@ -170,8 +179,7 @@ class RowPermutationMatrix(PermutationMatrix):
     def to_array(self):
         return np.identity(self.shape[1])[self.permutation]
 
-    @property
-    def T(self):
+    def transpose(self):
         return ColumnPermutationMatrix(self.shape[1], self.permutation)
 
 
@@ -184,7 +192,7 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
         if isinstance(b, IdentityMatrix):
             return [a]
     if remove_inverse:
-        if (isinstance(a, InverseMatrix) and a.inv is b) or (isinstance(b, InverseMatrix) and b.inv is a):
+        if (isinstance(a, InverseMatrix) and a.inverse is b) or (isinstance(b, InverseMatrix) and b.inverse is a):
             assert(a.shape[0] == b.shape[1])
             return [IdentityMatrix(a.shape[0])]
     if remove_permutation:
@@ -213,9 +221,9 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
         #    #return [RowPermutationMatrix(permutation=permutation, size=a.shape[1])]
 
         # NEW
-        if isinstance(a, RowPermutationMatrix):
+        if isinstance(a, RowPermutationMatrix) and not isinstance(b, InverseMatrix):
             return [GeneralMatrix(to_array(b)[a.permutation])]
-        if isinstance(b, ColumnPermutationMatrix):
+        if isinstance(b, ColumnPermutationMatrix) and not isinstance(a, InverseMatrix):
             return [GeneralMatrix(to_array(a)[:, b.permutation])]
 
     return [a, b]
@@ -253,10 +261,9 @@ class MatrixProduct:
         return f'{type(self).__name__}(len ={len(self)}, shape= {self.shape})'
 
     def __str__(self):
-        s = f'{type(self).__name__}({self.matrices[0].shape}'
-        for m in self.matrices[1:]:
-            s += f' x {m.shape}'
-        s += f' -> {self.shape})'
+        s = f'{type(self).__name__}('
+        s += ' x '.join(f'ndarray{m.shape}' if isinstance(m, np.ndarray) else str(m) for m in self.matrices)
+        s += ')'
         return s
 
     @property
@@ -284,6 +291,8 @@ class MatrixProduct:
         return MatrixProduct(matrices)
 
     def __getitem__(self, item):
+        if isinstance(item, slice):
+            return MatrixProduct(self.matrices[item])
         return self.matrices[item]
 
     def __len__(self):
@@ -293,10 +302,24 @@ class MatrixProduct:
         return MatrixProduct(self.matrices + getattr(other, 'matrices', other))
 
     def evaluate(self, simplify=True):
-        matrices = self.simplify() if simplify else self.matrices
-        matrices = [to_array(m) for m in matrices]
+        matrices = self.simplify() if simplify else self
         if len(matrices) == 0:
-            raise ValueError("Cannot evaluate empty %s" % type(self).__name__)
+            raise ValueError(f"Cannot evaluate empty {type(self).__name__}")
+
+        # If first matrix A^-1 in A^-1 B... = X is an inverse, solve B... = AX instead
+        if isinstance(matrices[0], InverseMatrix) and len(matrices) > 1:
+            a = matrices[0].inverse
+            b = matrices[1:].evaluate()
+            assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+            return scipy.linalg.solve(a.to_array(), b, assume_a=assume_a)
+        # If last matrix Z^-1 in ...Y Z^-1 = X is an inverse, solve (...Y)^T = Z^T X^T instead
+        if isinstance(matrices[-1], InverseMatrix) and len(matrices) > 1:
+            a = matrices[-1].inverse
+            b = matrices[:-1].evaluate()
+            assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+            return scipy.linalg.solve(a.to_array(), b.T, assume_a=assume_a, transposed=True).T
+
+        matrices = [to_array(m) for m in matrices]
         if len(matrices) == 1:
             return matrices[0]
         return np.linalg.multi_dot(matrices)

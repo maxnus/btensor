@@ -83,6 +83,8 @@ class Basis(BasisClass):
         if self.is_root():
             if metric is None:
                 metric = IdentityMatrix(self.size)
+            else:
+                metric = SymmetricMatrix(metric)
         else:
             metric_calc = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
             if metric is None:
@@ -90,6 +92,8 @@ class Basis(BasisClass):
                 idt = IdentityMatrix(self.size)
                 if abs(metric_calc - idt.to_array()).max() < 1e-13:
                     metric_calc = idt
+                else:
+                    metric_calc = SymmetricMatrix(metric_calc)
                 metric = metric_calc
             else:
                 diff = abs(to_array(metric) - to_array(metric_calc))
@@ -98,7 +102,7 @@ class Basis(BasisClass):
                                      "(difference= {diff:.1e})")
         self._metric = metric
         if self.debug or __debug__:
-            cond = np.linalg.cond(to_array(self.metric))
+            cond = np.linalg.cond(self.metric.to_array())
             if cond > 1e14:
                 raise ValueError("Large condition number of metric matrix: %e" % cond)
 
@@ -277,7 +281,7 @@ class DualBasis(BasisClass):
 
     @property
     def metric(self):
-        return InverseMatrix(self.dual().metric)
+        return self.dual().metric.inverse
 
     def _as_basis_matprod(self, other):
         """Append inverse metric (metric of dual space)"""
