@@ -1,7 +1,7 @@
 import string
 import numpy as np
 from basis_array.util import *
-from .basis import Basis, BasisClass
+from .basis import Basis, BasisClass, DualBasis
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -15,7 +15,7 @@ def value_if_scalar(array):
 class Array(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, value, basis, variance=1):
+    def __init__(self, value, basis):
         #if basis is nobasis or isinstance(basis, BasisBase):
         #    basis = (basis,)
         #if len(basis) != np.ndim(value):
@@ -31,7 +31,6 @@ class Array(OperatorTemplate):
         #            i+1, value.shape[i], b.size))
         self.value = value
         self.basis = basis
-        self.replace_variance(variance)
 
     @property
     def basis(self):
@@ -75,8 +74,7 @@ class Array(OperatorTemplate):
 
     @property
     def variance(self):
-        raise NotImplementedError
-        return self._variance
+        return [-1 if isinstance(b, DualBasis) else 1 for b in self.basis]
 
     #@variance.setter
     #def variance(self, value):
@@ -95,9 +93,6 @@ class Array(OperatorTemplate):
                              self.ndim, self.ndim, len(variance)))
         return variance
 
-    def replace_variance(self, variance):
-        self._variance = self._check_variance(variance)
-
     #def as_variance(self, variance):
     #    variance = self._check_variance(variance)
     #    for i, (v0, v1) in enumerate(zip(self.variance, variance)):
@@ -114,7 +109,7 @@ class Array(OperatorTemplate):
         return tuple(np.asarray(self.variance) == -1)
 
     def copy(self):
-        return type(self)(self.value.copy(), basis=self.basis, variance=self.variance)
+        return type(self)(self.value.copy(), basis=self.basis)
 
     @property
     def variance_string(self):

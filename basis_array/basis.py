@@ -193,13 +193,11 @@ class Basis(BasisClass):
 
     def find_common_parent(self, other):
         """Find first common ancestor between two bases."""
-        a = self
-        b = other
-        #a = self.get_nondual()
-        #b = other.get_nondual()
-        a.check_same_root(b)
-        parents1 = a.get_parents(include_self=True)[::-1]
-        parents2 = b.get_parents(include_self=True)[::-1]
+        if other.is_dual():
+            raise ValueError
+        self.check_same_root(other)
+        parents1 = self.get_parents(include_self=True)[::-1]
+        parents2 = other.get_parents(include_self=True)[::-1]
         assert (parents1[0] is parents2[0])
         for i, p in enumerate(parents1):
             if i >= len(parents2) or p != parents2[i]:
@@ -220,7 +218,7 @@ class Basis(BasisClass):
         #if other.is_dual():
         #    matrices.insert(0, other.metric)
         value = MatrixProduct(matrices).evaluate()
-        return Array(value, basis=(other, self), variance=(-1, 1))
+        return Array(value, basis=(other, self))
 
     def dual(self):
         return self._dual
