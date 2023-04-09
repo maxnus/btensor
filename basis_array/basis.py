@@ -81,7 +81,7 @@ class Basis(BasisClass):
         else:
             if metric is not None:
                 raise ValueError
-            self.metric = chained_dot(a.T, self.parent.metric, a)
+            self.metric = MatrixProduct((a.T, self.parent.metric, a)).evaluate()
             if self.debug or __debug__:
                 cond = np.linalg.cond(self.metric)
                 if cond > 1e14:
@@ -196,7 +196,7 @@ class Basis(BasisClass):
         # This is now done in the DualBasis
         #if other.is_dual():
         #    matrices.insert(0, other.metric)
-        value = chained_dot(*matrices)
+        value = MatrixProduct(matrices).evaluate()
         return Array(value, basis=(other, self), variance=(-1, 1))
 
     def dual(self):
@@ -277,7 +277,7 @@ class DualBasis(BasisClass):
 
     def as_basis(self, other):
         c = self.dual().as_basis(other)
-        value = chained_dot(self.metric, c.value)
+        value = MatrixProduct((self.metric, c.value)).evaluate()
         return Array(value, basis=(other, self))
         #return c
 

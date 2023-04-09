@@ -3,7 +3,7 @@ import numpy as np
 
 import basis_array as basis
 from testing import TestCase, rand_orth_mat
-from basis_array.util import chained_dot, to_array
+from basis_array import util
 
 
 class TestBasis(TestCase):
@@ -66,7 +66,7 @@ class TestBasis(TestCase):
 
         def test(basis1, basis2, expected):
             mats = basis1.matrices_for_coeff_in_basis(basis2)
-            self.assertAllclose(to_array(chained_dot(*mats)), expected)
+            self.assertAllclose(util.to_array(util.MatrixProduct(mats).evaluate()), expected)
 
         test(self.rootbasis_a, self.rootbasis_a, np.identity(self.rootbasis_a.size))
         test(self.rootbasis_b, self.rootbasis_b, np.identity(self.rootbasis_b.size))
