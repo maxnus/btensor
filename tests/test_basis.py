@@ -99,6 +99,3 @@ class TestBasis(TestCase):
                     else:
                         expected = np.linalg.multi_dot(mats)
                 test(b1, b2, expected)
-
-
-

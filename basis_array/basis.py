@@ -23,8 +23,13 @@ class BasisClass:
     def get_nondual(self):
         raise NotImplementedError
 
-    def as_basis(self, other):
+    def _as_basis_matprod(self, other):
         raise NotImplementedError
+
+    def as_basis(self, other):
+        """Get overlap matrix as an Array with another basis."""
+        matprod = self._as_basis_matprod(other)
+        return Array(matprod.evaluate(), basis=(other, self))
 
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
@@ -196,20 +201,13 @@ class Basis(BasisClass):
             parent = p
         return parent
 
-    def as_basis(self, other):
-        """Get overlap matrix as an Array with another basis."""
+    def _as_basis_matprod(self, other):
+        """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other.get_nondual())
-
-        #matrices = [x.T for x in other.coeff_in_basis(parent)][::-1] # Reversion due to (ab...)^T = ... b^T a^T
-        matrices = other.coeff_in_basis(parent).T
-        matrices.append(parent.metric)
-        matrices.extend(self.coeff_in_basis(parent))
-        # This is now done in the DualBasis
-        #if other.is_dual():
-        #    matrices.insert(0, other.metric)
-        return Array(matrices.evaluate(), basis=(other, self))
+        matprod = other.coeff_in_basis(parent).T + [parent.metric] + self.coeff_in_basis(parent)
+        return matprod
 
     def dual(self):
         return self._dual
@@ -272,9 +270,6 @@ class DualBasis(BasisClass):
     def root(self):
         return self.dual().root
 
-    #def get_parents(self, include_root=True, include_self=False):
-    #    return self.dual().get_parents(include_root=include_root, include_self=include_self)
-
     def coeff_in_basis(self, basis):
         matrices = self.get_nondual().coeff_in_basis(basis)
         matrices.append(self.metric)
@@ -284,9 +279,9 @@ class DualBasis(BasisClass):
     def metric(self):
         return InverseMatrix(self.dual().metric)
 
-    def as_basis(self, other):
-        c = self.dual().as_basis(other)
-        value = MatrixProduct((c.value, self.metric)).evaluate()
-        return Array(value, basis=(other, self))
+    def _as_basis_matprod(self, other):
+        """Append inverse metric (metric of dual space)"""
+        matprod = self.get_nondual()._as_basis_matprod(other) + [self.metric]
+        return matprod
 
 from .array import Array
