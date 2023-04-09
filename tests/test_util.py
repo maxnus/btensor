@@ -59,17 +59,9 @@ def generate_test_permutation_matrix(cls, column=True):
 
     # Test permutations:
     perms = [
-        [],
-        [0],
-        np.arange(n),
-        np.arange(5),
-        np.random.permutation(range(n))[:5],
-        slice(None),
-        slice(0, 5),
-        slice(5, n),
-        slice(None, None, 2),
-        slice(None, None, -2),
-        slice(3, 8),
+        [], [0], [4],
+        np.arange(n), np.arange(5), np.random.permutation(range(n))[:5],
+        slice(None), slice(0, 5), slice(5, n), slice(None, None, 2), slice(None, None, -2), slice(3, 8),
     ]
     for m, perm in enumerate(perms):
         funcname = 'test_%s_permutation_matrix_%s_%d' % ('column' if column else 'row', type(perm).__name__, m)
@@ -78,7 +70,7 @@ def generate_test_permutation_matrix(cls, column=True):
         setattr(cls, funcname, generate_test(perm))
 
 
-def generate_test_chained_dot(cls, atol=1e-10):
+def generate_test_chained_dot(cls, simplify=True, atol=1e-10):
     n = 10
 
     def generate_test(*args):
@@ -92,15 +84,14 @@ def generate_test_chained_dot(cls, atol=1e-10):
             else:
                 ref = np.linalg.multi_dot(args_ref)
             mpl = util.MatrixProduct(args)
-            self.assertAllclose(mpl.evaluate(simplify=False), ref, atol=atol, rtol=0)
-            self.assertAllclose(mpl.evaluate(simplify=True), ref, atol=atol, rtol=0)
+            self.assertAllclose(mpl.evaluate(simplify=simplify), ref, atol=atol, rtol=0)
         return test
 
     a = util.GeneralMatrix(np.random.rand(n, n))
     matrices = {'x': None,
                 'i': util.IdentityMatrix(n),
                 'a': a,
-                'ainv': a.inverse,
+                'b': a.inverse,
                 'c': util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n),
                 'r': util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
                 }
@@ -111,18 +102,20 @@ def generate_test_chained_dot(cls, atol=1e-10):
             continue
         for perm in itertools.permutations(args):
             mats = [p[1] for p in perm]
-            name = '_'.join([p[0] for p in perm])
-            funcname = 'test_chained_dot_%s' % name
-            print("Adding test '%s'" % funcname)
+            name = ''.join([p[0] for p in perm])
+            funcname = f'test_matrix_product_{"simplify" if simplify else ""}_{name}'
+            print(f"Adding test {funcname}")
             assert not hasattr(cls, funcname)
             setattr(cls, funcname, generate_test(*mats))
 
 
-generate_test_permutation_matrix(UtilTests)
+generate_test_permutation_matrix(UtilTests, column=True)
 
 generate_test_permutation_matrix(UtilTests, column=False)
 
-generate_test_chained_dot(UtilTests)
+generate_test_chained_dot(UtilTests, simplify=False)
+
+generate_test_chained_dot(UtilTests, simplify=True)
 
 
 if __name__ == '__main__':

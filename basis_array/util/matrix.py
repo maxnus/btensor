@@ -291,7 +291,7 @@ class MatrixProduct:
         return MatrixProduct(matrices)
 
     def __getitem__(self, item):
-        if isinstance(item, slice):
+        if isinstance(item, (slice, list, np.ndarray)):
             return MatrixProduct(self.matrices[item])
         return self.matrices[item]
 
@@ -305,19 +305,19 @@ class MatrixProduct:
         matrices = self.simplify() if simplify else self
         if len(matrices) == 0:
             raise ValueError(f"Cannot evaluate empty {type(self).__name__}")
-
-        # If first matrix A^-1 in A^-1 B... = X is an inverse, solve B... = AX instead
-        if isinstance(matrices[0], InverseMatrix) and len(matrices) > 1:
-            a = matrices[0].inverse
-            b = matrices[1:].evaluate()
-            assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
-            return scipy.linalg.solve(a.to_array(), b, assume_a=assume_a)
-        # If last matrix Z^-1 in ...Y Z^-1 = X is an inverse, solve (...Y)^T = Z^T X^T instead
-        if isinstance(matrices[-1], InverseMatrix) and len(matrices) > 1:
-            a = matrices[-1].inverse
-            b = matrices[:-1].evaluate()
-            assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
-            return scipy.linalg.solve(a.to_array(), b.T, assume_a=assume_a, transposed=True).T
+        if len(matrices) > 1:
+            # If first matrix A^-1 in A^-1 B... = X is an inverse, solve B... = AX instead
+            if isinstance(matrices[0], InverseMatrix):
+                a = matrices[0].inverse
+                b = matrices[1:].evaluate()
+                assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+                return scipy.linalg.solve(a.to_array(), b, assume_a=assume_a)
+            # If last matrix Z^-1 in ...Y Z^-1 = X is an inverse, solve (...Y)^T = Z^T X^T instead
+            if isinstance(matrices[-1], InverseMatrix):
+                a = matrices[-1].inverse
+                b = matrices[:-1].evaluate()
+                assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+                return scipy.linalg.solve(a.to_array(), b.T, assume_a=assume_a, transposed=True).T
 
         matrices = [to_array(m) for m in matrices]
         if len(matrices) == 1:

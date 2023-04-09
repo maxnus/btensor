@@ -259,12 +259,6 @@ class Array(OperatorTemplate):
                 basis_out[i] = bas
                 continue
 
-            # If self.basis[i] is covariant and bas is contravariant (or vice versa), the order
-            # of bases in the overlap matters:
-            #if not self.contravariant_axes[i]:
-            #    ovlp = (self.basis[i] | bas).value
-            #else:
-            #    ovlp = (bas | self.basis[i]).value.T
             ovlp = (~self.basis[i] | bas).value
             operands.append(ovlp)
             sub_new = subscripts[i].upper()
@@ -277,7 +271,7 @@ class Array(OperatorTemplate):
             self.value = value
             self._basis = basis_out
             return self
-        return type(self)(value, basis=basis)#, variance=self.variance)
+        return type(self)(value, basis=basis)
 
     def as_basis_at(self, index, basis, **kwargs):
         if index < 0:
