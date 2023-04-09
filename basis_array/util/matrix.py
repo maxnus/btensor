@@ -243,7 +243,21 @@ def _simplify_n_matrix_products(matrices, remove_permutation=True):
 class MatrixProduct:
 
     def __init__(self, matrices):
-        self._matrices = [m for m in matrices if m is not None]
+        matrices = [m for m in matrices if m is not None]
+        self._matrices = matrices
+        for m1, m2 in zip(matrices[:-1], matrices[1:]):
+            if m1.shape[1] != m2.shape[0]:
+                raise ValueError(f"Invalid matrix product in {self}: {m1.shape} x {m2.shape}")
+
+    def __repr__(self):
+        return f'{type(self).__name__}(len ={len(self)}, shape= {self.shape})'
+
+    def __str__(self):
+        s = f'{type(self).__name__}({self.matrices[0].shape}'
+        for m in self.matrices[1:]:
+            s += f' x {m.shape}'
+        s += f' -> {self.shape})'
+        return s
 
     @property
     def matrices(self):

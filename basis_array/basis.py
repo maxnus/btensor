@@ -81,9 +81,13 @@ class Basis(BasisClass):
         else:
             metric_calc = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
             if metric is None:
+                # Automatically Promote to identity
+                idt = IdentityMatrix(self.size)
+                if abs(metric_calc - idt.to_array()).max() < 1e-13:
+                    metric_calc = idt
                 metric = metric_calc
             else:
-                diff = abs(to_array(metric) - metric_calc)
+                diff = abs(to_array(metric) - to_array(metric_calc))
                 if diff > 1e-8:
                     raise ValueError(f"Large difference between provided and calculated metric matrix "
                                      "(difference= {diff:.1e})")
@@ -209,7 +213,7 @@ class Basis(BasisClass):
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other.get_nondual())
 
-        matrices = [x.T for x in other.coeff_in_basis(parent)]
+        matrices = [x.T for x in other.coeff_in_basis(parent)][::-1] # Reversion due to (ab...)^T = ... b^T a^T
         matrices.append(parent.metric)
         matrices.extend(self.coeff_in_basis(parent))
         # This is now done in the DualBasis
