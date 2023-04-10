@@ -39,10 +39,6 @@ class BasisClass:
     def get_nondual(self):
         raise NotImplementedError
 
-    @property
-    def space(self):
-        return Space(self)
-
     def _as_basis_matprod(self, other, simplify=False):
         raise NotImplementedError
 
@@ -161,6 +157,10 @@ class Basis(BasisClass):
 
     def is_root(self):
         return self.parent is None
+
+    @property
+    def space(self):
+        return Space(self)
 
     def coeff_in_basis(self, basis):
         """Express coeffients in different (parent) basis (rather than the direct parent).

@@ -119,7 +119,9 @@ class Array(OperatorTemplate):
         return ''.join(symbols[x] for x in self.variance)
 
     def __repr__(self):
-        return '%s(shape= %r, variance= %r)' % (self.__class__.__name__, self.shape, self.variance_string)
+        if np.all(self.variance_string == 1):
+            return f'{type(self).__name__}(shape= {self.shape})'
+        return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance_string})'
 
     # --- NumPy compatibility
 
@@ -191,38 +193,6 @@ class Array(OperatorTemplate):
 
     # ---
 
-    def index_non_subbasis(self, basis, inclusive=True):
-        """Index of first element of basis which is not a subbasis of the corresponding array basis element."""
-        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
-            if not b1.is_subbasis(b0, inclusive=inclusive):
-                return i
-        return -1
-
-    def index_non_superbasis(self, basis, inclusive=True):
-        """Index of first element of basis which is not a superbasis of the corresponding array basis element."""
-        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
-            if not b1.is_superbasis(b0, inclusive=inclusive):
-                return i
-        return -1
-
-    def is_subbasis(self, basis, inclusive=True):
-        return (self.index_non_subbasis(basis, inclusive=inclusive) == -1)
-
-    def is_superbasis(self, basis, inclusive=True):
-        return (self.index_non_superbasis(basis, inclusive=inclusive) == -1)
-
-    def has_subbasis(self, other, inclusive=True):
-        return self.is_subbasis(other.basis, inclusive=inclusive)
-
-    def has_superbasis(self, other, inclusive=True):
-        return self.is_superbasis(other.basis, inclusive=inclusive)
-
-    def as_basis(self, basis, inplace=False):
-        #i = self.index_non_superbasis(basis)
-        #if i != -1:
-        #    raise BasisError("%s is not superbasis of %s" % (basis[i], self.basis[i]))
-        return self.project_onto(basis, inplace=inplace)
-
     def project_onto(self, basis, inplace=False):
         """Transform to different set of basis.
 
@@ -284,6 +254,14 @@ class Array(OperatorTemplate):
             return self
         return type(self)(value, basis=basis)
 
+    def as_basis(self, basis, inplace=False):
+        for b0, b1 in zip(self.basis, basis):
+            b0 = b0.get_nondual()
+            b1 = b1.get_nondual()
+            if not (b1.space >= b0.space):
+                raise BasisError(f"{b1} does not span {b0}")
+        return self.project_onto(basis, inplace=inplace)
+
     def as_basis_at(self, index, basis, **kwargs):
         if index < 0:
             index += self.ndim
@@ -306,7 +284,7 @@ class Array(OperatorTemplate):
             basis = basis + self.basis[len(basis):]
         return self.as_basis(basis)
 
-    # Arithmetric
+    # Arithmetic
 
     def is_compatible(self, other):
         return all(self.compatible_axes(other))

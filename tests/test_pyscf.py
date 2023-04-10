@@ -213,12 +213,12 @@ class SCF_Tests(TestCase):
         self.assertAllclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())
         self.assertAllclose(t2s.trace().trace(), t2b.trace().trace())
         # Restore
-        t2r = (mo_occ, mo_occ) | t2b | (mo_vir, mo_vir)
+        t2r = t2b.project_onto((mo_occ, mo_occ, mo_vir, mo_vir))
         self.assertAllclose(t2s.value, t2r.value)
         # Empty array for orthogonal basis
-        t2e = (mo_vir, mo_vir) | t2s | (mo_occ, mo_occ)
+        t2e = t2s.project_onto((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assertAllclose(t2e, 0)
-        t2e = (mo_vir, mo_vir) | t2b | (mo_occ, mo_occ)
+        t2e = t2b.project_onto((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assertAllclose(t2e, 0)
 
 
