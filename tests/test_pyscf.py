@@ -188,7 +188,6 @@ class SCF_Tests(TestCase):
         mo_occ = basis.B(slice(self.scf.nocc), parent=mo)
         mo_vir = basis.B(slice(self.scf.nocc, self.scf.nmo), parent=mo)
         t2s = basis.A(self.cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
-
         t2b = (mo, mo) | t2s | (mo, mo)
         # Add
         self.assertAllclose(t2s + t2b, 2 * t2b)
@@ -209,16 +208,13 @@ class SCF_Tests(TestCase):
         # Power
         self.assertAllclose(t2s ** t2b, t2b ** t2b)
         self.assertAllclose(t2b ** t2s, t2b ** t2b)
-
         # Preserved trace
         self.assertAllclose(t2s.trace().trace(), (t2s | (mo, mo)).trace().trace())
         self.assertAllclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())
         self.assertAllclose(t2s.trace().trace(), t2b.trace().trace())
-
         # Restore
         t2r = (mo_occ, mo_occ) | t2b | (mo_vir, mo_vir)
         self.assertAllclose(t2s.value, t2r.value)
-
         # Empty array for orthogonal basis
         t2e = (mo_vir, mo_vir) | t2s | (mo_occ, mo_occ)
         self.assertAllclose(t2e, 0)

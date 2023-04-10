@@ -11,6 +11,7 @@ __all__ = [
         'SymmetricMatrix',
         'InverseMatrix',
         'IdentityMatrix',
+        'PermutationMatrix',
         'RowPermutationMatrix',
         'ColumnPermutationMatrix',
         'MatrixProduct',
@@ -169,6 +170,12 @@ class ColumnPermutationMatrix(PermutationMatrix):
     def transpose(self):
         return RowPermutationMatrix(self.shape[0], self.permutation)
 
+    @property
+    def indices(self):
+        if isinstance(self.permutation, slice):
+            return np.arange(self.shape[0])[self.permutation]
+        return self.permutation
+
 
 class RowPermutationMatrix(PermutationMatrix):
 
@@ -181,6 +188,12 @@ class RowPermutationMatrix(PermutationMatrix):
 
     def transpose(self):
         return ColumnPermutationMatrix(self.shape[1], self.permutation)
+
+    @property
+    def indices(self):
+        if isinstance(self.permutation, slice):
+            return np.arange(self.shape[1])[self.permutation]
+        return self.permutation
 
 
 def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, remove_permutation=True):

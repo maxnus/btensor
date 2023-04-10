@@ -239,32 +239,42 @@ class Array(OperatorTemplate):
 
         subscripts = string.ascii_lowercase[:self.ndim]
         operands = [self.value]
-        result = ''
+        result = list(subscripts)
         basis_out = list(basis)
         for i, bas in enumerate(basis):
             if bas is None or (bas == self.basis[i]):
-                result += subscripts[i]
-                #if bas is None:
                 if bas is None:
                     basis_out[i] = self.basis[i]
                 continue
             # Remove basis:
             if bas is nobasis:
-                result += subscripts[i]
                 basis_out[i] = nobasis
                 continue
             # Add basis:
             # Buggy
             if self.basis[i] is nobasis:
-                result += subscripts[i]
                 basis_out[i] = bas
                 continue
 
-            ovlp = (~self.basis[i] | bas).value
+            # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
+            #ovlp = (self.basis[i].dual() | bas).value
+            ovlp = bas._as_basis_matprod(self.basis[i].dual(), simplify=True)
+            if len(ovlp) == 1 and isinstance(ovlp[0], IdentityMatrix):
+                raise NotImplementedError
+            elif len(ovlp) == 1 and isinstance(ovlp[0], PermutationMatrix):
+                perm = ovlp[0]
+                indices = perm.indices
+                if isinstance(perm, RowPermutationMatrix):
+                    operands[0] = util.expand_axis(operands[0], perm.shape[1], indices=indices, axis=i)
+                if isinstance(perm, ColumnPermutationMatrix):
+                    operands[0] = np.take(operands[0], indices, axis=i)
+                continue
+            else:
+                ovlp = ovlp.evaluate()
             operands.append(ovlp)
             sub_new = subscripts[i].upper()
             subscripts += (',%s%s' % (subscripts[i], sub_new))
-            result += sub_new
+            result[i] = sub_new
         basis_out = tuple(basis_out)
         subscripts += '->%s' % (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)

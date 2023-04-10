@@ -14,6 +14,18 @@ class BasisClass:
             return False
         return self.id == other.id
 
+    @property
+    def id(self):
+        raise NotImplementedError
+
+    @property
+    def size(self):
+        raise NotImplementedError
+
+    @property
+    def root(self):
+        raise NotImplementedError
+
     def dual(self):
         raise NotImplementedError
 
@@ -23,7 +35,7 @@ class BasisClass:
     def get_nondual(self):
         raise NotImplementedError
 
-    def _as_basis_matprod(self, other):
+    def _as_basis_matprod(self, other, simplify=False):
         raise NotImplementedError
 
     def as_basis(self, other):
@@ -205,12 +217,14 @@ class Basis(BasisClass):
             parent = p
         return parent
 
-    def _as_basis_matprod(self, other):
+    def _as_basis_matprod(self, other, simplify=False):
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other.get_nondual())
         matprod = other.coeff_in_basis(parent).T + [parent.metric] + self.coeff_in_basis(parent)
+        if simplify:
+            matprod = matprod.simplify()
         return matprod
 
     def dual(self):
@@ -283,9 +297,11 @@ class DualBasis(BasisClass):
     def metric(self):
         return self.dual().metric.inverse
 
-    def _as_basis_matprod(self, other):
+    def _as_basis_matprod(self, other, simplify=False):
         """Append inverse metric (metric of dual space)"""
         matprod = self.get_nondual()._as_basis_matprod(other) + [self.metric]
+        if simplify:
+            matprod = matprod.simplify()
         return matprod
 
 from .array import Array
