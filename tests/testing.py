@@ -6,9 +6,11 @@ import scipy.stats
 
 
 def rand_orth_mat(n, ncol=None):
+    if n == 1:
+        return np.asarray([[1.0]])[:, :ncol]
     m = scipy.stats.ortho_group.rvs(n)
     if ncol is not None:
-        m = m[:,:ncol]
+        m = m[:, :ncol]
     return m
 
 

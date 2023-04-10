@@ -1,9 +1,7 @@
 import unittest
 import numpy as np
-
 import basis_array as basis
 from testing import TestCase, rand_orth_mat
-from basis_array import util
 
 
 class TestBasis(TestCase):
@@ -11,7 +9,7 @@ class TestBasis(TestCase):
     @classmethod
     def setUpClass(cls):
         np.random.seed(0)
-        cls.size_a, cls.size_b = 6, 6
+        cls.size_a, cls.size_b = 5, 6
 
         def metric(n):
             noise = 0.1*(np.random.random((n, n))-0.5)
@@ -60,6 +58,228 @@ class TestBasis(TestCase):
         self.assertEqual(self.rootbasis_b.size, self.size_b)
         for i, b in enumerate(self.subbasis_a):
             self.assertEqual(b.size, self.rootbasis_a.size - (i + 1))
+
+    def test_len_and_ordering(self):
+        for i, b1 in enumerate(self.basis_a):
+            for j, b2 in enumerate(self.basis_a):
+                if i == j:
+                    self.assertTrue(len(b1) == len(b2))
+                    self.assertTrue(len(b1) >= len(b2))
+                    self.assertTrue(len(b1) <= len(b2))
+                    self.assertFalse(len(b1) > len(b2))
+                    self.assertFalse(len(b1) < len(b2))
+                    self.assertFalse(len(b1) != len(b2))
+                    self.assertTrue(len(b2) == len(b1))
+                    self.assertTrue(len(b2) >= len(b1))
+                    self.assertTrue(len(b2) <= len(b1))
+                    self.assertFalse(len(b2) > len(b1))
+                    self.assertFalse(len(b2) < len(b1))
+                    self.assertFalse(len(b2) != len(b1))
+                elif i > j:
+                    self.assertFalse(len(b1) == len(b2))
+                    self.assertFalse(len(b1) >= len(b2))
+                    self.assertTrue(len(b1) <= len(b2))
+                    self.assertFalse(len(b1) > len(b2))
+                    self.assertTrue(len(b1) < len(b2))
+                    self.assertTrue(len(b1) != len(b2))
+                    self.assertFalse(len(b2) == len(b1))
+                    self.assertTrue(len(b2) >= len(b1))
+                    self.assertFalse(len(b2) <= len(b1))
+                    self.assertTrue(len(b2) > len(b1))
+                    self.assertFalse(len(b2) < len(b1))
+                    self.assertTrue(len(b2) != len(b1))
+                else:
+                    self.assertFalse(len(b1) == len(b2))
+                    self.assertTrue(len(b1) >= len(b2))
+                    self.assertFalse(len(b1) <= len(b2))
+                    self.assertTrue(len(b1) > len(b2))
+                    self.assertFalse(len(b1) < len(b2))
+                    self.assertTrue(len(b1) != len(b2))
+                    self.assertFalse(len(b2) == len(b1))
+                    self.assertFalse(len(b2) >= len(b1))
+                    self.assertTrue(len(b2) <= len(b1))
+                    self.assertFalse(len(b2) > len(b1))
+                    self.assertTrue(len(b2) < len(b1))
+                    self.assertTrue(len(b2) != len(b1))
+
+    def test_space_same_root(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b1 in enumerate(bas):
+                for j, b2 in enumerate(bas):
+                    # space(b1) == space(b2)
+                    if i == j:
+                        self.assertTrue(b1.space == b2.space)
+                        self.assertFalse(b1.space != b2.space)
+                        self.assertTrue(b1.space >= b2.space)
+                        self.assertTrue(b1.space <= b2.space)
+                        self.assertFalse(b1.space > b2.space)
+                        self.assertFalse(b1.space < b2.space)
+                        self.assertTrue(b2.space == b1.space)
+                        self.assertFalse(b2.space != b1.space)
+                        self.assertTrue(b2.space >= b1.space)
+                        self.assertTrue(b2.space <= b1.space)
+                        self.assertFalse(b2.space > b1.space)
+                        self.assertFalse(b2.space < b1.space)
+                    # space(b1) < space(b2)
+                    elif i > j:
+                        self.assertFalse(b1.space == b2.space)
+                        self.assertTrue(b1.space != b2.space)
+                        self.assertFalse(b1.space >= b2.space)
+                        self.assertTrue(b1.space <= b2.space)
+                        self.assertFalse(b1.space > b2.space)
+                        self.assertTrue(b1.space < b2.space)
+                        self.assertFalse(b2.space == b1.space)
+                        self.assertTrue(b2.space != b1.space)
+                        self.assertTrue(b2.space >= b1.space)
+                        self.assertFalse(b2.space <= b1.space)
+                        self.assertTrue(b2.space > b1.space)
+                        self.assertFalse(b2.space < b1.space)
+                    # space(b1) > space(b2)
+                    else:
+                        self.assertFalse(b1.space == b2.space)
+                        self.assertTrue(b1.space != b2.space)
+                        self.assertTrue(b1.space >= b2.space)
+                        self.assertFalse(b1.space <= b2.space)
+                        self.assertTrue(b1.space > b2.space)
+                        self.assertFalse(b1.space < b2.space)
+                        self.assertFalse(b2.space == b1.space)
+                        self.assertTrue(b2.space != b1.space)
+                        self.assertFalse(b2.space >= b1.space)
+                        self.assertTrue(b2.space <= b1.space)
+                        self.assertFalse(b2.space > b1.space)
+                        self.assertTrue(b2.space < b1.space)
+
+    def test_same_space(self):
+        for bas in (self.basis_a, self.basis_b):
+            for b in bas:
+                b1 = b
+                b2 = basis.B(rand_orth_mat(b.size), parent=b)
+                self.assertTrue(b1.space == b2.space)
+                self.assertFalse(b1.space != b2.space)
+                self.assertTrue(b1.space >= b2.space)
+                self.assertTrue(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertTrue(b2.space == b1.space)
+                self.assertFalse(b2.space != b1.space)
+                self.assertTrue(b2.space >= b1.space)
+                self.assertTrue(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
+
+    def test_same_space_2(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b in enumerate(bas):
+                b1 = basis.B(rand_orth_mat(b.size), parent=b)
+                b2 = basis.B(rand_orth_mat(b.size), parent=b)
+                self.assertTrue(b1.space == b2.space)
+                self.assertFalse(b1.space != b2.space)
+                self.assertTrue(b1.space >= b2.space)
+                self.assertTrue(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertTrue(b2.space == b1.space)
+                self.assertFalse(b2.space != b1.space)
+                self.assertTrue(b2.space >= b1.space)
+                self.assertTrue(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
+
+    def test_svd_same_space(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b in enumerate(bas[:-1]):
+                r = rand_orth_mat(b.size, b.size-1)
+                b1 = basis.B(r, parent=b)
+                b2 = basis.B(r, parent=b)
+                self.assertTrue(b1.space == b2.space)
+                self.assertFalse(b1.space != b2.space)
+                self.assertTrue(b1.space >= b2.space)
+                self.assertTrue(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertTrue(b2.space == b1.space)
+                self.assertFalse(b2.space != b1.space)
+                self.assertTrue(b2.space >= b1.space)
+                self.assertTrue(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
+
+    def test_svd_different_space_same_size(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b in enumerate(bas[:-1]):
+                r1 = rand_orth_mat(b.size, b.size - 1)
+                r2 = rand_orth_mat(b.size, b.size - 1)
+                b1 = basis.B(r1, parent=b)
+                b2 = basis.B(r2, parent=b)
+                self.assertFalse(b1.space == b2.space)
+                self.assertTrue(b1.space != b2.space)
+                self.assertFalse(b1.space >= b2.space)
+                self.assertFalse(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertFalse(b2.space == b1.space)
+                self.assertTrue(b2.space != b1.space)
+                self.assertFalse(b2.space >= b1.space)
+                self.assertFalse(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
+
+    def test_svd_different_space_different_size(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b in enumerate(bas[:-2]):
+                r1 = rand_orth_mat(b.size, b.size - 1)
+                r2 = rand_orth_mat(b.size, b.size - 2)
+                b1 = basis.B(r1, parent=b)
+                b2 = basis.B(r2, parent=b)
+                self.assertFalse(b1.space == b2.space)
+                self.assertTrue(b1.space != b2.space)
+                self.assertFalse(b1.space >= b2.space)
+                self.assertFalse(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertFalse(b2.space == b1.space)
+                self.assertTrue(b2.space != b1.space)
+                self.assertFalse(b2.space >= b1.space)
+                self.assertFalse(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
+
+    def test_svd_subspace(self):
+        for bas in (self.basis_a, self.basis_b):
+            for i, b in enumerate(bas[:-2]):
+                r1 = rand_orth_mat(b.size, b.size - 1)
+                r2 = r1[:, :-1]
+                # b2 is subspace of b1
+                b1 = basis.B(r1, parent=b)
+                b2 = basis.B(r2, parent=b)
+                self.assertFalse(b1.space == b2.space)
+                self.assertTrue(b1.space != b2.space)
+                self.assertTrue(b1.space >= b2.space)
+                self.assertFalse(b1.space <= b2.space)
+                self.assertTrue(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertFalse(b2.space == b1.space)
+                self.assertTrue(b2.space != b1.space)
+                self.assertFalse(b2.space >= b1.space)
+                self.assertTrue(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertTrue(b2.space < b1.space)
+
+    def test_space_different_root(self):
+        for b1 in self.basis_a:
+            for b2 in self.basis_b:
+                self.assertFalse(b1.space == b2.space)
+                self.assertTrue(b1.space != b2.space)
+                self.assertFalse(b1.space >= b2.space)
+                self.assertFalse(b1.space <= b2.space)
+                self.assertFalse(b1.space > b2.space)
+                self.assertFalse(b1.space < b2.space)
+                self.assertFalse(b2.space == b1.space)
+                self.assertTrue(b2.space != b1.space)
+                self.assertFalse(b2.space >= b1.space)
+                self.assertFalse(b2.space <= b1.space)
+                self.assertFalse(b2.space > b1.space)
+                self.assertFalse(b2.space < b1.space)
 
     def test_matrices_for_coeff_in_basis(self):
 

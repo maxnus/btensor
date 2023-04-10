@@ -1,5 +1,6 @@
 import numpy as np
 from basis_array.util import *
+from basis_array.space import Space
 
 
 class BasisClass:
@@ -22,6 +23,9 @@ class BasisClass:
     def size(self):
         raise NotImplementedError
 
+    def __len__(self):
+        return self.size
+
     @property
     def root(self):
         raise NotImplementedError
@@ -34,6 +38,10 @@ class BasisClass:
 
     def get_nondual(self):
         raise NotImplementedError
+
+    @property
+    def space(self):
+        return Space(self)
 
     def _as_basis_matprod(self, other, simplify=False):
         raise NotImplementedError
@@ -90,6 +98,8 @@ class Basis(BasisClass):
         if not self.is_root() and (argument.shape[0] != self.parent.size):
             raise ValueError("Invalid size: %d (expected %d)" % (argument.shape[0], self.parent.size))
         self._coeff = argument
+        if self.size == 0:
+            raise ValueError("Cannot construct empty basis")
 
         # Initialize metric matrix:
         if self.is_root():
@@ -238,16 +248,18 @@ class Basis(BasisClass):
     def is_orthonormal(self):
         return isinstance(self.metric, IdentityMatrix)
 
-    #def is_subbasis(self, other, inclusive=True):
-    #    """True if other is subbasis of given basis, else False."""
-    #    for parent in self.get_parents(include_self=inclusive):
-    #        if other == parent:
-    #            return True
-    #    return False
+    def is_derived_from(self, other, inclusive=False):
+        """True if self is derived from other, else False"""
+        if not self.same_root(other):
+            return False
+        for parent in self.get_parents(include_self=inclusive):
+            if other == parent:
+                return True
+        return False
 
-    #def is_superbasis(self, other, inclusive=True):
-    #    """True if other is superbasis of given basis, else False."""
-    #    return other.is_subbasis(self, inclusive=inclusive)
+    def is_parent_of(self, other, inclusive=False):
+        """True if self is parent of other, else False"""
+        return other.is_derived_from(self, inclusive=inclusive)
 
     def get_orthonormal_error(self):
         ortherr = abs(self.metric-np.identity(self.size)).max()
