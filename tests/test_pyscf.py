@@ -97,6 +97,30 @@ class SCF_Tests(TestCase):
         self.assertAllclose((~ao | ~mo), c)
         self.assertAllclose((~mo | ~ao), c.T)
 
+        # AO derived from MO
+        r = np.dot(self.scf.mo_coeff.T, self.scf.ovlp)
+        ao = basis.Basis(r, parent=mo)
+        # Normal-normal
+        self.assertAllclose((ao | ao), s)
+        self.assertAllclose((mo | mo), i)
+        self.assertAllclose((ao | mo), s.dot(c))
+        self.assertAllclose((mo | ao), c.T.dot(s.T))
+        # Dual-normal
+        self.assertAllclose((~ao | ao), i)
+        self.assertAllclose((~mo | mo), i)
+        self.assertAllclose((~ao | mo), c)
+        self.assertAllclose((~mo | ao), c.T.dot(s.T))
+        # Normal-dual
+        self.assertAllclose((ao | ~ao), i)
+        self.assertAllclose((mo | ~mo), i)
+        self.assertAllclose((ao | ~mo), s.dot(c))
+        self.assertAllclose((mo | ~ao), c.T)
+        # Dual-dual
+        self.assertAllclose((~ao | ~ao), np.linalg.inv(s))
+        self.assertAllclose((~mo | ~mo), i)
+        self.assertAllclose((~ao | ~mo), c)
+        self.assertAllclose((~mo | ~ao), c.T)
+
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
         i = np.identity(self.scf.nao)

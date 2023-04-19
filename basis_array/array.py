@@ -30,8 +30,18 @@ class Array(OperatorTemplate):
         #    if value.shape[i] != b.size:
         #        raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
         #            i+1, value.shape[i], b.size))
-        self.value = value
+        self.value = np.asarray(value)
         self.basis = basis
+
+    def __repr__(self):
+        if np.all(self.variance_string == 1):
+            return f'{type(self).__name__}(shape= {self.shape})'
+        return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
+
+    def copy(self):
+        return type(self)(self.value.copy(), basis=self.basis)
+
+    # --- Basis
 
     @property
     def basis(self):
@@ -73,33 +83,26 @@ class Array(OperatorTemplate):
         assert len(new_basis) == len(self.basis)
         self._basis = tuple(new_basis)
 
+    # --- Variance
+
     @property
     def variance(self):
-        return [-1 if isinstance(b, DualBasis) else 1 for b in self.basis]
+        return tuple([-1 if isinstance(b, DualBasis) else 1 for b in self.basis])
 
-    #@variance.setter
-    #def variance(self, value):
-    #    if np.ndim(value) == 0:
-    #        value = self.ndim * (value,)
-    #    if len(value) != self.ndim:
-    #        raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
-    #                         self.ndim, self.ndim, len(value)))
-    #    self._variance = value
-
-    def _check_variance(self, variance):
+    def as_variance(self, variance):
         if np.ndim(variance) == 0:
             variance = self.ndim * (variance,)
         if len(variance) != self.ndim:
             raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
                              self.ndim, self.ndim, len(variance)))
-        return variance
-
-    #def as_variance(self, variance):
-    #    variance = self._check_variance(variance)
-    #    for i, (v0, v1) in enumerate(zip(self.variance, variance)):
-    #        if v0 == v1:
-    #            continue
-    #    return type(self)(value, basis=basis, variance=variance)
+        if not np.isin(variance, (-1, 1)):
+            raise ValueError("Variance can only contain values -1 and 1")
+        new_basis = []
+        for i, (b, v0, v1) in enumerate(zip(self.basis, self.variance, variance)):
+            if v0 != v1:
+                b = b.dual()
+            new_basis.append(b)
+        return self.as_basis(basis=new_basis)
 
     @property
     def covariant_axes(self):
@@ -109,19 +112,11 @@ class Array(OperatorTemplate):
     def contravariant_axes(self):
         return tuple(np.asarray(self.variance) == -1)
 
-    def copy(self):
-        return type(self)(self.value.copy(), basis=self.basis)
-
     @property
     def variance_string(self):
         """String representation of variance tuple."""
         symbols = {1: '+', -1: '-', 0: '*'}
         return ''.join(symbols[x] for x in self.variance)
-
-    def __repr__(self):
-        if np.all(self.variance_string == 1):
-            return f'{type(self).__name__}(shape= {self.shape})'
-        return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance_string})'
 
     # --- NumPy compatibility
 
@@ -307,6 +302,8 @@ class Array(OperatorTemplate):
         if not self.is_compatible(other):
             raise ValueError
         for b1, b2 in zip(self.basis, other.basis):
+            if b1.is_dual() ^ b2.is_dual():
+                raise ValueError()
             if b1 is nobasis and b2 is nobasis:
                 basis.append(nobasis)
             elif b1 is nobasis:
@@ -343,5 +340,5 @@ class Array(OperatorTemplate):
         else:
             return NotImplemented
         if swap:
-            v1, v2 = (v2, v1)
+            v1, v2 = v2, v1
         return type(self)(operator(v1, v2), basis=basis)
