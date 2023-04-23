@@ -195,7 +195,7 @@ class Tensor(OperatorTemplate):
         transform = basis2.dual()._as_basis_matprod(basis1, simplify=True)
         return transform
 
-    def project_onto(self, basis, inplace=False):
+    def proj(self, basis, inplace=False):
         """Transform to different set of basis.
 
         None can be used to indicate no transformation.
@@ -267,7 +267,7 @@ class Tensor(OperatorTemplate):
             b1 = +b1
             if not (b1.space >= b0.space):
                 raise BasisError(f"{b1} does not span {b0}")
-        return self.project_onto(basis, inplace=inplace)
+        return self.proj(basis, inplace=inplace)
 
     def as_basis_at(self, index, basis, **kwargs):
         if index < 0:

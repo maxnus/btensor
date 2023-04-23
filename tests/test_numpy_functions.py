@@ -112,8 +112,8 @@ class Tests(TestCase):
                                         self.numpy_arrays_rt[ndim].trace(axis1=axis1, axis2=axis2))
 
     def test_trace_subspace(self):
-        tr1 = self.a_nn.project_onto((self.bn2, self.bn2)).trace()
-        tr2 = self.a_nn.project_onto((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
+        tr1 = self.a_nn.proj((self.bn2, self.bn2)).trace()
+        tr2 = self.a_nn.proj((self.bn2, self.bn2)).as_basis((self.bn, self.bn)).trace()
         self.assertAllclose(tr1, tr2, atol=1e-14, rtol=0)
 
     def test_getitem_with_ellipsis(self):

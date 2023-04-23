@@ -174,7 +174,7 @@ class SubbasisTests(TestCase):
     #    self.assertAllclose(a1a, a1b)
 
     def test_subspace(self):
-        a2 = self.a1.project_onto(self.a2.basis)
+        a2 = self.a1.proj(self.a2.basis)
         self.assertAllclose(self.a2, a2)
 
 
