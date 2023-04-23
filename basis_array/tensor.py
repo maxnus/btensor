@@ -2,7 +2,7 @@ import numbers
 import string
 import numpy as np
 from basis_array.util import *
-from .basis import Basis, BasisClass, DualBasis
+from .basis import Basis, BasisClass, Cobasis
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -87,7 +87,7 @@ class Tensor(OperatorTemplate):
 
     @property
     def variance(self):
-        return tuple([1 if isinstance(b, DualBasis) else -1 for b in self.basis])
+        return tuple([1 if isinstance(b, Cobasis) else -1 for b in self.basis])
 
     def as_variance(self, variance):
         if np.ndim(variance) == 0:
@@ -259,8 +259,8 @@ class Tensor(OperatorTemplate):
 
     def as_basis(self, basis, inplace=False):
         for b0, b1 in zip(self.basis, basis):
-            b0 = b0.get_nondual()
-            b1 = b1.get_nondual()
+            b0 = -b0
+            b1 = -b1
             if not (b1.space >= b0.space):
                 raise BasisError(f"{b1} does not span {b0}")
         return self.project_onto(basis, inplace=inplace)
@@ -310,7 +310,7 @@ class Tensor(OperatorTemplate):
         if not self.is_compatible(other):
             raise ValueError
         for b1, b2 in zip(self.basis, other.basis):
-            if b1.is_dual() ^ b2.is_dual():
+            if b1.is_cobasis() ^ b2.is_cobasis():
                 raise ValueError()
             if b1 is nobasis and b2 is nobasis:
                 basis.append(nobasis)
@@ -356,7 +356,7 @@ class Cotensor(Tensor):
 
     @property
     def variance(self):
-        return tuple([-1 if isinstance(b, DualBasis) else 1 for b in self.basis])
+        return tuple([-1 if isinstance(b, Cobasis) else 1 for b in self.basis])
 
     @staticmethod
     def _get_basis_transform(basis1, basis2):

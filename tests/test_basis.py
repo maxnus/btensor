@@ -59,6 +59,16 @@ class TestBasis(TestCase):
         for i, b in enumerate(self.subbasis_a):
             self.assertEqual(b.size, self.rootbasis_a.size - (i + 1))
 
+    def test_pos_neg_invert(self):
+        b = self.basis_a[0]
+        d = b.dual()
+        self.assertEqual(+b, d)
+        self.assertEqual(-b, b)
+        self.assertEqual(~b, d)
+        self.assertEqual(+d, d)
+        self.assertEqual(-d, b)
+        self.assertEqual(~d, b)
+
     def test_len_and_ordering(self):
         for i, b1 in enumerate(self.basis_a):
             for j, b2 in enumerate(self.basis_a):
