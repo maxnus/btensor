@@ -58,8 +58,8 @@ class BasisClass:
         return other.as_basis(self)
 
     def same_root(self, other):
-        root1 = self.root or (-self)
-        root2 = other.root or (-other)
+        root1 = self.root or (+self)
+        root2 = other.root or (+other)
         return root1 == root2
 
     def check_same_root(self, other):
@@ -177,7 +177,7 @@ class Basis(BasisClass):
 
         self.check_same_root(basis)
         parents = self.get_parents()
-        nondual = -basis
+        nondual = +basis
         if nondual not in parents:
             raise ValueError("%s is not superbasis of %r" % (basis, self))
         matrices = []
@@ -237,7 +237,7 @@ class Basis(BasisClass):
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
-        parent = self.find_common_parent(-other)
+        parent = self.find_common_parent(+other)
         matprod = other.coeff_in_basis(parent).T + [parent.metric] + self.coeff_in_basis(parent)
         if simplify:
             matprod = matprod.simplify()
@@ -272,10 +272,10 @@ class Basis(BasisClass):
         return ortherr
 
     def __pos__(self):
-        return self.dual()
+        return self
 
     def __neg__(self):
-        return self
+        return self.dual()
 
 
 class Cobasis(BasisClass):
@@ -285,7 +285,7 @@ class Cobasis(BasisClass):
 
     @property
     def id(self):
-        return -self.dual().id
+        return -(self.dual().id)
 
     @property
     def size(self):
@@ -307,7 +307,7 @@ class Cobasis(BasisClass):
         return self.dual().root
 
     def coeff_in_basis(self, basis):
-        matrices = (-self).coeff_in_basis(basis)
+        matrices = (+self).coeff_in_basis(basis)
         # To raise right-hand index:
         matrices.append(self.metric)
         return matrices
@@ -318,16 +318,16 @@ class Cobasis(BasisClass):
 
     def _as_basis_matprod(self, other, simplify=False):
         """Append inverse metric (metric of dual space)"""
-        matprod = (-self)._as_basis_matprod(other) + [self.metric]
+        matprod = (+self)._as_basis_matprod(other) + [self.metric]
         if simplify:
             matprod = matprod.simplify()
         return matprod
 
     def __pos__(self):
-        return self
+        return self.dual()
 
     def __neg__(self):
-        return self.dual()
+        return self
 
 
 from .tensor import Tensor

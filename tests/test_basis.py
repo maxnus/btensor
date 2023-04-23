@@ -62,11 +62,11 @@ class TestBasis(TestCase):
     def test_pos_neg_invert(self):
         b = self.basis_a[0]
         d = b.dual()
-        self.assertEqual(+b, d)
-        self.assertEqual(-b, b)
+        self.assertEqual(+b, b)
+        self.assertEqual(-b, d)
         self.assertEqual(~b, d)
-        self.assertEqual(+d, d)
-        self.assertEqual(-d, b)
+        self.assertEqual(+d, b)
+        self.assertEqual(-d, d)
         self.assertEqual(~d, b)
 
     def test_len_and_ordering(self):

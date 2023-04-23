@@ -82,20 +82,20 @@ class SCF_Tests(TestCase):
         self.assertAllclose((ao | mo), s.dot(c))
         self.assertAllclose((mo | ao), c.T.dot(s.T))
         # Dual-normal
-        self.assertAllclose((+ao | ao), i)
-        self.assertAllclose((+mo | mo), i)
-        self.assertAllclose((+ao | mo), c)
-        self.assertAllclose((+mo | ao), c.T.dot(s.T))
+        self.assertAllclose((-ao | ao), i)
+        self.assertAllclose((-mo | mo), i)
+        self.assertAllclose((-ao | mo), c)
+        self.assertAllclose((-mo | ao), c.T.dot(s.T))
         # Normal-dual
-        self.assertAllclose((ao | +ao), i)
-        self.assertAllclose((mo | +mo), i)
-        self.assertAllclose((ao | +mo), s.dot(c))
-        self.assertAllclose((mo | +ao), c.T)
+        self.assertAllclose((ao | -ao), i)
+        self.assertAllclose((mo | -mo), i)
+        self.assertAllclose((ao | -mo), s.dot(c))
+        self.assertAllclose((mo | -ao), c.T)
         # Dual-dual
-        self.assertAllclose((+ao | +ao), np.linalg.inv(s))
-        self.assertAllclose((+mo | +mo), i)
-        self.assertAllclose((+ao | +mo), c)
-        self.assertAllclose((+mo | +ao), c.T)
+        self.assertAllclose((-ao | -ao), np.linalg.inv(s))
+        self.assertAllclose((-mo | -mo), i)
+        self.assertAllclose((-ao | -mo), c)
+        self.assertAllclose((-mo | -ao), c.T)
 
         # AO derived from MO
         r = np.dot(self.scf.mo_coeff.T, self.scf.ovlp)
@@ -106,71 +106,71 @@ class SCF_Tests(TestCase):
         self.assertAllclose((ao | mo), s.dot(c))
         self.assertAllclose((mo | ao), c.T.dot(s.T))
         # Dual-normal
-        self.assertAllclose((+ao | ao), i)
-        self.assertAllclose((+mo | mo), i)
-        self.assertAllclose((+ao | mo), c)
-        self.assertAllclose((+mo | ao), c.T.dot(s.T))
+        self.assertAllclose((-ao | ao), i)
+        self.assertAllclose((-mo | mo), i)
+        self.assertAllclose((-ao | mo), c)
+        self.assertAllclose((-mo | ao), c.T.dot(s.T))
         # Normal-dual
-        self.assertAllclose((ao | +ao), i)
-        self.assertAllclose((mo | +mo), i)
-        self.assertAllclose((ao | +mo), s.dot(c))
-        self.assertAllclose((mo | +ao), c.T)
+        self.assertAllclose((ao | -ao), i)
+        self.assertAllclose((mo | -mo), i)
+        self.assertAllclose((ao | -mo), s.dot(c))
+        self.assertAllclose((mo | -ao), c.T)
         # Dual-dual
-        self.assertAllclose((+ao | +ao), np.linalg.inv(s))
-        self.assertAllclose((+mo | +mo), i)
-        self.assertAllclose((+ao | +mo), c)
-        self.assertAllclose((+mo | +ao), c.T)
+        self.assertAllclose((-ao | -ao), np.linalg.inv(s))
+        self.assertAllclose((-mo | -mo), i)
+        self.assertAllclose((-ao | -mo), c)
+        self.assertAllclose((-mo | -ao), c.T)
 
     def test_ao_mo_projector(self):
         ao, mo = self.ao, self.mo
         i = np.identity(self.scf.nao)
         # NumPy
         # 1
-        self.assertAllclose(np.dot((+ao| mo), ( mo|ao)), i)
-        self.assertAllclose(np.dot((+ao|+mo), ( mo|ao)), i)
-        self.assertAllclose(np.dot((+ao| mo), (+mo|ao)), i)
-        self.assertAllclose(np.dot((+ao|+mo), (+mo|ao)), i)
+        self.assertAllclose(np.dot((-ao| mo), ( mo|ao)), i)
+        self.assertAllclose(np.dot((-ao|-mo), ( mo|ao)), i)
+        self.assertAllclose(np.dot((-ao| mo), (-mo|ao)), i)
+        self.assertAllclose(np.dot((-ao|-mo), (-mo|ao)), i)
         # 2
-        self.assertAllclose(np.dot(( mo|+ao), (ao| mo)), i)
-        self.assertAllclose(np.dot((+mo|+ao), (ao| mo)), i)
-        self.assertAllclose(np.dot(( mo|+ao), (ao|+mo)), i)
-        self.assertAllclose(np.dot((+mo|+ao), (ao|+mo)), i)
+        self.assertAllclose(np.dot(( mo|-ao), (ao| mo)), i)
+        self.assertAllclose(np.dot((-mo|-ao), (ao| mo)), i)
+        self.assertAllclose(np.dot(( mo|-ao), (ao|-mo)), i)
+        self.assertAllclose(np.dot((-mo|-ao), (ao|-mo)), i)
         # 3
-        self.assertAllclose(np.dot(( mo|ao), (+ao| mo)), i)
-        self.assertAllclose(np.dot((+mo|ao), (+ao| mo)), i)
-        self.assertAllclose(np.dot(( mo|ao), (+ao|+mo)), i)
-        self.assertAllclose(np.dot((+mo|ao), (+ao|+mo)), i)
+        self.assertAllclose(np.dot(( mo|ao), (-ao| mo)), i)
+        self.assertAllclose(np.dot((-mo|ao), (-ao| mo)), i)
+        self.assertAllclose(np.dot(( mo|ao), (-ao|-mo)), i)
+        self.assertAllclose(np.dot((-mo|ao), (-ao|-mo)), i)
         # 4
-        self.assertAllclose(np.dot((ao| mo), ( mo|+ao)), i)
-        self.assertAllclose(np.dot((ao|+mo), ( mo|+ao)), i)
-        self.assertAllclose(np.dot((ao| mo), (+mo|+ao)), i)
-        self.assertAllclose(np.dot((ao|+mo), (+mo|+ao)), i)
+        self.assertAllclose(np.dot((ao| mo), ( mo|-ao)), i)
+        self.assertAllclose(np.dot((ao|-mo), ( mo|-ao)), i)
+        self.assertAllclose(np.dot((ao| mo), (-mo|-ao)), i)
+        self.assertAllclose(np.dot((ao|-mo), (-mo|-ao)), i)
 
         # basis
         # 1
-        self.assertAllclose(basis.dot((+ao| mo), ( mo|ao)), i)
-        self.assertAllclose(basis.dot((+ao|+mo), ( mo|ao)), i)
-        self.assertAllclose(basis.dot((+ao| mo), (+mo|ao)), i)
-        self.assertAllclose(basis.dot((+ao|+mo), (+mo|ao)), i)
+        self.assertAllclose(basis.dot((-ao| mo), ( mo|ao)), i)
+        self.assertAllclose(basis.dot((-ao|-mo), ( mo|ao)), i)
+        self.assertAllclose(basis.dot((-ao| mo), (-mo|ao)), i)
+        self.assertAllclose(basis.dot((-ao|-mo), (-mo|ao)), i)
         # 2
-        self.assertAllclose(basis.dot(( mo|+ao), (ao| mo)), i)
-        self.assertAllclose(basis.dot((+mo|+ao), (ao| mo)), i)
-        self.assertAllclose(basis.dot(( mo|+ao), (ao|+mo)), i)
-        self.assertAllclose(basis.dot((+mo|+ao), (ao|+mo)), i)
+        self.assertAllclose(basis.dot(( mo|-ao), (ao| mo)), i)
+        self.assertAllclose(basis.dot((-mo|-ao), (ao| mo)), i)
+        self.assertAllclose(basis.dot(( mo|-ao), (ao|-mo)), i)
+        self.assertAllclose(basis.dot((-mo|-ao), (ao|-mo)), i)
         # 3
-        self.assertAllclose(basis.dot(( mo|ao), (+ao| mo)), i)
-        self.assertAllclose(basis.dot((+mo|ao), (+ao| mo)), i)
-        self.assertAllclose(basis.dot(( mo|ao), (+ao|+mo)), i)
-        self.assertAllclose(basis.dot((+mo|ao), (+ao|+mo)), i)
+        self.assertAllclose(basis.dot(( mo|ao), (-ao| mo)), i)
+        self.assertAllclose(basis.dot((-mo|ao), (-ao| mo)), i)
+        self.assertAllclose(basis.dot(( mo|ao), (-ao|-mo)), i)
+        self.assertAllclose(basis.dot((-mo|ao), (-ao|-mo)), i)
         # 4
-        self.assertAllclose(basis.dot((ao| mo), ( mo|+ao)), i)
-        self.assertAllclose(basis.dot((ao|+mo), ( mo|+ao)), i)
-        self.assertAllclose(basis.dot((ao| mo), (+mo|+ao)), i)
-        self.assertAllclose(basis.dot((ao|+mo), (+mo|+ao)), i)
+        self.assertAllclose(basis.dot((ao| mo), ( mo|-ao)), i)
+        self.assertAllclose(basis.dot((ao|-mo), ( mo|-ao)), i)
+        self.assertAllclose(basis.dot((ao| mo), (-mo|-ao)), i)
+        self.assertAllclose(basis.dot((ao|-mo), (-mo|-ao)), i)
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.Tensor(self.scf.ovlp, basis=(+ao, +ao))
+        s = basis.Tensor(self.scf.ovlp, basis=(-ao, -ao))
         self.assertAllclose(((mo | s) | mo), np.identity(self.scf.nao))
         self.assertAllclose((mo | (s | mo)), np.identity(self.scf.nao))
         s = basis.Cotensor(self.scf.ovlp, basis=(ao, ao))
@@ -180,15 +180,15 @@ class SCF_Tests(TestCase):
     def test_mo2ao_ovlp(self):
         ao, mo = self.ao, self.mo
         s = basis.Tensor(np.identity(self.scf.nao), basis=(mo, mo))
-        self.assertAllclose(((+ao | s) | +ao), self.scf.ovlp)
-        self.assertAllclose((+ao | (s | +ao)), self.scf.ovlp)
+        self.assertAllclose(((-ao | s) | -ao), self.scf.ovlp)
+        self.assertAllclose((-ao | (s | -ao)), self.scf.ovlp)
         s = basis.Cotensor(np.identity(self.scf.nao), basis=(mo, mo))
         self.assertAllclose(((ao | s) | ao), self.scf.ovlp)
         self.assertAllclose((ao | (s | ao)), self.scf.ovlp)
 
     def test_ao2mo_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.Tensor(self.scf.fock, basis=(+ao, +ao))
+        f = basis.Tensor(self.scf.fock, basis=(-ao, -ao))
         self.assertAllclose(((mo | f) | mo), np.diag(self.scf.mo_energy), atol=1e-9)
         self.assertAllclose((mo | (f | mo)), np.diag(self.scf.mo_energy), atol=1e-9)
         f = basis.Cotensor(self.scf.fock, basis=(ao, ao))
@@ -198,8 +198,8 @@ class SCF_Tests(TestCase):
     def test_mo2ao_fock(self):
         ao, mo = self.ao, self.mo
         f = basis.Tensor(np.diag(self.scf.mo_energy), basis=(mo, mo))
-        self.assertAllclose(((+ao | f) | +ao), self.scf.fock, atol=1e-9)
-        self.assertAllclose((+ao | (f | +ao)), self.scf.fock, atol=1e-9)
+        self.assertAllclose(((-ao | f) | -ao), self.scf.fock, atol=1e-9)
+        self.assertAllclose((-ao | (f | -ao)), self.scf.fock, atol=1e-9)
         f = basis.Cotensor(np.diag(self.scf.mo_energy), basis=(mo, mo))
         self.assertAllclose(((ao | f) | ao), self.scf.fock, atol=1e-9)
         self.assertAllclose((ao | (f | ao)), self.scf.fock, atol=1e-9)
@@ -209,7 +209,7 @@ class SCF_Tests(TestCase):
         d = basis.Tensor(self.scf.dm, basis=(ao, ao))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
-        d = basis.Cotensor(self.scf.dm, basis=(+ao, +ao))
+        d = basis.Cotensor(self.scf.dm, basis=(-ao, -ao))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
@@ -219,8 +219,8 @@ class SCF_Tests(TestCase):
         self.assertAllclose(((ao | d) | ao), self.scf.dm)
         self.assertAllclose((ao | (d | ao)), self.scf.dm)
         d = basis.Cotensor(np.diag(self.scf.mo_occ), basis=(mo, mo))
-        self.assertAllclose(((+ao | d) | +ao), self.scf.dm)
-        self.assertAllclose((+ao | (d | +ao)), self.scf.dm)
+        self.assertAllclose(((-ao | d) | -ao), self.scf.dm)
+        self.assertAllclose((-ao | (d | -ao)), self.scf.dm)
 
     def test_mo2mo_t2(self):
         ao, mo = self.ao, self.mo

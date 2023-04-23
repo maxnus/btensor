@@ -259,8 +259,8 @@ class Tensor(OperatorTemplate):
 
     def as_basis(self, basis, inplace=False):
         for b0, b1 in zip(self.basis, basis):
-            b0 = -b0
-            b1 = -b1
+            b0 = +b0
+            b1 = +b1
             if not (b1.space >= b0.space):
                 raise BasisError(f"{b1} does not span {b0}")
         return self.project_onto(basis, inplace=inplace)
