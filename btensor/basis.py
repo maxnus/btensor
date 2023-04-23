@@ -89,7 +89,8 @@ class Basis(BasisClass):
         # Permutation + selection
         if isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
             # Convert boolean iterable to indices:
-            if (isinstance(argument, (tuple, list)) or array_like(argument)) and isinstance(argument[0], bool):
+            if ((isinstance(argument, (tuple, list)) or array_like(argument)) and
+                    any([isinstance(x, (bool, np.bool_)) for x in argument])):
                 argument = np.arange(len(argument))[argument]
             argument = ColumnPermutationMatrix(self.parent.size, argument)
         elif array_like(argument) and argument.ndim == 2:
