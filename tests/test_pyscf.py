@@ -46,8 +46,8 @@ class SCF_Tests(TestCase):
     def setUpClass(cls):
         cls.scf = make_scf_data(20)
         cls.cc = make_cc_data(cls.scf)
-        cls.ao = basis.B(cls.scf.nao, metric=cls.scf.ovlp, name='AO')
-        cls.mo = basis.B(cls.scf.mo_coeff, parent=cls.ao, name='MO')
+        cls.ao = basis.Basis(cls.scf.nao, metric=cls.scf.ovlp, name='AO')
+        cls.mo = basis.Basis(cls.scf.mo_coeff, parent=cls.ao, name='MO')
 
     def test_cc_dm_mo(self):
         nocc = self.scf.nocc
@@ -58,15 +58,15 @@ class SCF_Tests(TestCase):
         dm_ov = dm[occ, vir]
         dm_vo = dm[vir, occ]
         dm_vv = dm[vir, vir]
-        mo = basis.B(len(self.scf.mo_occ))
+        mo = basis.Basis(len(self.scf.mo_occ))
         #occ = np.arange(self.scf.nmo)[occ]
         #vir = np.arange(self.scf.nmo)[vir]
-        bo = basis.B(occ, parent=mo)
-        bv = basis.B(vir, parent=mo)
-        bdm_oo = basis.A(dm_oo, basis=(bo, bo))
-        bdm_ov = basis.A(dm_ov, basis=(bo, bv))
-        bdm_vo = basis.A(dm_vo, basis=(bv, bo))
-        bdm_vv = basis.A(dm_vv, basis=(bv, bv))
+        bo = basis.Basis(occ, parent=mo)
+        bv = basis.Basis(vir, parent=mo)
+        bdm_oo = basis.Tensor(dm_oo, basis=(bo, bo))
+        bdm_ov = basis.Tensor(dm_ov, basis=(bo, bv))
+        bdm_vo = basis.Tensor(dm_vo, basis=(bv, bo))
+        bdm_vv = basis.Tensor(dm_vv, basis=(bv, bv))
         bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
         self.assertAllclose(bdm.value, dm)
 
@@ -170,48 +170,63 @@ class SCF_Tests(TestCase):
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.A(self.scf.ovlp, basis=(~ao, ~ao))
+        s = basis.Tensor(self.scf.ovlp, basis=(~ao, ~ao))
+        self.assertAllclose(((mo | s) | mo), np.identity(self.scf.nao))
+        self.assertAllclose((mo | (s | mo)), np.identity(self.scf.nao))
+        s = basis.Cotensor(self.scf.ovlp, basis=(ao, ao))
         self.assertAllclose(((mo | s) | mo), np.identity(self.scf.nao))
         self.assertAllclose((mo | (s | mo)), np.identity(self.scf.nao))
 
     def test_mo2ao_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.A(np.identity(self.scf.nao), basis=(mo, mo))
+        s = basis.Tensor(np.identity(self.scf.nao), basis=(mo, mo))
         self.assertAllclose(((~ao | s) | ~ao), self.scf.ovlp)
         self.assertAllclose((~ao | (s | ~ao)), self.scf.ovlp)
+        s = basis.Cotensor(np.identity(self.scf.nao), basis=(mo, mo))
+        self.assertAllclose(((ao | s) | ao), self.scf.ovlp)
+        self.assertAllclose((ao | (s | ao)), self.scf.ovlp)
 
     def test_ao2mo_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.A(self.scf.fock, basis=(~ao, ~ao))
+        f = basis.Tensor(self.scf.fock, basis=(~ao, ~ao))
+        self.assertAllclose(((mo | f) | mo), np.diag(self.scf.mo_energy), atol=1e-9)
+        self.assertAllclose((mo | (f | mo)), np.diag(self.scf.mo_energy), atol=1e-9)
+        f = basis.Cotensor(self.scf.fock, basis=(ao, ao))
         self.assertAllclose(((mo | f) | mo), np.diag(self.scf.mo_energy), atol=1e-9)
         self.assertAllclose((mo | (f | mo)), np.diag(self.scf.mo_energy), atol=1e-9)
 
     def test_mo2ao_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.A(np.diag(self.scf.mo_energy), basis=(mo, mo))
+        f = basis.Tensor(np.diag(self.scf.mo_energy), basis=(mo, mo))
         self.assertAllclose(((~ao | f) | ~ao), self.scf.fock, atol=1e-9)
         self.assertAllclose((~ao | (f | ~ao)), self.scf.fock, atol=1e-9)
+        f = basis.Cotensor(np.diag(self.scf.mo_energy), basis=(mo, mo))
+        self.assertAllclose(((ao | f) | ao), self.scf.fock, atol=1e-9)
+        self.assertAllclose((ao | (f | ao)), self.scf.fock, atol=1e-9)
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(self.scf.dm, basis=(ao, ao))
+        d = basis.Tensor(self.scf.dm, basis=(ao, ao))
+        self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
+        self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
+        d = basis.Cotensor(self.scf.dm, basis=(~ao, ~ao))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))
+        d = basis.Tensor(np.diag(self.scf.mo_occ), basis=(mo, mo))
         self.assertAllclose(((ao | d) | ao), self.scf.dm)
         self.assertAllclose((ao | (d | ao)), self.scf.dm)
-        d = basis.A(np.diag(self.scf.mo_occ), basis=(~mo, ~mo))
-        self.assertAllclose(((ao | d) | ao), self.scf.dm)
-        self.assertAllclose((ao | (d | ao)), self.scf.dm)
+        d = basis.Cotensor(np.diag(self.scf.mo_occ), basis=(mo, mo))
+        self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
+        self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
 
     def test_mo2mo_t2(self):
         ao, mo = self.ao, self.mo
-        mo_occ = basis.B(slice(self.scf.nocc), parent=mo)
-        mo_vir = basis.B(slice(self.scf.nocc, self.scf.nmo), parent=mo)
-        t2s = basis.A(self.cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
+        mo_occ = basis.Basis(slice(self.scf.nocc), parent=mo)
+        mo_vir = basis.Basis(slice(self.scf.nocc, self.scf.nmo), parent=mo)
+        t2s = basis.Tensor(self.cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
         t2b = (mo, mo) | t2s | (mo, mo)
         # Add
         self.assertAllclose(t2s + t2b, 2 * t2b)
@@ -282,8 +297,8 @@ class SCF_Tests(TestCase):
         occ_y = root.make_basis(mo_coeff_occ_y)
         vir_y = root.make_basis(mo_coeff_vir_y)
 
-        t2x = basis.Array(t2x, (occ_x, occ_x, vir_x, vir_x), contravariant=True)
-        t2y = basis.Array(t2y, (occ_y, occ_y, vir_y, vir_y), contravariant=True)
+        t2x = basis.Tensor(t2x, (occ_x, occ_x, vir_x, vir_x), contravariant=True)
+        t2y = basis.Tensor(t2y, (occ_y, occ_y, vir_y, vir_y), contravariant=True)
         #result2 = basis_einsum('ijab,ijaB->bB', t2x, t2y)
         result2 = basis.einsum('ijab,ijab->ij', t2x, t2y)
         #result2 = basis_einsum('iiab,ijaB->bB', t2x, t2y)

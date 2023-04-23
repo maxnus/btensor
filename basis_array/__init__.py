@@ -4,11 +4,11 @@ the different bases are automatically taken into account.
 
 Usage:
 
->>> root = RootBasis(mol.nao, metric=mf.get_ovlp())
->>> mo = RootBasis.add_basis(mf.mo_coeff, name='mo')
->>> mo_occ = RootBasis.add_basis(mf.mo_coeff[:,occ], name='mo-occ')
->>> mo_vir = RootBasis.add_basis(mf.mo_coeff[:,vir], name='mo-vir')
->>> fov = BasisArray(fock[occ,vir], basis=(mo_occ, mo_vir))
+>>> root = Basis(mol.nao, metric=mf.get_ovlp())
+>>> mo = Basis.add_basis(mf.mo_coeff, name='mo')
+>>> mo_occ = Basis.add_basis(mf.mo_coeff[:,occ], name='mo-occ')
+>>> mo_vir = Basis.add_basis(mf.mo_coeff[:,vir], name='mo-vir')
+>>> fov = Tensor(fock[occ,vir], basis=(mo_occ, mo_vir))
 >>> # View in different basis:
 >>> print(fov.as_basis((mo, mo)))
 >>> # Contract with other BasisArray:
@@ -23,14 +23,8 @@ import numpy as np
 
 from basis_array.util.util import nobasis
 from .basis import Basis
-from .array import Array
-
-
-A = Array
-B = Basis
-
-Tensor = Array
-
+from .tensor import Tensor
+from .tensor import Cotensor
 
 from .numpy_functions import sum
 from .numpy_functions import dot

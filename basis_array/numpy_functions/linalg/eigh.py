@@ -8,7 +8,7 @@ def eigh(a):
     if a.basis[-2].root != basis.root:
         raise BasisError
     e, v = np.linalg.eigh(a.value)
-    eigenbasis = basis_array.B(v, parent=basis)
+    eigenbasis = basis_array.Basis(v, parent=basis)
     cls = type(a)
     v = cls(v, basis=(a.basis[:-1] + (eigenbasis,)))
     e = cls(e, basis=eigenbasis)

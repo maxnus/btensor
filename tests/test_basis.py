@@ -18,8 +18,8 @@ class TestBasis(TestCase):
         cls.metric_a = metric(cls.size_a)
         cls.metric_b = metric(cls.size_b)
 
-        cls.rootbasis_a = ba = basis.B(cls.size_a, metric=cls.metric_a)
-        cls.rootbasis_b = bb = basis.B(cls.size_b, metric=cls.metric_b)
+        cls.rootbasis_a = ba = basis.Basis(cls.size_a, metric=cls.metric_a)
+        cls.rootbasis_b = bb = basis.Basis(cls.size_b, metric=cls.metric_b)
 
         # Subbasis
 
@@ -34,7 +34,7 @@ class TestBasis(TestCase):
                 else:
                     t = rand_orth_mat(parent.size, parent.size-1)
                     trafos.append(t)
-                b = basis.B(t, parent=parent)
+                b = basis.Basis(t, parent=parent)
                 subbasis.append(b)
                 parent = b
             return subbasis, trafos
@@ -153,7 +153,7 @@ class TestBasis(TestCase):
         for bas in (self.basis_a, self.basis_b):
             for b in bas:
                 b1 = b
-                b2 = basis.B(rand_orth_mat(b.size), parent=b)
+                b2 = basis.Basis(rand_orth_mat(b.size), parent=b)
                 self.assertTrue(b1.space == b2.space)
                 self.assertFalse(b1.space != b2.space)
                 self.assertTrue(b1.space >= b2.space)
@@ -170,8 +170,8 @@ class TestBasis(TestCase):
     def test_same_space_2(self):
         for bas in (self.basis_a, self.basis_b):
             for i, b in enumerate(bas):
-                b1 = basis.B(rand_orth_mat(b.size), parent=b)
-                b2 = basis.B(rand_orth_mat(b.size), parent=b)
+                b1 = basis.Basis(rand_orth_mat(b.size), parent=b)
+                b2 = basis.Basis(rand_orth_mat(b.size), parent=b)
                 self.assertTrue(b1.space == b2.space)
                 self.assertFalse(b1.space != b2.space)
                 self.assertTrue(b1.space >= b2.space)
@@ -189,8 +189,8 @@ class TestBasis(TestCase):
         for bas in (self.basis_a, self.basis_b):
             for i, b in enumerate(bas[:-1]):
                 r = rand_orth_mat(b.size, b.size-1)
-                b1 = basis.B(r, parent=b)
-                b2 = basis.B(r, parent=b)
+                b1 = basis.Basis(r, parent=b)
+                b2 = basis.Basis(r, parent=b)
                 self.assertTrue(b1.space == b2.space)
                 self.assertFalse(b1.space != b2.space)
                 self.assertTrue(b1.space >= b2.space)
@@ -209,8 +209,8 @@ class TestBasis(TestCase):
             for i, b in enumerate(bas[:-1]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 1)
-                b1 = basis.B(r1, parent=b)
-                b2 = basis.B(r2, parent=b)
+                b1 = basis.Basis(r1, parent=b)
+                b2 = basis.Basis(r2, parent=b)
                 self.assertFalse(b1.space == b2.space)
                 self.assertTrue(b1.space != b2.space)
                 self.assertFalse(b1.space >= b2.space)
@@ -229,8 +229,8 @@ class TestBasis(TestCase):
             for i, b in enumerate(bas[:-2]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 2)
-                b1 = basis.B(r1, parent=b)
-                b2 = basis.B(r2, parent=b)
+                b1 = basis.Basis(r1, parent=b)
+                b2 = basis.Basis(r2, parent=b)
                 self.assertFalse(b1.space == b2.space)
                 self.assertTrue(b1.space != b2.space)
                 self.assertFalse(b1.space >= b2.space)
@@ -250,8 +250,8 @@ class TestBasis(TestCase):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = r1[:, :-1]
                 # b2 is subspace of b1
-                b1 = basis.B(r1, parent=b)
-                b2 = basis.B(r2, parent=b)
+                b1 = basis.Basis(r1, parent=b)
+                b2 = basis.Basis(r2, parent=b)
                 self.assertFalse(b1.space == b2.space)
                 self.assertTrue(b1.space != b2.space)
                 self.assertTrue(b1.space >= b2.space)

@@ -3,6 +3,7 @@ from .matrix import Matrix, IdentityMatrix
 
 
 __all__ = [
+        'array_like',
         'nobasis',
         'BasisError',
         'ndot',
@@ -12,6 +13,16 @@ __all__ = [
 
 
 nobasis = type('NoBasis', (object,), {})()
+
+
+def array_like(obj):
+    try:
+        obj.shape
+        obj.ndim
+        obj[()]
+    except (AttributeError, TypeError):
+        return False
+    return True
 
 
 class BasisError(Exception):

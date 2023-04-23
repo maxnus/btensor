@@ -21,33 +21,33 @@ class Tests(TestCase):
         cls.m = m = 6
         cls.k = k = 7
         cls.l = l = 8
-        cls.bn = bn = basis.B(n)
-        cls.bm = bm = basis.B(m)
-        cls.bk = bk = basis.B(k)
-        cls.bl = bl = basis.B(l)
+        cls.bn = bn = basis.Basis(n)
+        cls.bm = bm = basis.Basis(m)
+        cls.bk = bk = basis.Basis(k)
+        cls.bl = bl = basis.Basis(l)
 
         # 1D
         cls.d_n = d_n = np.random.rand(n)
-        cls.a_n = basis.Array(d_n, basis=bn)
+        cls.a_n = basis.Tensor(d_n, basis=bn)
         # 2D
         cls.d_nn = d_nn = np.random.rand(n, n)
         cls.d_nm = d_nm = np.random.rand(n, m)
-        cls.a_nn = basis.Array(d_nn, basis=(bn, bn))
-        cls.a_nm = basis.Array(d_nm, basis=(bn, bm))
+        cls.a_nn = basis.Tensor(d_nn, basis=(bn, bn))
+        cls.a_nm = basis.Tensor(d_nm, basis=(bn, bm))
         # 2D Hermitian
         cls.dh_nn = dh_nn = np.random.rand(n, n)
         cls.dh_nn = dh_nn = (dh_nn + dh_nn.T)
-        cls.ah_nn = basis.Array(dh_nn, basis=(bn, bn))
+        cls.ah_nn = basis.Tensor(dh_nn, basis=(bn, bn))
         # 3D
         cls.d_nnn = d_nnn = np.random.rand(n, n, n)
         cls.d_nmk = d_nmk = np.random.rand(n, m, k)
-        cls.a_nnn = basis.Array(d_nnn, basis=(bn, bn, bn))
-        cls.a_nmk = basis.Array(d_nmk, basis=(bn, bm, bk))
+        cls.a_nnn = basis.Tensor(d_nnn, basis=(bn, bn, bn))
+        cls.a_nmk = basis.Tensor(d_nmk, basis=(bn, bm, bk))
         # 4D
         cls.d_nnnn = d_nnnn = np.random.rand(n, n, n, n)
         cls.d_nmkl = d_nmkl = np.random.rand(n, m, k, l)
-        cls.a_nnnn = basis.Array(d_nnnn, basis=(bn, bn, bn, bn))
-        cls.a_nmkl = basis.Array(d_nmkl, basis=(bn, bm, bk, bl))
+        cls.a_nnnn = basis.Tensor(d_nnnn, basis=(bn, bn, bn, bn))
+        cls.a_nmkl = basis.Tensor(d_nmkl, basis=(bn, bm, bk, bl))
 
         # --- Subspaces
 
@@ -55,7 +55,7 @@ class Tests(TestCase):
         #cls.m2 = m2 = 12
         #cls.k2 = k2 = 13
         #cls.l2 = l2 = 14
-        cls.bn2 = bn2 = basis.B(rand_orth_mat(n, n2), parent=bn)
+        cls.bn2 = bn2 = basis.Basis(rand_orth_mat(n, n2), parent=bn)
 
         cls.numpy_arrays_sq = [None, cls.d_n, cls.d_nn, cls.d_nnn, cls.d_nnnn]
         cls.basis_arrays_sq = [None, cls.a_n, cls.a_nn, cls.a_nnn, cls.a_nnnn]
@@ -224,8 +224,8 @@ class DotTests(TestCase):
         a = np.random.rand(n)
         b = np.random.rand(n)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=nobasis)
-        ab = basis.Array(b, basis=nobasis)
+        aa = basis.Tensor(a, basis=nobasis)
+        ab = basis.Tensor(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -234,8 +234,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(nobasis, nobasis))
-        ab = basis.Array(b, basis=nobasis)
+        aa = basis.Tensor(a, basis=(nobasis, nobasis))
+        ab = basis.Tensor(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -244,8 +244,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(nobasis, nobasis, nobasis))
-        ab = basis.Array(b, basis=nobasis)
+        aa = basis.Tensor(a, basis=(nobasis, nobasis, nobasis))
+        ab = basis.Tensor(b, basis=nobasis)
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -254,8 +254,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(nobasis, nobasis))
-        ab = basis.Array(b, basis=(nobasis, basis.nobasis))
+        aa = basis.Tensor(a, basis=(nobasis, nobasis))
+        ab = basis.Tensor(b, basis=(nobasis, basis.nobasis))
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -264,8 +264,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k, l)
         c = np.dot(a, b)
-        aa = basis.Array(a, basis=(basis.nobasis, basis.nobasis, basis.nobasis))
-        ab = basis.Array(b, basis=(basis.nobasis, basis.nobasis))
+        aa = basis.Tensor(a, basis=(basis.nobasis, basis.nobasis, basis.nobasis))
+        ab = basis.Tensor(b, basis=(basis.nobasis, basis.nobasis))
         ac = basis.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -278,11 +278,11 @@ class EinsumTests(TestCase):
         b = np.random.rand(m, k)
         contract = 'ij,jk->ik'
         c = np.einsum(contract, a, b)
-        bn = basis.B(n)
-        bm = basis.B(m)
-        bk = basis.B(k)
-        aa = basis.Array(a, basis=(bn, bm))
-        ab = basis.Array(b, basis=(bm, bk))
+        bn = basis.Basis(n)
+        bm = basis.Basis(m)
+        bk = basis.Basis(k)
+        aa = basis.Tensor(a, basis=(bn, bm))
+        ab = basis.Tensor(b, basis=(bm, bk))
         ac = basis.einsum(contract, aa, ab)
         self.assertAllclose(ac, c)
 
@@ -293,13 +293,13 @@ class EinsumTests(TestCase):
         c = np.random.rand(k, l)
         contract = 'ij,jk,kl->il'
         d = np.einsum(contract, a, b, c)
-        bn = basis.B(n)
-        bm = basis.B(m)
-        bk = basis.B(k)
-        bl = basis.B(l)
-        aa = basis.Array(a, basis=(bn, bm))
-        ab = basis.Array(b, basis=(bm, bk))
-        ac = basis.Array(c, basis=(bk, bl))
+        bn = basis.Basis(n)
+        bm = basis.Basis(m)
+        bk = basis.Basis(k)
+        bl = basis.Basis(l)
+        aa = basis.Tensor(a, basis=(bn, bm))
+        ab = basis.Tensor(b, basis=(bm, bk))
+        ac = basis.Tensor(c, basis=(bk, bl))
         ad = basis.einsum(contract, aa, ab, ac)
         self.assertAllclose(ad, d)
 
@@ -309,10 +309,10 @@ class EinsumTests(TestCase):
         b = np.random.rand(m, n)
         contract = 'ij,ji->'
         c = np.einsum(contract, a, b)
-        bn = basis.B(n)
-        bm = basis.B(m)
-        aa = basis.Array(a, basis=(bn, bm))
-        ab = basis.Array(b, basis=(bm, bn))
+        bn = basis.Basis(n)
+        bm = basis.Basis(m)
+        aa = basis.Tensor(a, basis=(bn, bm))
+        ab = basis.Tensor(b, basis=(bm, bn))
         ac = basis.einsum(contract, aa, ab)
         self.assertAllclose(ac, c)
 
@@ -322,12 +322,12 @@ class EinsumTests(TestCase):
         b = np.random.rand(k, l)
         contract = 'ijk,kl->ijl'
         c = np.einsum(contract, a, b)
-        bn = basis.B(n)
-        bm = basis.B(m)
-        bk = basis.B(k)
-        bl = basis.B(l)
-        aa = basis.Array(a, basis=(bn, bm, bk))
-        ab = basis.Array(b, basis=(bk, bl))
+        bn = basis.Basis(n)
+        bm = basis.Basis(m)
+        bk = basis.Basis(k)
+        bl = basis.Basis(l)
+        aa = basis.Tensor(a, basis=(bn, bm, bk))
+        ab = basis.Tensor(b, basis=(bk, bl))
         ac = basis.einsum(contract, aa, ab)
         self.assertAllclose(ac, c)
 

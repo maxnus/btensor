@@ -45,7 +45,7 @@ class BasisClass:
     def as_basis(self, other):
         """Get overlap matrix as an Array with another basis."""
         matprod = self._as_basis_matprod(other)
-        return Array(matprod.evaluate(), basis=(~other, ~self))
+        return Tensor(matprod.evaluate(), basis=(~other, ~self))
 
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
@@ -84,12 +84,15 @@ class Basis(BasisClass):
         if isinstance(argument, (int, np.integer)):
             argument = IdentityMatrix(argument)
         # Permutation + selection
-        if isinstance(argument, (tuple, list, slice)) or (getattr(argument, 'ndim', None) == 1):
+        if isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
             argument = ColumnPermutationMatrix(self.parent.size, argument)
-        elif isinstance(argument, (np.ndarray, Matrix)) and argument.ndim == 2:
+        elif array_like(argument) and argument.ndim == 2:
+            argument = GeneralMatrix(argument)
+        elif isinstance(argument, Matrix):
             pass
         else:
             raise ValueError("Invalid rotation: %r of type %r" % (argument, type(argument)))
+        assert isinstance(argument, Matrix)
 
         if not self.is_root() and (argument.shape[0] != self.parent.size):
             raise ValueError("Invalid size: %d (expected %d)" % (argument.shape[0], self.parent.size))
@@ -317,4 +320,5 @@ class DualBasis(BasisClass):
             matprod = matprod.simplify()
         return matprod
 
-from .array import Array
+
+from .tensor import Tensor

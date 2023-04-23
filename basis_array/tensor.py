@@ -13,7 +13,7 @@ def value_if_scalar(array):
     return array.value
 
 
-class Array(OperatorTemplate):
+class Tensor(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
     def __init__(self, value, basis):
@@ -188,6 +188,13 @@ class Array(OperatorTemplate):
 
     # ---
 
+    @staticmethod
+    def _get_basis_transform(basis1, basis2):
+        # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
+        # transform = (basis1 | basis2.dual()).value
+        transform = basis2.dual()._as_basis_matprod(basis1, simplify=True)
+        return transform
+
     def project_onto(self, basis, inplace=False):
         """Transform to different set of basis.
 
@@ -223,7 +230,8 @@ class Array(OperatorTemplate):
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
             #ovlp = (self.basis[i] | bas.dual()).value
-            ovlp = bas.dual()._as_basis_matprod(self.basis[i], simplify=True)
+            #ovlp = bas.dual()._as_basis_matprod(self.basis[i], simplify=True)
+            ovlp = self._get_basis_transform(self.basis[i], bas)
             if len(ovlp) == 1 and isinstance(ovlp[0], IdentityMatrix):
                 raise NotImplementedError
             elif len(ovlp) == 1 and isinstance(ovlp[0], PermutationMatrix):
@@ -328,7 +336,7 @@ class Array(OperatorTemplate):
         v1 = self.value
         if isinstance(other, numbers.Number):
             v2 = other
-        elif isinstance(other, Array):
+        elif isinstance(other, Tensor):
             if self.basis == other.basis:
                 v2 = other.value
             elif self.is_compatible(other):
@@ -342,3 +350,15 @@ class Array(OperatorTemplate):
         if swap:
             v1, v2 = v2, v1
         return type(self)(operator(v1, v2), basis=basis)
+
+
+class Cotensor(Tensor):
+
+    @property
+    def variance(self):
+        return tuple([-1 if isinstance(b, DualBasis) else 1 for b in self.basis])
+
+    @staticmethod
+    def _get_basis_transform(basis1, basis2):
+        transform = basis2._as_basis_matprod(basis1.dual(), simplify=True)
+        return transform

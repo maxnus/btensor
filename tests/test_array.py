@@ -11,12 +11,12 @@ class ArithmetricTestsSameBasis(TestCase):
     def setUpClass(cls):
         np.random.seed(0)
         n1, n2 = 5, 6
-        b1 = basis.B(n1)
-        b2 = basis.B(n2)
+        b1 = basis.Basis(n1)
+        b2 = basis.Basis(n2)
         cls.d1 = np.random.rand(n1, n2)
         cls.d2 = np.random.rand(n1, n2)
-        cls.a1 = basis.Array(cls.d1, basis=(b1, b2))
-        cls.a2 = basis.Array(cls.d2, basis=(b1, b2))
+        cls.a1 = basis.Tensor(cls.d1, basis=(b1, b2))
+        cls.a2 = basis.Tensor(cls.d2, basis=(b1, b2))
 
     def test_negation(self):
         self.assertAllclose((-self.a1).value, -self.d1)
@@ -76,20 +76,20 @@ class ArithmetricTestsDifferentBasis(TestCase):
         n1, n2 = 5, 6
         n11, n12 = 3, 4
         n21, n22 = 6, 2
-        b1 = basis.B(n1)
-        b2 = basis.B(n2)
+        b1 = basis.Basis(n1)
+        b2 = basis.Basis(n2)
         cls.c11 = rand_orth_mat(n1, n11)
         cls.c12 = rand_orth_mat(n1, n12)
         cls.c21 = rand_orth_mat(n2, n21)
         cls.c22 = rand_orth_mat(n2, n22)
-        b11 = basis.B(cls.c11, parent=b1)
-        b12 = basis.B(cls.c12, parent=b1)
-        b21 = basis.B(cls.c21, parent=b2)
-        b22 = basis.B(cls.c22, parent=b2)
+        b11 = basis.Basis(cls.c11, parent=b1)
+        b12 = basis.Basis(cls.c12, parent=b1)
+        b21 = basis.Basis(cls.c21, parent=b2)
+        b22 = basis.Basis(cls.c22, parent=b2)
         cls.d1 = np.random.rand(n11, n21)
         cls.d2 = np.random.rand(n12, n22)
-        cls.a1 = basis.Array(cls.d1, basis=(b11, b21))
-        cls.a2 = basis.Array(cls.d2, basis=(b12, b22))
+        cls.a1 = basis.Tensor(cls.d1, basis=(b11, b21))
+        cls.a2 = basis.Tensor(cls.d2, basis=(b12, b22))
         # To check
         cls.t1 = np.linalg.multi_dot((cls.c11, cls.d1, cls.c21.T))
         cls.t2 = np.linalg.multi_dot((cls.c12, cls.d2, cls.c22.T))
@@ -150,16 +150,16 @@ class SubbasisTests(TestCase):
         np.random.seed(0)
         n1, n2 = 5, 6
         m1, m2 = 3, 4
-        b1 = basis.B(n1)
-        b2 = basis.B(n2)
+        b1 = basis.Basis(n1)
+        b2 = basis.Basis(n2)
         cls.c1 = rand_orth_mat(n1, m1)
         cls.c2 = rand_orth_mat(n2, m2)
-        sb1 = basis.B(cls.c1, parent=b1)
-        sb2 = basis.B(cls.c2, parent=b2)
+        sb1 = basis.Basis(cls.c1, parent=b1)
+        sb2 = basis.Basis(cls.c2, parent=b2)
         cls.d1 = np.random.rand(n1, n2)
         cls.d2 = np.linalg.multi_dot((cls.c1.T, cls.d1, cls.c2))
-        cls.a1 = basis.Array(cls.d1, basis=(b1, b2))
-        cls.a2 = basis.Array(cls.d2, basis=(sb1, sb2))
+        cls.a1 = basis.Tensor(cls.d1, basis=(b1, b2))
+        cls.a2 = basis.Tensor(cls.d2, basis=(sb1, sb2))
 
     #def test_basis_setter(self):
     #    a1a = self.a1.project_onto(self.a2.basis)
