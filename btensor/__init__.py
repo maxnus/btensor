@@ -26,7 +26,4 @@ from .basis import Basis
 from .tensor import Tensor
 from .tensor import Cotensor
 
-from .numpy_functions import sum
-from .numpy_functions import dot
-from .numpy_functions import einsum
-from .numpy_functions import linalg
+from .numpy_functions import *

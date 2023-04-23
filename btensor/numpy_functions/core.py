@@ -1,6 +1,16 @@
 import numpy as np
+import btensor as bt
 from btensor.util import ndot, overlap
 from btensor.util import BasisError
+
+
+__all__ = [
+    'zeros', 'sum', 'dot', 'trace',
+]
+
+def zeros(basis, **kwargs):
+    shape = tuple(b.size for b in basis)
+    return bt.Tensor(np.zeros(shape, **kwargs), basis=basis)
 
 
 def sum(a, axis=None):
