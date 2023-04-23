@@ -6,8 +6,7 @@ from btensor.space import Space
 class BasisClass:
 
     def __repr__(self):
-        name = (self.name or type(self).__name__)
-        return '%s(id= %d, size= %d)' % (name, self.id, self.size)
+        return '%s(id= %d, size= %d, name= %s)' % (type(self).__name__, self.id, self.size, self.name)
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their ID."""
