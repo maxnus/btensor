@@ -1,6 +1,6 @@
 import numpy as np
-from basis_array.util import *
-from basis_array.space import Space
+from btensor.util import *
+from btensor.space import Space
 
 
 class BasisClass:

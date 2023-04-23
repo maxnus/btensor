@@ -1,7 +1,7 @@
 import unittest
 import itertools
 import numpy as np
-from basis_array import util
+from btensor import util
 from testing import TestCase, powerset
 
 

@@ -1,6 +1,6 @@
 import numpy as np
-from basis_array.util import ndot, overlap
-from basis_array.util import BasisError
+from btensor.util import ndot, overlap
+from btensor.util import BasisError
 
 
 def sum(a, axis=None):

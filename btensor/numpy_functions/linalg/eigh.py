@@ -1,6 +1,6 @@
 import numpy as np
-import basis_array
-from basis_array.util.util import BasisError
+import btensor
+from btensor.util.util import BasisError
 
 
 def eigh(a):
@@ -8,7 +8,7 @@ def eigh(a):
     if a.basis[-2].root != basis.root:
         raise BasisError
     e, v = np.linalg.eigh(a.value)
-    eigenbasis = basis_array.Basis(v, parent=basis)
+    eigenbasis = btensor.Basis(v, parent=basis)
     cls = type(a)
     v = cls(v, basis=(a.basis[:-1] + (eigenbasis,)))
     e = cls(e, basis=eigenbasis)

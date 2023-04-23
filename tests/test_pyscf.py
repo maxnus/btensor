@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 import scipy.stats
 from collections import namedtuple
-import basis_array as basis
+import btensor as basis
 from testing import TestCase, rand_orth_mat
 
 

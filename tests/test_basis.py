@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import basis_array as basis
+import btensor as basis
 from testing import TestCase, rand_orth_mat
 
 

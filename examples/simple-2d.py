@@ -1,5 +1,5 @@
 import numpy as np
-from basis_array import Basis, Tensor
+from btensor import Basis, Tensor
 
 
 # The standard euclidian 2D basis:

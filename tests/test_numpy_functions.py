@@ -3,8 +3,8 @@ import itertools
 import string
 import numpy as np
 
-import basis_array as basis
-from basis_array import nobasis
+import btensor as basis
+from btensor import nobasis
 from testing import TestCase, rand_orth_mat, powerset
 
 

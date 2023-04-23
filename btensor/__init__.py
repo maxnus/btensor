@@ -21,7 +21,7 @@ Usage:
 
 import numpy as np
 
-from basis_array.util.util import nobasis
+from btensor.util.util import nobasis
 from .basis import Basis
 from .tensor import Tensor
 from .tensor import Cotensor

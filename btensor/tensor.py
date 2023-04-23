@@ -1,7 +1,7 @@
 import numbers
 import string
 import numpy as np
-from basis_array.util import *
+from btensor.util import *
 from .basis import Basis, BasisClass, Cobasis
 from .optemplate import OperatorTemplate
 from . import numpy_functions
