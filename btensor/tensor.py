@@ -58,7 +58,7 @@ class Tensor(OperatorTemplate):
             if b is nobasis:
                 continue
             if not isinstance(b, BasisClass):
-                raise ValueError("Basis instance or nobasis required")
+                raise ValueError("Basis instance or nobasis required.")
             if self.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
                                  i+1, self.shape[i], b.size))
@@ -203,29 +203,29 @@ class Tensor(OperatorTemplate):
         Note that this can reduce the rank of the array, for example when trying to express
         a purely occupied quantitiy in a purely virtual basis.
         """
-        if len(basis) != len(self.basis):
-            raise ValueError
+        basis = self._broadcast_basis(basis)
+        assert len(basis) == len(self.basis)
         for bas in basis:
-            if not (isinstance(bas, BasisClass) or bas is nobasis):
+            if not (isinstance(bas, BasisClass) or bas in (nobasis, None)):
                 raise ValueError
 
         subscripts = string.ascii_lowercase[:self.ndim]
         operands = [self.value]
         result = list(subscripts)
-        basis_out = list(basis)
+        basis_out = list(self.basis)
         for i, bas in enumerate(basis):
             if bas is None or (bas == self.basis[i]):
-                if bas is None:
-                    basis_out[i] = self.basis[i]
+                #if bas is None:
+                #    basis_out[i] = self.basis[i]
                 continue
             # Remove basis:
             if bas is nobasis:
                 basis_out[i] = nobasis
                 continue
-            # Add basis:
-            # Buggy
+
+            basis_out[i] = bas
+            # Add basis (buggy):
             if self.basis[i] is nobasis:
-                basis_out[i] = bas
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
@@ -255,10 +255,14 @@ class Tensor(OperatorTemplate):
             self.value = value
             self._basis = basis_out
             return self
-        return type(self)(value, basis=basis)
+        return type(self)(value, basis=basis_out)
 
     def as_basis(self, basis, inplace=False):
+        if isinstance(basis, BasisClass):
+            basis = (basis,)
         for b0, b1 in zip(self.basis, basis):
+            if b1 is None:
+                continue
             b0 = +b0
             b1 = +b1
             if not (b1.space >= b0.space):
@@ -273,19 +277,28 @@ class Tensor(OperatorTemplate):
 
     def __or__(self, basis):
         """To allow basis transformation as (array | basis)"""
-        if isinstance(basis, BasisClass):
-            basis = (basis,)
-        if isinstance(basis, tuple):
-            basis = self.basis[:-len(basis)] + basis
+        # Left-pad:
+        basis = self._broadcast_basis(basis, pad='left')
         return self.as_basis(basis)
 
     def __ror__(self, basis):
         """To allow basis transformation as (basis | array)"""
+        return self.as_basis(basis)
+
+    def _broadcast_basis(self, basis, pad='right'):
+        """Broadcast basis to same length as self.basis."""
         if isinstance(basis, BasisClass):
             basis = (basis,)
-        if isinstance(basis, tuple):
-            basis = basis + self.basis[len(basis):]
-        return self.as_basis(basis)
+        npad = len(self.basis) - len(basis)
+        if npad == 0:
+            return tuple(basis)
+        if npad < 0:
+            raise ValueError
+        if pad == 'right':
+            return tuple(basis) + npad*(None,)
+        if pad == 'left':
+            return npad*(None,) + tuple(basis)
+        raise ValueError
 
     # Arithmetic
 

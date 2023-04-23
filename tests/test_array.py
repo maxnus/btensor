@@ -142,6 +142,12 @@ class ArithmetricTestsDifferentBasis(TestCase):
     def test_power(self):
         self.assertAllclose((self.a1 ** self.a2).value, self.t1 ** self.t2)
 
+    @unittest.skip("TODO")
+    def test_iadd(self):
+        a1 = self.a1
+        a1 += 0
+        self.assertEqual(id(a1), id(self.a1))
+
 
 class SubbasisTests(TestCase):
 
