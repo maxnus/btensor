@@ -88,6 +88,9 @@ class Basis(BasisClass):
             argument = IdentityMatrix(argument)
         # Permutation + selection
         if isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
+            # Convert boolean iterable to indices:
+            if (isinstance(argument, (tuple, list)) or array_like(argument)) and isinstance(argument[0], bool):
+                argument = np.arange(len(argument))[argument]
             argument = ColumnPermutationMatrix(self.parent.size, argument)
         elif array_like(argument) and argument.ndim == 2:
             argument = GeneralMatrix(argument)
