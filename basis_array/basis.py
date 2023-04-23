@@ -45,7 +45,7 @@ class BasisClass:
     def as_basis(self, other):
         """Get overlap matrix as an Array with another basis."""
         matprod = self._as_basis_matprod(other)
-        return Array(matprod.evaluate(), basis=(other, self))
+        return Array(matprod.evaluate(), basis=(~other, ~self))
 
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
@@ -302,6 +302,7 @@ class DualBasis(BasisClass):
 
     def coeff_in_basis(self, basis):
         matrices = self.get_nondual().coeff_in_basis(basis)
+        # To raise right-hand index:
         matrices.append(self.metric)
         return matrices
 

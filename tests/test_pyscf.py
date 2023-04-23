@@ -170,42 +170,42 @@ class SCF_Tests(TestCase):
 
     def test_ao2mo_ovlp(self):
         ao, mo = self.ao, self.mo
-        s = basis.A(self.scf.ovlp, basis=(ao, ao))
+        s = basis.A(self.scf.ovlp, basis=(~ao, ~ao))
         self.assertAllclose(((mo | s) | mo), np.identity(self.scf.nao))
         self.assertAllclose((mo | (s | mo)), np.identity(self.scf.nao))
 
     def test_mo2ao_ovlp(self):
         ao, mo = self.ao, self.mo
         s = basis.A(np.identity(self.scf.nao), basis=(mo, mo))
-        self.assertAllclose(((ao | s) | ao), self.scf.ovlp)
-        self.assertAllclose((ao | (s | ao)), self.scf.ovlp)
+        self.assertAllclose(((~ao | s) | ~ao), self.scf.ovlp)
+        self.assertAllclose((~ao | (s | ~ao)), self.scf.ovlp)
 
     def test_ao2mo_fock(self):
         ao, mo = self.ao, self.mo
-        f = basis.A(self.scf.fock, basis=(ao, ao))
+        f = basis.A(self.scf.fock, basis=(~ao, ~ao))
         self.assertAllclose(((mo | f) | mo), np.diag(self.scf.mo_energy), atol=1e-9)
         self.assertAllclose((mo | (f | mo)), np.diag(self.scf.mo_energy), atol=1e-9)
 
     def test_mo2ao_fock(self):
         ao, mo = self.ao, self.mo
         f = basis.A(np.diag(self.scf.mo_energy), basis=(mo, mo))
-        self.assertAllclose(((ao | f) | ao), self.scf.fock, atol=1e-9)
-        self.assertAllclose((ao | (f | ao)), self.scf.fock, atol=1e-9)
+        self.assertAllclose(((~ao | f) | ~ao), self.scf.fock, atol=1e-9)
+        self.assertAllclose((~ao | (f | ~ao)), self.scf.fock, atol=1e-9)
 
     def test_ao2mo_dm(self):
         ao, mo = self.ao, self.mo
-        d = basis.A(self.scf.dm, basis=(~ao, ~ao))
+        d = basis.A(self.scf.dm, basis=(ao, ao))
         self.assertAllclose(((mo | d) | mo), np.diag(self.scf.mo_occ))
         self.assertAllclose((mo | (d | mo)), np.diag(self.scf.mo_occ))
 
     def test_mo2ao_dm(self):
         ao, mo = self.ao, self.mo
         d = basis.A(np.diag(self.scf.mo_occ), basis=(mo, mo))
-        self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
-        self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
+        self.assertAllclose(((ao | d) | ao), self.scf.dm)
+        self.assertAllclose((ao | (d | ao)), self.scf.dm)
         d = basis.A(np.diag(self.scf.mo_occ), basis=(~mo, ~mo))
-        self.assertAllclose(((~ao | d) | ~ao), self.scf.dm)
-        self.assertAllclose((~ao | (d | ~ao)), self.scf.dm)
+        self.assertAllclose(((ao | d) | ao), self.scf.dm)
+        self.assertAllclose((ao | (d | ao)), self.scf.dm)
 
     def test_mo2mo_t2(self):
         ao, mo = self.ao, self.mo

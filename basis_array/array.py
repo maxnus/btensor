@@ -87,7 +87,7 @@ class Array(OperatorTemplate):
 
     @property
     def variance(self):
-        return tuple([-1 if isinstance(b, DualBasis) else 1 for b in self.basis])
+        return tuple([1 if isinstance(b, DualBasis) else -1 for b in self.basis])
 
     def as_variance(self, variance):
         if np.ndim(variance) == 0:
@@ -222,8 +222,8 @@ class Array(OperatorTemplate):
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
-            #ovlp = (self.basis[i].dual() | bas).value
-            ovlp = bas._as_basis_matprod(self.basis[i].dual(), simplify=True)
+            #ovlp = (self.basis[i] | bas.dual()).value
+            ovlp = bas.dual()._as_basis_matprod(self.basis[i], simplify=True)
             if len(ovlp) == 1 and isinstance(ovlp[0], IdentityMatrix):
                 raise NotImplementedError
             elif len(ovlp) == 1 and isinstance(ovlp[0], PermutationMatrix):

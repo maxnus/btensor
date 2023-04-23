@@ -29,6 +29,8 @@ from .array import Array
 A = Array
 B = Basis
 
+Tensor = Array
+
 
 from .numpy_functions import sum
 from .numpy_functions import dot
