@@ -169,6 +169,11 @@ class Tensor(OperatorTemplate):
             return type(self)(value, basis=basis)
         raise NotImplementedError("Key= %r of type %r" % (key, type(key)))
 
+    def __setitem__(self, key, value):
+        if isinstance(value, Tensor):
+            value = value.value
+        self.value[key] = value
+
     def transpose(self, axes=None):
         value = self.value.transpose(axes)
         if axes is None:

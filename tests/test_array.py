@@ -51,6 +51,14 @@ class ArithmetricTestsSameBasis(TestCase):
     def test_getitem_elipsis(self):
         self.assertAllclose(self.a1[...].value, self.d1[...])
 
+    def test_getitem_list_array(self):
+        self.assertAllclose(self.a1[[0]], self.d1[[0]])
+        self.assertAllclose(self.a1[np.asarray([0])], self.d1[np.asarray([0])])
+        self.assertAllclose(self.a1[[0, 2, 1]], self.d1[[0, 2, 1]])
+        self.assertAllclose(self.a1[np.asarray([0, 2, 1])], self.d1[np.asarray([0, 2, 1])])
+        self.assertAllclose(self.a1[[-2, 1]], self.d1[[-2, 1]])
+        self.assertAllclose(self.a1[np.asarray([-2, 1])], self.d1[np.asarray([-2, 1])])
+
     def test_getitem_tuple(self):
         self.assertAllclose(self.a1[0, 2], self.d1[0, 2])
         self.assertAllclose(self.a1[-1, 2], self.d1[-1, 2])
@@ -62,13 +70,25 @@ class ArithmetricTestsSameBasis(TestCase):
         self.assertAllclose(self.a1[..., :2], self.d1[..., :2])
         self.assertAllclose(self.a1[::-1, ...], self.d1[::-1, ...])
 
-    def test_getitem_list_array(self):
-        self.assertAllclose(self.a1[[0]], self.d1[[0]])
-        self.assertAllclose(self.a1[np.asarray([0])], self.d1[np.asarray([0])])
-        self.assertAllclose(self.a1[[0, 2, 1]], self.d1[[0, 2, 1]])
-        self.assertAllclose(self.a1[np.asarray([0, 2, 1])], self.d1[np.asarray([0, 2, 1])])
-        self.assertAllclose(self.a1[[-2, 1]], self.d1[[-2, 1]])
-        self.assertAllclose(self.a1[np.asarray([-2, 1])], self.d1[np.asarray([-2, 1])])
+    def test_setitem(self):
+        def test(key, value):
+            a1 = self.a1.copy()
+            d1 = self.d1.copy()
+            a1[key] = value
+            d1[key] = value
+            self.assertAllclose(a1, d1)
+
+        test(0, 0)
+        test(slice(None), 0)
+        test(slice(1, 2), 0)
+        test(..., 0)
+        test([1, 2], 0)
+        test(([1, 2, -1], [0, 3, 2]), 0)
+        test((0, 2), 0)
+        test((slice(None), 2), 0)
+        test((slice(1, 2), slice(3, 0, -1)), 0)
+        test((slice(1, 2), [0, 2]), 0)
+
 
     #def test_getitem_boolean(self):
     #    mask = [True, True, False, False, True]
