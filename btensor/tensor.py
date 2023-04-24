@@ -130,6 +130,10 @@ class Tensor(OperatorTemplate):
         """Construct and return sub-Array."""
         if isinstance(key, int):
             return type(self)(self.value[key], basis=self.basis[1:])
+        if isinstance(key, (list, np.ndarray)):
+            value = self.value[key]
+            basis = (self.basis[0].make_basis(key),) + self.basis[1:]
+            return type(self)(value, basis=basis)
         if key is Ellipsis:
             return self
         if isinstance(key, slice) or key is np.newaxis:
