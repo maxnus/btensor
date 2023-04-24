@@ -1,4 +1,5 @@
 import numpy as np
+from functools import lru_cache
 from btensor.util import *
 from btensor.space import Space
 
@@ -44,6 +45,9 @@ class BasisClass:
     def _as_basis_matprod(self, other, simplify=False):
         raise NotImplementedError
 
+    cache_size = 100
+
+    @lru_cache(cache_size)
     def as_basis(self, other):
         """Get overlap matrix as an Array with another basis."""
         matprod = self._as_basis_matprod(other)
@@ -76,7 +80,8 @@ class Basis(BasisClass):
 
     __next_id = 1
 
-    def __init__(self, argument, parent=None, metric=None, name=None, debug=False):
+    def __init__(self, argument, parent=None, metric=None, name=None, debug=False, **kwargs):
+        super().__init__(**kwargs)
         self.parent = parent
         self._id = self._get_next_id()
         self.name = name
@@ -283,7 +288,8 @@ class Basis(BasisClass):
 
 class Cobasis(BasisClass):
 
-    def __init__(self, basis):
+    def __init__(self, basis, **kwargs):
+        super().__init__(**kwargs)
         self._basis = basis
 
     @property
