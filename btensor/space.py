@@ -20,7 +20,7 @@ class Space:
         return len(self.basis)
 
     def _svd(self, other):
-        ovlp = (~self.basis | other.basis).value
+        ovlp = (~self.basis | other.basis)._value
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return sv
 

@@ -68,7 +68,7 @@ class SCF_Tests(TestCase):
         bdm_vo = basis.Tensor(dm_vo, basis=(bv, bo))
         bdm_vv = basis.Tensor(dm_vv, basis=(bv, bv))
         bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
-        self.assertAllclose(bdm.value, dm)
+        self.assertAllclose(bdm._value, dm)
 
     def test_ao_mo_transform(self):
         ao, mo = self.ao, self.mo
@@ -253,7 +253,7 @@ class SCF_Tests(TestCase):
         self.assertAllclose(t2s.trace().trace(), t2b.trace().trace())
         # Restore
         t2r = t2b.proj((mo_occ, mo_occ, mo_vir, mo_vir))
-        self.assertAllclose(t2s.value, t2r.value)
+        self.assertAllclose(t2s._value, t2r._value)
         # Empty array for orthogonal basis
         t2e = t2s.proj((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assertAllclose(t2e, 0)
@@ -309,13 +309,13 @@ class SCF_Tests(TestCase):
         # ERIs are transformed without S, T is transformed with S!
         ref = np.einsum('ijab,pi,qj,ra,sb->pqrs', t2x, r_occ, r_occ, r_vir, r_vir, optimize=True)
 
-        print(np.linalg.norm(t2x_ao.value - ref))
+        print(np.linalg.norm(t2x_ao._value - ref))
 
         t2x_mo = (occ_x, occ_x) | t2x_ao | (vir_x, vir_x)
 
         #t2x_mo = t2x_ao @ (vir_x, vir_x)
 
-        print(np.linalg.norm(t2x_mo.value - t2x.value))
+        print(np.linalg.norm(t2x_mo._value - t2x._value))
 
 
 if __name__ == '__main__':

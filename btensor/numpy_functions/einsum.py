@@ -64,12 +64,12 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
                 idx2 = free_indices.pop(0)
                 labels_out[i][pos] = idx2
                 labels_out.append([idx, idx2])
-                overlaps.append((basis | basis2).value)
+                overlaps.append((basis | basis2)._value)
 
     # Return
     subscripts_out = ','.join([''.join(label) for label in labels_out])
     subscripts_out = '->'.join((subscripts_out, result))
-    operands_out = [op.value for op in operands]
+    operands_out = [op._value for op in operands]
     operands_out.extend(overlaps)
     values = einsumfunc(subscripts_out, *operands_out, **kwargs)
     basis_out = tuple([basis_dict[idx] for idx in result])

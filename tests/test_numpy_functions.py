@@ -66,7 +66,7 @@ class Tests(TestCase):
 
     def test_zeros(self):
         self.assertAllclose(
-            bt.zeros((self.bn, self.bm, self.bk)).value,
+            bt.zeros((self.bn, self.bm, self.bk))._value,
             np.zeros((self.n, self.m, self.k)))
 
     def test_transpose_property(self):
@@ -138,11 +138,11 @@ class Tests(TestCase):
                                 self.numpy_arrays_rt[ndim][:, ..., :])
 
     def test_newaxis(self):
-        self.assertAllclose(self.a_nn[None].value, self.d_nn[None])
+        self.assertAllclose(self.a_nn[None]._value, self.d_nn[None])
         self.assertTrue(self.a_nn[None].shape == self.d_nn[None].shape)
-        self.assertAllclose(self.a_nn[:, None].value, self.d_nn[:, None])
+        self.assertAllclose(self.a_nn[:, None]._value, self.d_nn[:, None])
         self.assertTrue(self.a_nn[:, None].shape == self.d_nn[:, None].shape)
-        self.assertAllclose(self.a_nn[None, None].value, self.d_nn[None, None])
+        self.assertAllclose(self.a_nn[None, None]._value, self.d_nn[None, None])
         self.assertTrue(self.a_nn[None, None].shape == self.d_nn[None, None].shape)
 
     def test_eigh(self):

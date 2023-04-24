@@ -7,7 +7,7 @@ def eigh(a):
     basis = a.basis[-1]
     if a.basis[-2].root != basis.root:
         raise BasisError
-    e, v = np.linalg.eigh(a.value)
+    e, v = np.linalg.eigh(a._value)
     eigenbasis = btensor.Basis(v, parent=basis)
     cls = type(a)
     v = cls(v, basis=(a.basis[:-1] + (eigenbasis,)))
