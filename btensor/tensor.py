@@ -173,6 +173,12 @@ class Tensor(OperatorTemplate):
         if isinstance(value, Tensor):
             value = value.value
         self.value[key] = value
+        # Not required, since np.newaxis has no effect in assignment?
+        #if not isinstance(key, tuple) or np.newaxis not in key:
+        #    return
+        #basis_old = list(self.basis)
+        #basis_new = tuple(nobasis if elem is np.newaxis else basis_old.pop(0) for elem in key)
+        #self.basis = basis_new
 
     def transpose(self, axes=None):
         value = self.value.transpose(axes)

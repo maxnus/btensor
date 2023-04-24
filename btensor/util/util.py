@@ -12,7 +12,13 @@ __all__ = [
         ]
 
 
-nobasis = type('NoBasis', (object,), {})()
+class NoBasis:
+
+    def __repr__(self):
+        return type(self).__name__
+
+
+nobasis = NoBasis()
 
 
 def array_like(obj):
