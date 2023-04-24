@@ -19,6 +19,9 @@ class BasisClass:
     def id(self):
         raise NotImplementedError
 
+    def __hash__(self):
+        return self.id
+
     @property
     def size(self):
         raise NotImplementedError
