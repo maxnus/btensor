@@ -68,7 +68,7 @@ class Tensor(OperatorTemplate):
             self.as_basis(value, inplace=True)
         #self.project_onto(value, inplace=True)
 
-    def replace_basis(self, basis, inplace=True):
+    def replace_basis(self, basis, inplace=False):
         """Replace basis with new basis."""
         if basis is nobasis or isinstance(basis, BasisClass):
             basis = (basis,)
@@ -81,7 +81,6 @@ class Tensor(OperatorTemplate):
                                  i+1, self.shape[i], b1.size))
             new_basis[i] = b1
         assert len(new_basis) == len(self.basis)
-
         tensor = self if inplace else self.copy()
         tensor._basis = tuple(new_basis)
         return tensor
