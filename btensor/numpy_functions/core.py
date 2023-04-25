@@ -8,12 +8,19 @@ __all__ = [
     'zeros', 'sum', 'dot', 'trace',
 ]
 
+
+def _to_tensor(*args):
+    args = tuple(bt.Tensor(a, basis=a.ndim*(bt.nobasis,)) if isinstance(a, np.ndarray) else a for a in args)
+    return args[0] if len(args) == 1 else args
+
+
 def zeros(basis, **kwargs):
     shape = tuple(b.size for b in basis)
     return bt.Tensor(np.zeros(shape, **kwargs), basis=basis)
 
 
 def sum(a, axis=None):
+    a = _to_tensor(a)
     value = a._value.sum(axis=axis)
     if value.ndim == 0:
         return value
@@ -21,11 +28,12 @@ def sum(a, axis=None):
         return value
     if isinstance(axis, (int, np.integer)):
         axis = (axis,)
-    basis = [a.basis[ax] for ax in range(a.ndim) if ax not in axis]
+    basis = tuple(a.basis[ax] for ax in range(a.ndim) if ax not in axis)
     return type(a)(value, basis=basis)
 
 
 def dot(a, b):
+    a, b = _to_tensor(a, b)
     if a.ndim == b.ndim == 1:
         ovlp = overlap(a.basis[0], b.basis[0])
         return ndot(a._value, ovlp, b._value)
@@ -45,6 +53,7 @@ def dot(a, b):
 
 
 def trace(a, axis1=0, axis2=1):
+    a = _to_tensor(a)
     basis1 = a.basis[axis1]
     basis2 = a.basis[axis2]
     if basis1.root != basis2.root:

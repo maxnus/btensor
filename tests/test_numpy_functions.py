@@ -69,6 +69,10 @@ class Tests(TestCase):
             bt.zeros((self.bn, self.bm, self.bk))._value,
             np.zeros((self.n, self.m, self.k)))
 
+    def test_sum(self):
+        self.assertAllclose(bt.sum(self.a_nn), np.sum(self.d_nn))
+        self.assertAllclose(bt.sum(self.d_nn), np.sum(self.d_nn))
+
     def test_transpose_property(self):
         for ndim in range(1, MAXDIM+1):
             self.assertAllclose(self.basis_arrays_sq[ndim].T, self.numpy_arrays_sq[ndim].T)
