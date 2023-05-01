@@ -5,7 +5,7 @@ from btensor.util import BasisError
 
 
 __all__ = [
-    'zeros', 'sum', 'dot', 'trace',
+    'zeros', 'zeros_like', 'sum', 'dot', 'trace',
 ]
 
 
@@ -14,9 +14,13 @@ def _to_tensor(*args):
     return args[0] if len(args) == 1 else args
 
 
-def zeros(basis, **kwargs):
+def zeros(basis, *args, **kwargs):
     shape = tuple(b.size for b in basis)
-    return bt.Tensor(np.zeros(shape, **kwargs), basis=basis)
+    return bt.Tensor(np.zeros(shape, *args, **kwargs), basis=basis)
+
+
+def zeros_like(a, *args, **kwargs):
+    return zeros(a.basis, *args, **kwargs)
 
 
 def sum(a, axis=None):
