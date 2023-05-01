@@ -4,7 +4,6 @@ import string
 import numpy as np
 
 import btensor as bt
-from btensor import nobasis
 from testing import TestCase, rand_orth_mat, powerset
 
 
@@ -260,6 +259,9 @@ generate_test_einsum_summation(Tests)
 generate_test_einsum_contraction(Tests)
 
 
+nobasis = -1
+
+
 class DotTests(TestCase):
 
     def test_dot_11(self):
@@ -298,7 +300,7 @@ class DotTests(TestCase):
         b = np.random.rand(m, k)
         c = np.dot(a, b)
         aa = bt.Tensor(a, basis=(nobasis, nobasis))
-        ab = bt.Tensor(b, basis=(nobasis, bt.nobasis))
+        ab = bt.Tensor(b, basis=(nobasis, nobasis))
         ac = bt.dot(aa, ab)
         self.assertAllclose(ac, c)
 
@@ -307,8 +309,8 @@ class DotTests(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k, l)
         c = np.dot(a, b)
-        aa = bt.Tensor(a, basis=(bt.nobasis, bt.nobasis, bt.nobasis))
-        ab = bt.Tensor(b, basis=(bt.nobasis, bt.nobasis))
+        aa = bt.Tensor(a, basis=(nobasis, nobasis, nobasis))
+        ab = bt.Tensor(b, basis=(nobasis, nobasis))
         ac = bt.dot(aa, ab)
         self.assertAllclose(ac, c)
 

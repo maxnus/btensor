@@ -1,7 +1,10 @@
 import numpy as np
 import btensor as bt
-from btensor.util import ndot, overlap
+from btensor.util import ndot
 from btensor.util import BasisError
+from btensor.util import is_int
+from btensor.util import IdentityMatrix
+from btensor.basis import is_nobasis
 
 
 __all__ = [
@@ -10,14 +13,13 @@ __all__ = [
 
 
 def _to_tensor(*args):
-    args = tuple(bt.Tensor(a, basis=a.ndim*(bt.nobasis,)) if isinstance(a, np.ndarray) else a for a in args)
+    args = tuple(bt.Tensor(a, basis=a.shape) if isinstance(a, np.ndarray) else a for a in args)
     return args[0] if len(args) == 1 else args
 
 
 def _empty_factory(numpy_func):
     def func(basis, *args, **kwargs):
-        shape = tuple(b.size if isinstance(b, bt.Basis) else b for b in basis)
-        basis = tuple(b if isinstance(b, bt.Basis) else bt.nobasis for b in basis)
+        shape = tuple(b if is_int(b) else b.size for b in basis)
         return bt.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
     return func
 
@@ -30,8 +32,7 @@ zeros = _empty_factory(np.zeros)
 def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
         a = _to_tensor(a)
-        basis = tuple((b if not (b is bt.nobasis) else n) for b, n in zip(a.basis, a.shape))
-        return func(basis, *args, **kwargs)
+        return func(a.basis, *args, **kwargs)
     return func_like
 
 
@@ -53,21 +54,29 @@ def sum(a, axis=None):
     return type(a)(value, basis=basis)
 
 
+def _overlap(a, b):
+    if is_nobasis(a) and is_nobasis(b):
+        return IdentityMatrix(None)
+    if is_nobasis(a) or is_nobasis(b):
+        raise BasisError
+    return (a | b)
+
+
 def dot(a, b):
     a, b = _to_tensor(a, b)
     if a.ndim == b.ndim == 1:
-        ovlp = overlap(a.basis[0], b.basis[0])
+        ovlp = _overlap(a.basis[0], b.basis[0])
         return ndot(a._value, ovlp, b._value)
     if a.ndim == b.ndim == 2:
-        ovlp = overlap(a.basis[-1], b.basis[0])
+        ovlp = _overlap(a.basis[-1], b.basis[0])
         out = ndot(a._value, ovlp, b._value)
         basis = (a.basis[0], b.basis[1])
     elif b.ndim == 1:
-        ovlp = overlap(a.basis[-1], b.basis[0])
+        ovlp = _overlap(a.basis[-1], b.basis[0])
         out = ndot(a._value, ovlp, b._value)
         basis = a.basis[:-1]
     elif b.ndim >= 2:
-        ovlp = overlap(a.basis[-1], b.basis[-2])
+        ovlp = _overlap(a.basis[-1], b.basis[-2])
         out = ndot(a._value, ovlp, b._value)
         basis = (a.basis[:-1] + b.basis[:-2] + b.basis[-1:])
     return type(a)(out, basis=basis)

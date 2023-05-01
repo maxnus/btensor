@@ -4,6 +4,26 @@ from btensor.util import *
 from btensor.space import Space
 
 
+def is_basis(obj, allow_int=True, allow_cobasis=True):
+    allowed = (BasisClass,) if allow_cobasis else (Basis,)
+    if allow_int:
+        allowed += (int, np.integer)
+    return isinstance(obj, allowed)
+
+
+is_nobasis = is_int
+
+
+def compatible_basis(b1, b2):
+    if is_int(b1) and is_int(b2):
+        if b1 == -1 or b2 == -1:
+            return True
+        return b1 == b2
+    if is_int(b1):
+        return b2.compatible(b1)
+    return b1.compatible(b2)
+
+
 class BasisClass:
 
     def __repr__(self):
@@ -13,7 +33,7 @@ class BasisClass:
         """Compare if to bases are the same based on their ID."""
         if not isinstance(other, BasisClass):
             return False
-        return self.id == other.id
+        return hash(self) == hash(other)
 
     @property
     def id(self):
@@ -91,7 +111,7 @@ class Basis(BasisClass):
         self.debug = debug or getattr(parent, 'debug', False)
 
         # Root basis:
-        if isinstance(argument, (int, np.integer)):
+        if is_int(argument):
             argument = IdentityMatrix(argument)
         # Permutation + selection
         if isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
@@ -183,6 +203,9 @@ class Basis(BasisClass):
         """Express coeffients in different (parent) basis (rather than the direct parent).
 
         Was BUGGY before, now fixed?"""
+        if not is_basis(basis, allow_int=False):
+            raise ValueError
+
         if basis == self:
             return MatrixProduct([IdentityMatrix(self.size)])
 
@@ -228,7 +251,9 @@ class Basis(BasisClass):
         return parents
 
     def compatible(self, other):
-        return other is nobasis or self.same_root(other)
+        if is_int(other):
+            return (other == self.size) or (other == -1)
+        return self.same_root(other)
 
     def find_common_parent(self, other):
         """Find first common ancestor between two bases."""
@@ -238,10 +263,12 @@ class Basis(BasisClass):
         parents1 = self.get_parents(include_self=True)[::-1]
         parents2 = other.get_parents(include_self=True)[::-1]
         assert (parents1[0] is parents2[0])
+        parent = None
         for i, p in enumerate(parents1):
             if i >= len(parents2) or p != parents2[i]:
                 break
             parent = p
+        assert parent is not None
         return parent
 
     def _as_basis_matprod(self, other, simplify=False):

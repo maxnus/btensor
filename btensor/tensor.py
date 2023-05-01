@@ -2,7 +2,7 @@ import numbers
 import string
 import numpy as np
 from btensor.util import *
-from .basis import Basis, BasisClass, Cobasis
+from .basis import Basis, BasisClass, Cobasis, is_basis, is_nobasis, compatible_basis
 from .optemplate import OperatorTemplate
 from . import numpy_functions
 
@@ -34,8 +34,6 @@ class Tensor(OperatorTemplate):
         self.basis = basis
 
     def __repr__(self):
-        if np.all(self.variance_string == 1):
-            return f'{type(self).__name__}(shape= {self.shape})'
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
 
     def copy(self):
@@ -49,15 +47,14 @@ class Tensor(OperatorTemplate):
 
     @basis.setter
     def basis(self, value):
-        if value is nobasis or isinstance(value, BasisClass):
-            value = (value,)
+        value = atleast_1d(value)
         if len(value) != self.ndim:
             raise ValueError("%d-dimensional Array requires %d basis elements (%d given)" % (
                              self.ndim, self.ndim, len(value)))
         for i, b in enumerate(value):
-            if b is nobasis:
+            if is_nobasis(b):
                 continue
-            if not isinstance(b, BasisClass):
+            if not is_basis(b):
                 raise ValueError(f"Basis instance or nobasis required (given: {b} of type {type(b)}).")
             if self.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
@@ -66,17 +63,18 @@ class Tensor(OperatorTemplate):
             self._basis = value
         else:
             self.as_basis(value, inplace=True)
-        #self.project_onto(value, inplace=True)
 
     def replace_basis(self, basis, inplace=False):
         """Replace basis with new basis."""
-        if basis is nobasis or isinstance(basis, BasisClass):
-            basis = (basis,)
+        basis = atleast_1d(basis)
         new_basis = list(self.basis)
         for i, (b0, b1) in enumerate(zip(self.basis, basis)):
             if b1 is None:
                 continue
-            if (b1 is not nobasis) and (b1.size != self.shape[i]):
+            if b1 == -1:
+                b1 = self.shape[i]
+            size = b1 if is_nobasis(b1) else b1.size
+            if size != self.shape[i]:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
                                  i+1, self.shape[i], b1.size))
             new_basis[i] = b1
@@ -154,7 +152,7 @@ class Tensor(OperatorTemplate):
             newaxis_indices = [i for (i, k) in enumerate(key) if (k is np.newaxis)]
             basis = list(self.basis)
             for i in newaxis_indices:
-                basis.insert(i, nobasis)
+                basis.insert(i, 1)
 
             # Replace Ellipsis with multiple slice(None)
             if Ellipsis in key:
@@ -228,8 +226,8 @@ class Tensor(OperatorTemplate):
         basis = self._broadcast_basis(basis)
         assert len(basis) == len(self.basis)
         for bas in basis:
-            if not (isinstance(bas, BasisClass) or bas in (nobasis, None)):
-                raise ValueError
+            if not (is_basis(bas) or bas is None):
+                raise ValueError(f"Invalid basis: {bas} of type {type(bas)}")
 
         subscripts = string.ascii_lowercase[:self.ndim]
         operands = [self._value]
@@ -237,17 +235,15 @@ class Tensor(OperatorTemplate):
         basis_out = list(self.basis)
         for i, bas in enumerate(basis):
             if bas is None or (bas == self.basis[i]):
-                #if bas is None:
-                #    basis_out[i] = self.basis[i]
                 continue
             # Remove basis:
-            if bas is nobasis:
-                basis_out[i] = nobasis
+            if is_nobasis(bas):
+                basis_out[i] = self.shape[i]
                 continue
 
             basis_out[i] = bas
             # Add basis (buggy):
-            if self.basis[i] is nobasis:
+            if is_nobasis(self.basis[i]):
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
@@ -330,12 +326,7 @@ class Tensor(OperatorTemplate):
     def compatible_axes(self, other):
         axes = []
         for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
-            if (b1 is nobasis or b2 is nobasis) and (self.shape[i] == other.shape[i]):
-                axes.append(True)
-            elif b1.compatible(b2):
-                axes.append(True)
-            else:
-                axes.append(False)
+            axes.append(bool(compatible_basis(b1, b2)))
         if self.ndim > other.ndim:
             axes += (self.ndim-other.ndim)*[False]
         return axes
@@ -347,11 +338,18 @@ class Tensor(OperatorTemplate):
         for b1, b2 in zip(self.basis, other.basis):
             if b1.is_cobasis() ^ b2.is_cobasis():
                 raise ValueError()
-            if b1 is nobasis and b2 is nobasis:
-                basis.append(nobasis)
-            elif b1 is nobasis:
+            if is_nobasis(b1) and is_nobasis(b2):
+                if b1 == -1:
+                    basis.append(b2)
+                elif b2 == -1:
+                    basis.append(b1)
+                elif b1 == b2:
+                    basis.append(b1)
+                else:
+                    raise ValueError
+            elif is_nobasis(b1):
                 basis.append(b2)
-            elif b2 is nobasis:
+            elif is_nobasis(b2):
                 basis.append(b1)
             else:
                 basis.append(b1.find_common_parent(b2))

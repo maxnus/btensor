@@ -19,9 +19,6 @@ Usage:
 
 """
 
-import numpy as np
-
-from btensor.util.util import nobasis
 from .basis import Basis
 from .tensor import Tensor
 from .tensor import Cotensor

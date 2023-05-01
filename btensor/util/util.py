@@ -3,22 +3,19 @@ from .matrix import Matrix, IdentityMatrix
 
 
 __all__ = [
+        'is_int',
         'array_like',
-        'nobasis',
+        'atleast_1d',
         'BasisError',
         'ndot',
-        'overlap',
+        #'overlap',
         'expand_axis',
         ]
 
 
-class NoBasis:
 
-    def __repr__(self):
-        return type(self).__name__
-
-
-nobasis = NoBasis()
+def is_int(obj):
+    return isinstance(obj, (int, np.integer))
 
 
 def array_like(obj):
@@ -26,9 +23,13 @@ def array_like(obj):
         obj.shape
         obj.ndim
         obj[()]
+        return True
     except (AttributeError, TypeError):
         return False
-    return True
+
+
+def atleast_1d(obj):
+    return tuple(np.atleast_1d(obj))
 
 
 class BasisError(Exception):
@@ -41,11 +42,11 @@ def ndot(*args):
 
 
 def overlap(a, b):
-    if a is nobasis and b is nobasis:
-        return IdentityMatrix(None)
-    if a is nobasis or b is nobasis:
-        raise BasisError
-    return (a | b)
+   if a is nobasis and b is nobasis:
+       return IdentityMatrix(None)
+   if a is nobasis or b is nobasis:
+       raise BasisError
+   return (a | b)
 
 
 def expand_axis(a, size, indices=None, axis=-1):
