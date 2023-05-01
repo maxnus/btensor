@@ -27,7 +27,7 @@ def compatible_basis(b1, b2):
 class BasisClass:
 
     def __repr__(self):
-        return '%s(id= %d, size= %d, name= %s)' % (type(self).__name__, self.id, self.size, self.name)
+        return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their ID."""
@@ -90,7 +90,7 @@ class BasisClass:
 
     def check_same_root(self, other):
         if not self.same_root(other):
-            raise BasisError("Bases %s and %s do not derive from the same root basis." % (self, other))
+            raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
 
 class Basis(BasisClass):
@@ -213,7 +213,7 @@ class Basis(BasisClass):
         parents = self.get_parents()
         nondual = +basis
         if nondual not in parents:
-            raise ValueError("%s is not superbasis of %r" % (basis, self))
+            raise ValueError(f"{basis} is not superbasis of {self}")
         matrices = []
         for p in parents:
             if p == nondual:

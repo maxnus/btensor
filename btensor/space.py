@@ -14,7 +14,7 @@ class Space:
         return self._basis
 
     def __repr__(self):
-        return f'{type(self).__name__}(basis= {self.basis})'
+        return f"{type(self).__name__}(basis= {self.basis})"
 
     def __len__(self):
         return len(self.basis)

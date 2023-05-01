@@ -49,16 +49,14 @@ class Tensor(OperatorTemplate):
     def basis(self, value):
         value = atleast_1d(value)
         if len(value) != self.ndim:
-            raise ValueError("%d-dimensional Array requires %d basis elements (%d given)" % (
-                             self.ndim, self.ndim, len(value)))
-        for i, b in enumerate(value):
+            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(value)} given)")
+        for i, (s, b) in enumerate(self.shape, value):
             if is_nobasis(b):
                 continue
             if not is_basis(b):
                 raise ValueError(f"Basis instance or nobasis required (given: {b} of type {type(b)}).")
-            if self.shape[i] != b.size:
-                raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
-                                 i+1, self.shape[i], b.size))
+            if s != b.size:
+                raise ValueError(f"Dimension {i+1} with size {s} incompatible with basis size {b.size}")
         if not hasattr(self, '_basis'):
             self._basis = value
         else:
@@ -68,15 +66,14 @@ class Tensor(OperatorTemplate):
         """Replace basis with new basis."""
         basis = atleast_1d(basis)
         new_basis = list(self.basis)
-        for i, (b0, b1) in enumerate(zip(self.basis, basis)):
+        for i, (size, b0, b1) in enumerate(zip(self.shape, self.basis, basis)):
             if b1 is None:
                 continue
             if b1 == -1:
-                b1 = self.shape[i]
-            size = b1 if is_nobasis(b1) else b1.size
-            if size != self.shape[i]:
-                raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
-                                 i+1, self.shape[i], b1.size))
+                b1 = size
+            size_new = b1 if is_nobasis(b1) else b1.size
+            if size_new != size:
+                raise ValueError(f"Dimension {i} with size {size} incompatible with basis size {size_new}")
             new_basis[i] = b1
         assert len(new_basis) == len(self.basis)
         tensor = self if inplace else self.copy()
@@ -93,8 +90,8 @@ class Tensor(OperatorTemplate):
         if np.ndim(variance) == 0:
             variance = self.ndim * (variance,)
         if len(variance) != self.ndim:
-            raise ValueError("%d-dimensional Array requires %d variance elements (%d given)" % (
-                             self.ndim, self.ndim, len(variance)))
+            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
+                             f"({len(variance)} given)")
         if not np.isin(variance, (-1, 1)):
             raise ValueError("Variance can only contain values -1 and 1")
         new_basis = []
@@ -129,7 +126,7 @@ class Tensor(OperatorTemplate):
         """Inherit from NumPy"""
         if name in ['dtype', 'ndim', 'shape', '__array_interface__']:
             return getattr(self._value, name)
-        raise AttributeError("%r object has no attribute '%s'" % (self.__class__.__name__, name))
+        raise AttributeError(f"{type(self).__name__} object has no attribute '{name}'")
 
     def __getitem__(self, key):
         """Construct and return sub-Array."""
