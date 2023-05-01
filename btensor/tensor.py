@@ -58,7 +58,7 @@ class Tensor(OperatorTemplate):
             if b is nobasis:
                 continue
             if not isinstance(b, BasisClass):
-                raise ValueError("Basis instance or nobasis required.")
+                raise ValueError(f"Basis instance or nobasis required (given: {b} of type {type(b)}).")
             if self.shape[i] != b.size:
                 raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
                                  i+1, self.shape[i], b.size))

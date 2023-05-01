@@ -16,7 +16,8 @@ def _to_tensor(*args):
 
 def _empty_factory(numpy_func):
     def func(basis, *args, **kwargs):
-        shape = tuple(b.size for b in basis)
+        shape = tuple(b.size if isinstance(b, bt.Basis) else b for b in basis)
+        basis = tuple(b if isinstance(b, bt.Basis) else bt.nobasis for b in basis)
         return bt.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
     return func
 
@@ -28,7 +29,9 @@ zeros = _empty_factory(np.zeros)
 
 def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
-        return func(a.basis, *args, **kwargs)
+        a = _to_tensor(a)
+        basis = tuple((b if not (b is bt.nobasis) else n) for b, n in zip(a.basis, a.shape))
+        return func(basis, *args, **kwargs)
     return func_like
 
 
@@ -88,5 +91,5 @@ def trace(a, axis1=0, axis2=1):
         axis1 += a.ndim
     if axis2 < 0:
         axis2 += a.ndim
-    basis_new = tuple(a.basis[i] for i in set(range(a.ndim)) - set((axis1, axis2)))
+    basis_new = tuple(a.basis[i] for i in set(range(a.ndim)) - {axis1, axis2})
     return type(a)(value, basis_new)
