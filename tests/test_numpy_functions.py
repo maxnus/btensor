@@ -64,10 +64,25 @@ class Tests(TestCase):
 
     # NumPy
 
+    def test_empty(self):
+        tensor = bt.empty((self.bn, self.bm, self.bk))
+        array = np.empty((self.n, self.m, self.k))
+        self.assertEqual(tensor.shape, array.shape)
+        self.assertEqual(tensor.dtype, array.dtype)
+        self.assertEqual(bt.empty_like(tensor).shape, array.shape)
+        self.assertEqual(bt.empty_like(tensor).dtype, array.dtype)
+
+    def test_ones(self):
+        tensor = bt.ones((self.bn, self.bm, self.bk))
+        array = np.ones((self.n, self.m, self.k))
+        self.assertAllclose(tensor, array)
+        self.assertAllclose(bt.ones_like(tensor), array)
+
     def test_zeros(self):
-        self.assertAllclose(
-            bt.zeros((self.bn, self.bm, self.bk))._value,
-            np.zeros((self.n, self.m, self.k)))
+        tensor = bt.zeros((self.bn, self.bm, self.bk))
+        array = np.zeros((self.n, self.m, self.k))
+        self.assertAllclose(tensor, array)
+        self.assertAllclose(bt.zeros_like(tensor), array)
 
     def test_sum(self):
         self.assertAllclose(bt.sum(self.a_nn), np.sum(self.d_nn))
