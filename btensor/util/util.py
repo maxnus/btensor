@@ -68,16 +68,21 @@ def expand_axis(a, size, indices=None, axis=-1):
 
 
 @contextmanager
-def replace_attr(obj, **kwargs):
+def replace_attr(obj, bind_callable=True, **kwargs):
     """Temporary replace attributes and methods of object."""
+
+    def _setattr(obj, name, attr):
+        # For functions: replace and bind as method, otherwise just set
+        setattr(obj, name, attr.__get__(obj) if (callable(attr) and bind_callable) else attr)
+
     orig = {}
     try:
         for name, attr in kwargs.items():
             orig[name] = getattr(obj, name)
-            # For functions: replace and bind as method, otherwise just set
-            setattr(obj, name, attr.__get__(obj) if callable(attr) else attr)
+            _setattr(obj, name, attr)
+
         yield obj
     finally:
         # Restore originals
         for name, attr in orig.items():
-            setattr(obj, name, attr.__get__(obj) if callable(attr) else attr)
+            _setattr(obj, name, attr)
