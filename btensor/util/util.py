@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import numpy as np
 from .matrix import Matrix, IdentityMatrix
 
@@ -10,6 +11,7 @@ __all__ = [
         'ndot',
         #'overlap',
         'expand_axis',
+        'replace_attr',
         ]
 
 
@@ -63,3 +65,19 @@ def expand_axis(a, size, indices=None, axis=-1):
     b = np.zeros_like(a, shape=shape)
     b[mask] = a
     return b
+
+
+@contextmanager
+def replace_attr(obj, **kwargs):
+    """Temporary replace attributes and methods of object."""
+    orig = {}
+    try:
+        for name, attr in kwargs.items():
+            orig[name] = getattr(obj, name)
+            # For functions: replace and bind as method, otherwise just set
+            setattr(obj, name, attr.__get__(obj) if callable(attr) else attr)
+        yield obj
+    finally:
+        # Restore originals
+        for name, attr in orig.items():
+            setattr(obj, name, attr.__get__(obj) if callable(attr) else attr)

@@ -185,9 +185,8 @@ class Tensor(OperatorTemplate):
     def __setitem__(self, key, value):
         if isinstance(value, Tensor):
             value = value._data
-        self._data.flags.writeable = True
-        self._data[key] = value
-        self._data.flags.writeable = False
+        with replace_attr(self._data.flags, writeable=True):
+            self._data[key] = value
         # Not required, since np.newaxis has no effect in assignment?
         #if not isinstance(key, tuple) or np.newaxis not in key:
         #    return
