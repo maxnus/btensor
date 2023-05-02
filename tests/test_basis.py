@@ -6,13 +6,15 @@ from testing import TestCase, rand_orth_mat
 
 class TestBasis(TestCase):
 
+    non_orth_noise = 0.1
+
     @classmethod
     def setUpClass(cls):
         np.random.seed(0)
         cls.size_a, cls.size_b = 5, 6
 
         def metric(n):
-            noise = 0.1*(np.random.random((n, n))-0.5)
+            noise = cls.non_orth_noise * (np.random.random((n, n))-0.5)
             return np.identity(n) + noise + noise.T
 
         cls.metric_a = metric(cls.size_a)
@@ -291,6 +293,16 @@ class TestBasis(TestCase):
                 self.assertFalse(b2.space > b1.space)
                 self.assertFalse(b2.space < b1.space)
 
+    def test_space_orthogonal(self):
+        for b1 in self.basis_a:
+            self.assertFalse(b1.space | b1.space)
+        for i, b1 in enumerate(self.basis_a):
+            for j, b2 in enumerate(self.basis_a):
+                self.assertFalse(b1.space | b2.space)
+        for i, b1 in enumerate(self.basis_a):
+            for j, b2 in enumerate(self.basis_b):
+                self.assertTrue(b1.space | b2.space)
+
     def test_matrices_for_coeff_in_basis(self):
 
         def test(basis1, basis2, expected):
@@ -329,3 +341,18 @@ class TestBasis(TestCase):
                     else:
                         expected = np.linalg.multi_dot(mats)
                 test(b1, b2, expected)
+
+
+class TestBasisOrthogonal(TestBasis):
+
+    non_orth_noise = 0
+
+    def test_space_orthogonal_disjoint(self):
+        b = self.basis_a[0]
+        b1 = b.make_basis([0, 1])
+        b2 = b.make_basis([2, 3, 4])
+        self.assertTrue(b1.space | b2.space)
+        b = self.basis_b[0]
+        b1 = b.make_basis([0, 1])
+        b2 = b.make_basis([2, 3, 4])
+        self.assertTrue(b1.space | b2.space)

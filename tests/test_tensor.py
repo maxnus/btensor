@@ -39,8 +39,6 @@ class TestTensor(TestCase):
         self.assertTrue(np.all(tensor_copy == self.data))
 
 
-
-
 class ArithmetricTestsSameBasis(TestCase):
 
     @classmethod
