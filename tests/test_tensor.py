@@ -32,6 +32,14 @@ class TestTensor(TestCase):
         self.assertTrue(np.all(tensor == 0))
         self.data = data_backup
 
+    def test_copy(self):
+        tensor = basis.as_tensor(self.data)
+        tensor_copy = tensor.copy()
+        tensor[:] = 0
+        self.assertTrue(np.all(tensor_copy == self.data))
+
+
+
 
 class ArithmetricTestsSameBasis(TestCase):
 

@@ -48,7 +48,7 @@ class Tensor(OperatorTemplate):
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
 
     def copy(self):
-        return type(self)(self._data.copy(), basis=self.basis)
+        return type(self)(self._data, basis=self.basis, copy_data=True)
 
     # --- Basis
 
