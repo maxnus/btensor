@@ -10,13 +10,20 @@ from . import numpy_functions
 def value_if_scalar(array):
     if array.ndim > 0:
         return array
-    return array._value
+    return array._data
+
+
+def as_tensor(obj, **kwargs):
+    """Convert NumPy array to tensor."""
+    if isinstance(obj, Tensor):
+        return obj
+    return Tensor(obj, basis=obj.shape, **kwargs)
 
 
 class Tensor(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, value, basis):
+    def __init__(self, data, basis, copy_data=True):
         #if basis is nobasis or isinstance(basis, BasisBase):
         #    basis = (basis,)
         #if len(basis) != np.ndim(value):
@@ -29,15 +36,19 @@ class Tensor(OperatorTemplate):
         #        raise ValueError("Basis instance or nobasis required")
         #    if value.shape[i] != b.size:
         #        raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
-        #            i+1, value.shape[i], b.size))
-        self._value = np.asarray(value)
+        #            i+1, value.shape[i], b.size)
+
+        data = np.array(data, copy=copy_data)
+        data.flags.writeable = False
+        self._data = data
+
         self.basis = basis
 
     def __repr__(self):
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
 
     def copy(self):
-        return type(self)(self._value.copy(), basis=self.basis)
+        return type(self)(self._data.copy(), basis=self.basis)
 
     # --- Basis
 
@@ -50,7 +61,7 @@ class Tensor(OperatorTemplate):
         value = atleast_1d(value)
         if len(value) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(value)} given)")
-        for i, (s, b) in enumerate(self.shape, value):
+        for i, (s, b) in enumerate(zip(self.shape, value)):
             if is_nobasis(b):
                 continue
             if not is_basis(b):
@@ -120,20 +131,20 @@ class Tensor(OperatorTemplate):
     def to_array(self, basis=None):
         """Convert to NumPy ndarray"""
         tensor = self.as_basis(basis=basis) if basis is not None else self
-        return tensor._value.copy()
+        return tensor._data.copy()
 
     def __getattr__(self, name):
         """Inherit from NumPy"""
         if name in ['dtype', 'ndim', 'shape', '__array_interface__']:
-            return getattr(self._value, name)
+            return getattr(self._data, name)
         raise AttributeError(f"{type(self).__name__} object has no attribute '{name}'")
 
     def __getitem__(self, key):
         """Construct and return sub-Array."""
         if isinstance(key, int):
-            return type(self)(self._value[key], basis=self.basis[1:])
+            return type(self)(self._data[key], basis=self.basis[1:])
         if isinstance(key, (list, np.ndarray)):
-            value = self._value[key]
+            value = self._data[key]
             basis = (self.basis[0].make_basis(key),) + self.basis[1:]
             return type(self)(value, basis=basis)
         if key is Ellipsis:
@@ -141,7 +152,7 @@ class Tensor(OperatorTemplate):
         if isinstance(key, slice) or key is np.newaxis:
             key = (key,)
         if isinstance(key, tuple):
-            value = self._value[key]
+            value = self._data[key]
             if value.ndim == 0:
                 return value
 
@@ -173,8 +184,10 @@ class Tensor(OperatorTemplate):
 
     def __setitem__(self, key, value):
         if isinstance(value, Tensor):
-            value = value._value
-        self._value[key] = value
+            value = value._data
+        self._data.flags.writeable = True
+        self._data[key] = value
+        self._data.flags.writeable = False
         # Not required, since np.newaxis has no effect in assignment?
         #if not isinstance(key, tuple) or np.newaxis not in key:
         #    return
@@ -183,7 +196,7 @@ class Tensor(OperatorTemplate):
         #self.basis = basis_new
 
     def transpose(self, axes=None):
-        value = self._value.transpose(axes)
+        value = self._data.transpose(axes)
         if axes is None:
             basis = self.basis[::-1]
         else:
@@ -227,7 +240,7 @@ class Tensor(OperatorTemplate):
                 raise ValueError(f"Invalid basis: {bas} of type {type(bas)}")
 
         subscripts = string.ascii_lowercase[:self.ndim]
-        operands = [self._value]
+        operands = [self._data]
         result = list(subscripts)
         basis_out = list(self.basis)
         for i, bas in enumerate(basis):
@@ -267,7 +280,7 @@ class Tensor(OperatorTemplate):
         subscripts += '->%s' % (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
         if inplace:
-            self._value = value
+            self._data = value
             self._basis = basis_out
             return self
         return type(self)(value, basis=basis_out)
@@ -355,7 +368,7 @@ class Tensor(OperatorTemplate):
     def _operator(self, operator, *other, swap=False):
         # Unary operator
         if len(other) == 0:
-            return type(self)(operator(self._value), basis=self.basis)
+            return type(self)(operator(self._data), basis=self.basis)
         # Ternary+ operator
         if len(other) > 1:
             raise NotImplementedError
@@ -363,16 +376,16 @@ class Tensor(OperatorTemplate):
         other = other[0]
 
         basis = self.basis
-        v1 = self._value
+        v1 = self._data
         if isinstance(other, numbers.Number):
             v2 = other
         elif isinstance(other, Tensor):
             if self.basis == other.basis:
-                v2 = other._value
+                v2 = other._data
             elif self.is_compatible(other):
                 basis = self.common_basis(other)
-                v1 = self.as_basis(basis)._value
-                v2 = other.as_basis(basis)._value
+                v1 = self.as_basis(basis)._data
+                v2 = other.as_basis(basis)._data
             else:
                 raise ValueError
         else:

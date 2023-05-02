@@ -5,6 +5,34 @@ import btensor as basis
 from testing import TestCase, rand_orth_mat
 
 
+class TestTensor(TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        n = 10
+        np.random.seed(0)
+        cls.data = np.random.random((n, n))
+
+    def test_not_writeable(self):
+        data_backup = self.data.copy()
+
+        # Perform copy
+        tensor = basis.as_tensor(self.data)
+        self.assertTrue(np.all(tensor == data_backup))
+        self.data[:] = 0
+        self.assertTrue(np.all(tensor == data_backup))
+        self.data = data_backup
+
+        # Do not copy
+        tensor = basis.as_tensor(self.data, copy_data=False)
+        self.assertTrue(np.all(tensor == data_backup))
+        with self.assertRaises(ValueError):
+            self.data[:] = 0
+        tensor[:] = 0
+        self.assertTrue(np.all(tensor == 0))
+        self.data = data_backup
+
+
 class ArithmetricTestsSameBasis(TestCase):
 
     @classmethod
@@ -19,37 +47,37 @@ class ArithmetricTestsSameBasis(TestCase):
         cls.a2 = basis.Tensor(cls.d2, basis=(b1, b2))
 
     def test_negation(self):
-        self.assertAllclose((-self.a1)._value, -self.d1)
+        self.assertAllclose((-self.a1)._data, -self.d1)
 
     def test_absolute(self):
-        self.assertAllclose(abs(self.a1)._value, abs(self.d1))
+        self.assertAllclose(abs(self.a1)._data, abs(self.d1))
 
     def test_addition(self):
-        self.assertAllclose((self.a1 + self.a2)._value, self.d1 + self.d2)
+        self.assertAllclose((self.a1 + self.a2)._data, self.d1 + self.d2)
 
     def test_subtraction(self):
-        self.assertAllclose((self.a1 - self.a2)._value, self.d1 - self.d2)
+        self.assertAllclose((self.a1 - self.a2)._data, self.d1 - self.d2)
 
     def test_multiplication(self):
-        self.assertAllclose((self.a1 * self.a2)._value, self.d1 * self.d2)
+        self.assertAllclose((self.a1 * self.a2)._data, self.d1 * self.d2)
 
     def test_division(self):
-        self.assertAllclose((self.a1 / self.a2)._value, self.d1 / self.d2)
+        self.assertAllclose((self.a1 / self.a2)._data, self.d1 / self.d2)
 
     def test_floordivision(self):
-        self.assertAllclose((self.a1 // self.a2)._value, self.d1 // self.d2)
+        self.assertAllclose((self.a1 // self.a2)._data, self.d1 // self.d2)
 
     def test_getitem_int(self):
-        self.assertAllclose(self.a1[0]._value, self.d1[0])
-        self.assertAllclose(self.a1[-1]._value, self.d1[-1])
+        self.assertAllclose(self.a1[0]._data, self.d1[0])
+        self.assertAllclose(self.a1[-1]._data, self.d1[-1])
 
     def test_getitem_slice(self):
-        self.assertAllclose(self.a1[:2]._value, self.d1[:2])
-        self.assertAllclose(self.a1[::2]._value, self.d1[::2])
-        self.assertAllclose(self.a1[:-1]._value, self.d1[:-1])
+        self.assertAllclose(self.a1[:2]._data, self.d1[:2])
+        self.assertAllclose(self.a1[::2]._data, self.d1[::2])
+        self.assertAllclose(self.a1[:-1]._data, self.d1[:-1])
 
     def test_getitem_elipsis(self):
-        self.assertAllclose(self.a1[...]._value, self.d1[...])
+        self.assertAllclose(self.a1[...]._data, self.d1[...])
 
     def test_getitem_newaxis(self):
         self.assertAllclose(self.a1[np.newaxis], self.d1[np.newaxis])
@@ -65,10 +93,10 @@ class ArithmetricTestsSameBasis(TestCase):
     def test_getitem_tuple(self):
         self.assertAllclose(self.a1[0, 2], self.d1[0, 2])
         self.assertAllclose(self.a1[-1, 2], self.d1[-1, 2])
-        self.assertAllclose(self.a1[:2, 3:]._value, self.d1[:2, 3:])
-        self.assertAllclose(self.a1[::2, ::-1]._value, self.d1[::2, ::-1])
-        self.assertAllclose(self.a1[0, :2]._value, self.d1[0, :2])
-        self.assertAllclose(self.a1[::-1, -1]._value, self.d1[::-1, -1])
+        self.assertAllclose(self.a1[:2, 3:]._data, self.d1[:2, 3:])
+        self.assertAllclose(self.a1[::2, ::-1]._data, self.d1[::2, ::-1])
+        self.assertAllclose(self.a1[0, :2]._data, self.d1[0, :2])
+        self.assertAllclose(self.a1[::-1, -1]._data, self.d1[::-1, -1])
         self.assertAllclose(self.a1[..., 0], self.d1[..., 0])
         self.assertAllclose(self.a1[..., :2], self.d1[..., :2])
         self.assertAllclose(self.a1[::-1, ...], self.d1[::-1, ...])
@@ -130,50 +158,50 @@ class ArithmetricTestsDifferentBasis(TestCase):
     # --- Scalar
 
     def test_scalar_addition(self):
-        self.assertAllclose((self.a1 + 2)._value, self.d1 + 2)
-        self.assertAllclose((2 + self.a1)._value, self.d1 + 2)
+        self.assertAllclose((self.a1 + 2)._data, self.d1 + 2)
+        self.assertAllclose((2 + self.a1)._data, self.d1 + 2)
 
     def test_scalar_subtraction(self):
-        self.assertAllclose((self.a1 - 2)._value, self.d1 - 2)
-        self.assertAllclose((2 - self.a1)._value, 2 - self.d1)\
+        self.assertAllclose((self.a1 - 2)._data, self.d1 - 2)
+        self.assertAllclose((2 - self.a1)._data, 2 - self.d1)\
 
     def test_scalar_multiplication(self):
-        self.assertAllclose((self.a1 * 2)._value, self.d1 * 2)
-        self.assertAllclose((2 * self.a1)._value, 2 * self.d1)
+        self.assertAllclose((self.a1 * 2)._data, self.d1 * 2)
+        self.assertAllclose((2 * self.a1)._data, 2 * self.d1)
 
     def test_scalar_division(self):
-        self.assertAllclose((self.a1 / 2)._value, self.d1 / 2)
-        self.assertAllclose((2 / self.a1)._value, 2 / self.d1)
+        self.assertAllclose((self.a1 / 2)._data, self.d1 / 2)
+        self.assertAllclose((2 / self.a1)._data, 2 / self.d1)
 
     def test_scalar_floor_division(self):
         val = 0.02
-        self.assertAllclose((self.a1 // val)._value, self.d1 // val)
-        self.assertAllclose((val // self.a1)._value, val // self.d1)
+        self.assertAllclose((self.a1 // val)._data, self.d1 // val)
+        self.assertAllclose((val // self.a1)._data, val // self.d1)
 
     def test_scalar_power(self):
         val = 0.02
-        self.assertAllclose((self.a1 // val)._value, self.d1 // val)
-        self.assertAllclose((val // self.a1)._value, val // self.d1)
+        self.assertAllclose((self.a1 // val)._data, self.d1 // val)
+        self.assertAllclose((val // self.a1)._data, val // self.d1)
 
     # --- Other
 
     def test_addition(self):
-        self.assertAllclose((self.a1 + self.a2)._value, self.t1 + self.t2)
+        self.assertAllclose((self.a1 + self.a2)._data, self.t1 + self.t2)
 
     def test_subtraction(self):
-        self.assertAllclose((self.a1 - self.a2)._value, self.t1 - self.t2)
+        self.assertAllclose((self.a1 - self.a2)._data, self.t1 - self.t2)
 
     def test_multiplication(self):
-        self.assertAllclose((self.a1 * self.a2)._value, self.t1 * self.t2)
+        self.assertAllclose((self.a1 * self.a2)._data, self.t1 * self.t2)
 
     def test_division(self):
-        self.assertAllclose((self.a1 / self.a2)._value, self.t1 / self.t2)
+        self.assertAllclose((self.a1 / self.a2)._data, self.t1 / self.t2)
 
     def test_floor_division(self):
-        self.assertAllclose((self.a1 // self.a2)._value, self.t1 // self.t2)
+        self.assertAllclose((self.a1 // self.a2)._data, self.t1 // self.t2)
 
     def test_power(self):
-        self.assertAllclose((self.a1 ** self.a2)._value, self.t1 ** self.t2)
+        self.assertAllclose((self.a1 ** self.a2)._data, self.t1 ** self.t2)
 
     @unittest.skip("TODO")
     def test_iadd(self):
