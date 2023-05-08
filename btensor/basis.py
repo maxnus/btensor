@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 from functools import lru_cache
 from btensor.util import *
@@ -166,6 +167,9 @@ class Basis(BasisClass):
             self._dual = self
         else:
             self._dual = Cobasis(self)
+
+    def __class_getitem__(cls, item):
+        return functools.partial(cls, parent=item)
 
     @property
     def id(self):

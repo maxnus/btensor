@@ -1,3 +1,4 @@
+import functools
 import numbers
 import string
 import numpy as np
@@ -49,6 +50,9 @@ class Tensor(OperatorTemplate):
 
     def copy(self):
         return type(self)(self._data, basis=self.basis, copy_data=True)
+
+    def __class_getitem__(cls, item):
+        return functools.partial(cls, basis=item)
 
     # --- Basis
 
