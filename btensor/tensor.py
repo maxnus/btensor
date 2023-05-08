@@ -133,9 +133,10 @@ class Tensor(OperatorTemplate):
 
     # --- NumPy compatibility
 
-    def to_array(self, basis=None):
+    def to_array(self, basis=None, project=False):
         """Convert to NumPy ndarray"""
-        tensor = self.as_basis(basis=basis) if basis is not None else self
+        transform = self.proj if project else self.as_basis
+        tensor = transform(basis=basis) if basis is not None else self
         return tensor._data.copy()
 
     def __getattr__(self, name):
