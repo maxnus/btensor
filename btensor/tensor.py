@@ -24,7 +24,7 @@ def as_tensor(obj, **kwargs):
 class Tensor(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, data, basis, copy_data=True):
+    def __init__(self, data, basis=None, copy_data=True):
         #if basis is nobasis or isinstance(basis, BasisBase):
         #    basis = (basis,)
         #if len(basis) != np.ndim(value):
@@ -42,7 +42,8 @@ class Tensor(OperatorTemplate):
         data = np.array(data, copy=copy_data)
         data.flags.writeable = False
         self._data = data
-
+        if basis is None:
+            basis = data.shape
         self.basis = basis
 
     def __repr__(self):
