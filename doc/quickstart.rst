@@ -77,15 +77,57 @@ returns
 
 which agrees with the above result.
 
+
+Rotatation versus Permutation
+-----------------------------
+
+In the example above, the derived basis ``basis2`` was defined via the :math:`2 \times 2` transformation matrix.
+In general, any derived basis can be defined in terms of a :math:`m \times n` matrix, where :math:`m` is the size
+of the parent basis, :math:`n` the size of the derived basis, and :math:`0 < n \leq m`.
+If :math:`n = m`, the parent and derived basis span the same space and we consider the derived basis to be a **rotation**
+of its parent basis. If however, :math:`n < m`, then the derived basis only spans a **subspace** of its parent basis,
+which we can think of as a **rotation + projection** operation.
+
+.. note::
+    If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation matrix in the mathematical sense (orthogonal matrix with determinant 1).
+
+Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
+For example, we might be interested in the derived basis defined by the first 2 out of 5 basis vectors of its parent basis.
+While this transformation can be represented in terms of the matrix
+
+.. math::
+    \begin{bmatrix}
+    1 & 0  \\
+    0 & 1  \\
+    0 & 0  \\
+    0 & 0  \\
+    \end{bmatrix}
+
+we can represent it easier in terms of a **indexing array**, a **slice**, or a **masking array**:
+
+- **Indexing array**: a 1D array of integer indices, which refer to the basis vectors of the parent basis. In this example: ``[0, 1]``.
+- **Slice**: a slice object with start, stop, and step attributes. In this example: ``slice(0, 2, 1)`` (or simply ``slice(2)``).
+- **Masking array**: a 1D array with boolean values, indicating if the corresponding basis vector of the parent basis is included in the derived basis. In this example: ``[True, True, False, False]``.
+
+Opposed to the more general rotation above, we refer to these relations as **permutations**, since indexing array can change the order of basis vectors
+(or **permutation + selection**, if the derived basis is smaller than its parent).
+Defining a derived basis via a permutation is not purely for convenience, transformation can also be carried out more efficiently in this case.
+
+
 Multidimensional Tensors
 ------------------------
 
-In the example above, we only considered a 1D tensor, with a single associated basis.
+In the examples above, we only considered a 1D tensor, with a single associated basis.
 How can we work with higherdimensional tensors? We simply have to work with tuples of ``Basis`` instances, i.e.
 
-.. literalinclude:: ../examples/02-matrix.py
+.. literalinclude:: ../examples/03-matrix.py
     :linenos:
 
-In this example, both ``basis1`` and ``basis2`` are tuples of ``Basis`` instances.
-We also see a new way of defining derived bases in lines 6 and 7, via a one-dimensional **indexing array**;
-such an array do
+Note that ``basis2[1]`` with size 2 only spans a subspace of ``basis1[1]`` with size 3.
+As a result, ``tensor1`` and ``tensor2`` are created using NumPy arrays of different shapes,
+:math:`2 \times 3` and :math:`2 \times 2`, respectively.
+While it would not be possible to add the NumPy arrays directly, we can add the corresponding ``Tensor`` objects, since their bases are compatible along each dimension.
+
+The resulting ``tensor3`` can be converted back to its array representation with respect to ``basis1``, as shown in line 15.
+However, if we tried the do the same using ``basis2`` and without the additional keyword ``project=True``,
+an exception would occur. The reason for this is, that ``basis2`` cannot represent this tensor without loss of information.
