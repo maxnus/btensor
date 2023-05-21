@@ -372,5 +372,9 @@ class Cobasis(BasisClass):
     def __neg__(self):
         return self
 
+    #@staticmethod
+    #def is_cobasis():
+    #    return True
+
 
 from .tensor import Tensor

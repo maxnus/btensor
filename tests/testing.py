@@ -4,6 +4,7 @@ import itertools
 import numpy as np
 import scipy
 import scipy.stats
+import btensor
 
 
 def rand_orth_mat(n, ncol=None):
@@ -22,12 +23,13 @@ def powerset(iterable, include_empty=True):
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
 
 
-class TestCase(unittest.TestCase):
+#class TestCase(unittest.TestCase):
+class TestCase:
 
     allclose_atol = 1e-13
     allclose_rtol = 0
 
-    def assertAllclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):
+    def assert_allclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):
         if actual is desired is None:
             return True
         # TODO: Floats in set
@@ -36,8 +38,14 @@ class TestCase(unittest.TestCase):
         # Compare multiple pairs of arrays:
         if isinstance(actual, (tuple, list)):
             for i in range(len(actual)):
-                self.assertAllclose(actual[i], desired[i], rtol=rtol, atol=atol, **kwargs)
+                self.assert_allclose(actual[i], desired[i], rtol=rtol, atol=atol, **kwargs)
             return
+        # Tensor does not have __array_interface__:
+        if isinstance(actual, btensor.Tensor) and not hasattr(actual, '__array_interface__'):
+            actual = actual._data
+        if isinstance(desired, btensor.Tensor) and not hasattr(desired, '__array_interface__'):
+            desired = desired._data
+
         # Compare single pair of arrays:
         np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol, **kwargs)
         #try:
@@ -50,5 +58,17 @@ class TestCase(unittest.TestCase):
         #    e.args = (message, *args)
         #    raise
 
+    #def assertTrue(self, argument):
+    #    assert argument
+
     def setUp(self):
         np.random.seed(0)
+
+
+class TensorTests(TestCase):
+
+    tensor_cls = btensor.Tensor
+
+    #@property
+    #def tensor_cls(self):
+

@@ -23,5 +23,7 @@ from .basis import Basis
 from .tensor import Tensor
 from .tensor import Cotensor
 from .tensor import as_tensor
+from .array import Array
+from .array import Coarray
 
 from .numpy_functions import *

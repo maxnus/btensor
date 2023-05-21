@@ -14,19 +14,19 @@ class UtilTests(TestCase):
         pc2 = np.random.permutation(range(m))[:k]
         c1 = util.ColumnPermutationMatrix(permutation=pc1, size=n)  # n x m
         c2 = util.ColumnPermutationMatrix(permutation=pc2, size=m)  # m x k
-        self.assertAllclose(util.MatrixProduct((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProduct((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
         # Row-row
         pr1 = np.random.permutation(range(n))[:m]
         pr2 = np.random.permutation(range(m))[:k]
         r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
         r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
-        self.assertAllclose(util.MatrixProduct((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
+        self.assert_allclose(util.MatrixProduct((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
         # Column-row
-        self.assertAllclose(util.MatrixProduct((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
-        self.assertAllclose(util.MatrixProduct((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
+        self.assert_allclose(util.MatrixProduct((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
+        self.assert_allclose(util.MatrixProduct((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
         # Row-column
-        self.assertAllclose(util.MatrixProduct((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
-        self.assertAllclose(util.MatrixProduct((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProduct((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
+        self.assert_allclose(util.MatrixProduct((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
 
 
 def generate_test_permutation_matrix(cls, column=True):
@@ -44,17 +44,17 @@ def generate_test_permutation_matrix(cls, column=True):
                 pt = util.RowPermutationMatrix(permutation=perm, size=n)
                 p = pt.T
             # Test transpose
-            self.assertAllclose(p.to_array().T, pt.to_array())
+            self.assert_allclose(p.to_array().T, pt.to_array())
             # Test p.T x p
-            self.assertAllclose(pt.to_array().dot(p.to_array()), np.identity(m))
+            self.assert_allclose(pt.to_array().dot(p.to_array()), np.identity(m))
             # Test p x p.T
             ppt = p.to_array().dot(pt.to_array())
-            self.assertAllclose(ppt - np.diag(np.diag(ppt)), 0)
+            self.assert_allclose(ppt - np.diag(np.diag(ppt)), 0)
             nonzero = np.diag(ppt).nonzero()[0]
             if isinstance(perm, slice):
                 perm = np.arange(n)[perm]
             expected = set(np.asarray(perm).tolist())
-            self.assertAllclose(set(nonzero), expected)
+            self.assert_allclose(set(nonzero), expected)
         return test
 
     # Test permutations:
@@ -84,7 +84,7 @@ def generate_test_chained_dot(cls, simplify=True, atol=1e-10):
             else:
                 ref = np.linalg.multi_dot(args_ref)
             mpl = util.MatrixProduct(args)
-            self.assertAllclose(mpl.evaluate(simplify=simplify), ref, atol=atol, rtol=0)
+            self.assert_allclose(mpl.evaluate(simplify=simplify), ref, atol=atol, rtol=0)
         return test
 
     a = util.GeneralMatrix(np.random.rand(n, n))
