@@ -17,9 +17,11 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
         labels, result = subscripts.split('->')
     else:
         labels = subscripts
-        result = ''
+        # Generate result subscripts automatically: all non-repeated subcripts in alphabetical order
+        result = ''.join([s for s in sorted(set(subscripts.replace(',', ''))) if labels.count(s) == 1])
     labels = labels.split(',')
-    assert (len(labels) == len(operands))
+    if len(labels) != len(operands):
+        raise ValueError("Invalid number of operands")
 
     labels = [list(label) for label in labels]
     labels_out = copy.deepcopy(labels)
