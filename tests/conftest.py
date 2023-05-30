@@ -1,0 +1,343 @@
+import operator
+
+import pytest
+import itertools
+import numpy as np
+import scipy
+from btensor import Basis, Array, Tensor
+
+
+class HashableSlice:
+
+    def __init__(self, start=None, stop=None, step=None):
+        self.start = start
+        self.stop = stop
+        self.step = step
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.start}, {self.stop}, {self.step})"
+
+    @classmethod
+    def from_slice(cls, slc: slice) -> 'HashableSlice':
+        return cls(slc.start, slc.stop, slc.step)
+
+    def to_slice(self) -> slice:
+        return slice(self.start, self.stop, self.step)
+
+
+def get_permutations_of_combinations(values, minsize=1, maxsize=None):
+    if maxsize is None:
+        maxsize = len(values)
+    values = [HashableSlice.from_slice(v) if isinstance(v, slice) else v for v in values]
+    output = []
+    for size in range(minsize, maxsize+1):
+        combinations = list(itertools.combinations_with_replacement(values, size))
+        for comb in combinations:
+            perms = set(itertools.permutations(comb))
+            output += list(perms)
+    output = [tuple(y.to_slice() if isinstance(y, HashableSlice) else y for y in x) for x in output]
+    return output
+
+
+def random_orthogonal_matrix(n, ncolumn=None):
+    if n == 1:
+        return np.asarray([[1.0]])[:, :ncolumn]
+    m = scipy.stats.ortho_group.rvs(n)
+    if ncolumn is not None:
+        m = m[:, :ncolumn]
+    return m
+
+
+def powerset(iterable, include_empty=True):
+    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+    s = list(iterable)
+    start = 0 if include_empty else 1
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
+
+
+def get_ndims_and_axes(mindim=1, maxdim=4):
+    ndims_and_axes = []
+    for dim in range(mindim, maxdim+1):
+        axes = list(powerset(range(dim), include_empty=False))
+        ndims_and_axes += list(zip(len(axes)*[dim], axes))
+    return ndims_and_axes
+
+
+def get_ndims_and_same_size_axes(mindim=1, maxdim=4):
+    ndims_and_axes = []
+    for dim in range(mindim, maxdim+1):
+        axes = list(itertools.permutations(range(dim)))
+        ndims_and_axes += list(zip(len(axes)*[dim], axes))
+    return ndims_and_axes
+
+
+def get_ndims_and_axis12(mindim=1, maxdim=4):
+    ndims_and_axis12 = []
+    for dim in range(mindim, maxdim+1):
+        axes = itertools.permutations(range(dim), 2)
+        axes = list(zip(*axes))
+        axes1 = axes[0] if axes else []
+        axes2 = axes[1] if axes else []
+        ndims_and_axis12 += list(zip(len(axes1)*[dim], axes1, axes2))
+    return ndims_and_axis12
+
+
+# --- Root fixtures
+
+@pytest.fixture(params=[1, 2, 3, 4], scope='module', ids=lambda x: f'ndim{x}')
+def ndim(request):
+    return request.param
+
+
+@pytest.fixture(params=[2, 3, 4], scope='module', ids=lambda x: f'ndim{x}')
+def ndim_atleast2(request):
+    return request.param
+
+
+@pytest.fixture(params=get_ndims_and_axes(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+def ndim_and_axis(request):
+    return request.param
+
+
+@pytest.fixture(params=get_ndims_and_same_size_axes(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+def ndim_and_same_size_axis(request):
+    return request.param
+
+
+@pytest.fixture(params=get_ndims_and_axis12(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+def ndim_axis1_axis2(request):
+    return request.param
+
+
+@pytest.fixture(params=[Tensor, Array], scope='module')
+def tensor_cls(request):
+    """One tensor class (Tensor or Array)"""
+    return request.param
+
+
+@pytest.fixture(params=[1, 4], scope='module', ids=lambda x: f'size{x}')
+def basis_size(request):
+    return request.param
+
+
+@pytest.fixture(params=[operator.add, operator.sub, operator.mul, operator.truediv, operator.floordiv, operator.pow],
+                scope='module')
+def binary_operator(request):
+    return request.param
+
+# --- Combi fixtures
+
+@pytest.fixture(params=[Tensor, Array], scope='module')
+def tensor_cls_2x(request, tensor_cls):
+    """All combination of two tensor classes (Tensor, Tensor), (Tensor, Array), ..."""
+    return tensor_cls, request.param
+
+
+@pytest.fixture(params=[Tensor, Array], scope='module')
+def tensor_cls_3x(request, tensor_cls_2x):
+    """All combination of two tensor classes (Tensor, Tensor, Tensor), (Tensor, Tensor, Array), ..."""
+    return *tensor_cls_2x, request.param
+
+
+# --- Derived fixtures
+
+
+@pytest.fixture(scope='module')
+def rootbasis(basis_size):
+    return Basis(basis_size)
+
+
+@pytest.fixture(params=[0, -1], scope='module')
+def subbasis(request, rootbasis):
+    size = max(rootbasis.size + request.param, 1)
+    return rootbasis.make_basis(random_orthogonal_matrix(rootbasis.size, ncolumn=size))
+
+
+@pytest.fixture(params=[(0, 0), (-1, 0), (0, -1), (-1, -1)], scope='module')
+def subbasis_2x(request, rootbasis):
+    n = rootbasis.size
+    size1 = n + request.param[0]
+    size2 = n + request.param[1]
+    basis1 = rootbasis.make_basis(random_orthogonal_matrix(n, ncolumn=size1))
+    basis2 = rootbasis.make_basis(random_orthogonal_matrix(n, ncolumn=size2))
+    return basis1, basis2
+
+
+@pytest.fixture(params=['rotation', 'indices', 'slice', 'mask'], scope='module')
+def subbasis_type(request):
+    return request.param
+
+
+@pytest.fixture(params=['rotation', 'indices', 'slice', 'mask'], scope='module')
+def subbasis_type_2x(request, subbasis_type):
+    return request.param, subbasis_type
+
+
+def get_subbasis_argument(rootsize, subsize, subtype):
+    if subtype == 'rotation':
+        return random_orthogonal_matrix(rootsize, ncolumn=subsize)
+    if subtype in ('indices', 'mask'):
+        r = np.random.permutation(range(rootsize))[:subsize]
+        if subtype == 'mask':
+            r = np.isin(np.arange(rootsize), r)
+        return r
+    if subtype == 'slice':
+        start = np.random.randint(0, rootsize - subsize + 1)
+        stop = start + subsize
+        return slice(start, stop, 1)
+    raise ValueError(subtype)
+
+
+def subbasis_argument_to_matrix(subarg, rootsize):
+    if getattr(subarg, 'ndim', None) == 2:
+        return subarg
+    return np.identity(rootsize)[:, subarg]
+
+
+@pytest.fixture(scope='module')
+def get_rootbasis_subbasis():
+    def get_rootbasis_subbasis(rootsize, subsize, subtype, subsize2=None, subtype2=None):
+        if subsize > rootsize:
+            raise ValueError
+        rootbasis = Basis(rootsize)
+        subarg = get_subbasis_argument(rootsize, subsize, subtype)
+        subbasis = rootbasis.make_basis(subarg)
+        if subsize2 is not None and subtype2 is not None:
+            subarg2 = get_subbasis_argument(rootsize, subsize2, subtype2)
+            subbasis2 = rootbasis.make_basis(subarg2)
+            return rootbasis, (subbasis, subarg), (subbasis2, subarg2)
+        return rootbasis, (subbasis, subarg)
+    return get_rootbasis_subbasis
+
+#@pytest.fixture(scope='module')
+#def get_tensors(tensor_cls, ndim, rootbasis):
+#
+#    def tensor_factory(number):
+#        np.random.seed(0)
+#        basis = tuple(ndim * [rootbasis])
+#        output = []
+#        for i in range(number):
+#            data = np.random.random(tuple([b.size for b in basis]))
+#            tensor = tensor_cls(data, basis=basis)
+#            output.append((tensor, data))
+#        return output
+#
+#    return tensor_factory
+
+
+@pytest.fixture(params=get_permutations_of_combinations([0, 1, 3]), scope='module',
+                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+def shape_incl_empty(request):
+    return request.param
+
+
+@pytest.fixture(params=get_permutations_of_combinations([1, 3], maxsize=4), scope='module',
+                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+def shape(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def basis_for_shape(request, shape):
+    if not request.param:
+        return shape
+    basis = []
+    for size in shape:
+        basis.append(Basis(size))
+    return basis
+
+
+@pytest.fixture(scope='module')
+def np_array(shape):
+    return np.random.random(shape)
+
+
+#@pytest.fixture(scope='module')
+#def tensor(tensor_cls, ndim, rootbasis):
+#    np.random.seed(0)
+#    basis = tuple(ndim * [rootbasis])
+#    data = np.random.random(tuple([b.size for b in basis]))
+#    tensor = tensor_cls(data, basis=basis)
+#    return tensor, data
+
+
+#@pytest.fixture(scope='module')
+#def get_tensor(rootbasis):
+#    def get_array(ndim):
+#        np.random.seed(0)
+#        basis = tuple(ndim * [rootbasis])
+#        data = np.random.random(tuple([b.size for b in basis]))
+#        tensor = Array(data, basis=basis)
+#        return tensor, data
+#    return get_array
+
+
+#@pytest.fixture(scope='module')
+#def get_array(rootbasis):
+#    def get_array(ndim):
+#        np.random.seed(0)
+#        basis = tuple(ndim * [rootbasis])
+#        data = np.random.random(tuple([b.size for b in basis]))
+#        tensor = Array(data, basis=basis)
+#        return tensor, data
+#    return get_array
+
+
+@pytest.fixture(scope='module')
+def get_tensor_or_array(rootbasis):
+    def get_tensor_or_array(ndim: int, tensor_cls: type, number: int = 1, hermitian: bool = False) \
+            -> list[tuple] | tuple:
+        np.random.seed(0)
+        basis = tuple(ndim * [rootbasis])
+        result = []
+        for n in range(number):
+            data = np.random.random(tuple([b.size for b in basis]))
+            if hermitian:
+                data = (data + data.T)/2
+            tensor = tensor_cls(data, basis=basis)
+            result.append((tensor, data))
+        if number == 1:
+            return result[0]
+        return result
+    return get_tensor_or_array
+
+
+@pytest.fixture(scope='module')
+def get_tensor(get_tensor_or_array):
+    def get_tensor(ndim, hermitian=False):
+        return get_tensor_or_array(ndim, Tensor, hermitian=hermitian)
+    return get_tensor
+
+
+@pytest.fixture(scope='module')
+def get_array(get_tensor_or_array):
+    def get_array(ndim, hermitian=False):
+        return get_tensor_or_array(ndim, Array, hermitian=hermitian)
+    return get_array
+
+
+@pytest.fixture(scope='module')
+def tensor_or_array(ndim, tensor_cls, get_tensor_or_array):
+    return get_tensor_or_array(ndim, tensor_cls)
+
+
+@pytest.fixture(scope='module')
+def tensor(ndim, get_tensor):
+    return get_tensor(ndim)
+
+
+@pytest.fixture(scope='module')
+def array(ndim, get_array):
+    return get_array(ndim)
+
+
+@pytest.fixture(scope='module')
+def tensor_2x(tensor_cls_2x, ndim, rootbasis):
+    np.random.seed(0)
+    tensor_cls1, tensor_cls2 = tensor_cls_2x
+    basis = tuple(ndim * [rootbasis])
+    data1 = np.random.random(tuple([b.size for b in basis]))
+    data2 = np.random.random(tuple([b.size for b in basis]))
+    tensor1 = tensor_cls1(data1, basis=basis)
+    tensor2 = tensor_cls1(data2, basis=basis)
+    return (tensor1, data1), (tensor2, data2)

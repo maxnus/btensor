@@ -15,14 +15,19 @@ class Array(Tensor):
 
     def __getitem__(self, key):
         """Construct and return sub-Array."""
+
+        # getitem of Tensor base class:
+        try:
+            return super().__getitem__(key)
+        except IndexError as e:
+            pass
+
         if isinstance(key, int):
             return type(self)(self._data[key], basis=self.basis[1:])
         if isinstance(key, (list, np.ndarray)):
             value = self._data[key]
             basis = (self.basis[0].make_basis(key),) + self.basis[1:]
             return type(self)(value, basis=basis)
-        if key is Ellipsis:
-            return self
         if isinstance(key, slice) or key is np.newaxis:
             key = (key,)
         if isinstance(key, tuple):

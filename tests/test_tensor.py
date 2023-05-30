@@ -1,186 +1,164 @@
+import operator
+
 import pytest
 import numpy as np
 
 import btensor
-from testing import TensorTests, rand_orth_mat
+from helper import TestCase
+from conftest import get_permutations_of_combinations, random_orthogonal_matrix, subbasis_argument_to_matrix
 
 
-class TestTensor(TensorTests):
+class TestCopy(TestCase):
 
-    @classmethod
-    def setup_class(cls) -> None:
-        n = 10
-        np.random.seed(0)
-        cls.data = np.random.random((n, n))
+    def test_data_copy(self, tensor_cls, np_array):
+        data = np_array.copy()
+        tensor = tensor_cls(data)
+        data[:] = 0
+        assert np.all(tensor == np_array)
 
-    def test_not_writeable(self):
-        data_backup = self.data.copy()
-
-        # Perform copy
-        tensor = self.tensor_cls(self.data)
-        assert np.all(tensor == data_backup)
-        self.data[:] = 0
-        assert np.all(tensor == data_backup)
-        self.data = data_backup
-
-        # Do not copy
-        tensor = self.tensor_cls(self.data, copy_data=False)
-        assert np.all(tensor == data_backup)
-        with pytest.raises(ValueError):
-            self.data[:] = 0
-        tensor._data.flags.writeable = True
-        tensor._data[:] = 0
-        assert np.all(tensor == 0)
-        self.data = data_backup
-
-    def test_copy(self):
-        tensor = self.tensor_cls(self.data)
+    def test_tensor_copy(self, tensor_cls, np_array):
+        tensor = tensor_cls(np_array)
         tensor_copy = tensor.copy()
-        tensor._data.flags.writeable = True
-        tensor._data[:] = 0
-        assert np.all(tensor_copy == self.data)
+        tensor_copy._data.flags.writeable = True
+        tensor_copy._data[:] = 0
+        assert np.all(tensor == np_array)
+
+    def test_data_copy_nocopy(self, tensor_cls, np_array):
+        data = np_array.copy()
+        tensor = tensor_cls(data, copy_data=False)
+        data.flags.writeable = True
+        data[:] = 0
+        assert np.all(tensor == 0)
+
+    def test_data_copy_nocopy_raises(self, tensor_cls, np_array):
+        data = np_array.copy()
+        tensor_cls(data, copy_data=False)
+        with pytest.raises(ValueError):
+            data[:] = 0
 
 
-class TestArithmetricSameBasis(TensorTests):
+class TestArithmetic(TestCase):
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.mark.parametrize('unary_operator', [operator.neg, operator.abs])
+    def test_unary_operator(self, unary_operator, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        self.assert_allclose(unary_operator(tensor), unary_operator(np_array))
+
+    def test_binary_operator(self, ndim, tensor_cls, binary_operator, get_tensor_or_array):
+        (tensor1, np_array1), (tensor2, np_array2) = get_tensor_or_array(ndim, tensor_cls, number=2)
+        self.assert_allclose(binary_operator(tensor1, tensor2), binary_operator(np_array1, np_array2))
+
+    @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
+    def test_scalar_operator(self, scalar, ndim, tensor_cls, binary_operator, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        expected = binary_operator(np_array, scalar)
+        self.assert_allclose(binary_operator(tensor, scalar), expected)
+
+    @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
+    def test_scalar_operator_reverse(self, scalar, ndim, tensor_cls, binary_operator, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        expected = binary_operator(scalar, np_array)
+        self.assert_allclose(binary_operator(scalar, tensor), expected)
+
+    @pytest.mark.parametrize('subsize1', [1, 5, 10])
+    @pytest.mark.parametrize('subsize2', [1, 5, 10])
+    def test_binary_operator_different_basis(self, binary_operator, subsize1, subsize2, subbasis_type_2x, tensor_cls_2x,
+                                             get_rootbasis_subbasis):
+        subtype1, subtype2 = subbasis_type_2x
+        rootbasis, (subbasis1, subarg1), (subbasis2, subarg2) = get_rootbasis_subbasis(10, subsize1, subtype1, subsize2,
+                                                                                       subtype2)
         np.random.seed(0)
-        n1, n2 = 5, 6
-        b1 = btensor.Basis(n1)
-        b2 = btensor.Basis(n2)
-        cls.d1 = np.random.rand(n1, n2)
-        cls.d2 = np.random.rand(n1, n2)
-        cls.a1 = cls.tensor_cls(cls.d1, basis=(b1, b2))
-        cls.a2 = cls.tensor_cls(cls.d2, basis=(b1, b2))
+        np_array1 = np.random.random((rootbasis.size, subbasis1.size, subbasis1.size))
+        np_array2 = np.random.random((rootbasis.size, subbasis2.size, subbasis2.size))
+        tensor_cls1, tensor_cls2 = tensor_cls_2x
+        tensor1 = tensor_cls1(np_array1, basis=(rootbasis, subbasis1, subbasis1))
+        tensor2 = tensor_cls2(np_array2, basis=(rootbasis, subbasis2, subbasis2))
 
-    def test_negation(self):
-        self.assert_allclose((-self.a1)._data, -self.d1)
+        subarg1 = subbasis_argument_to_matrix(subarg1, rootbasis.size)
+        subarg2 = subbasis_argument_to_matrix(subarg2, rootbasis.size)
 
-    def test_absolute(self):
-        self.assert_allclose(abs(self.a1)._data, abs(self.d1))
-
-    def test_addition(self):
-        self.assert_allclose((self.a1 + self.a2)._data, self.d1 + self.d2)
-
-    def test_subtraction(self):
-        self.assert_allclose((self.a1 - self.a2)._data, self.d1 - self.d2)
-
-    def test_multiplication(self):
-        self.assert_allclose((self.a1 * self.a2)._data, self.d1 * self.d2)
-
-    def test_division(self):
-        self.assert_allclose((self.a1 / self.a2)._data, self.d1 / self.d2)
-
-    def test_floordivision(self):
-        self.assert_allclose((self.a1 // self.a2)._data, self.d1 // self.d2)
+        expected = binary_operator(np.einsum('xab,ia,jb->xij', np_array1, subarg1, subarg1),
+                                   np.einsum('xab,ia,jb->xij', np_array2, subarg2, subarg2))
+        if binary_operator == operator.truediv:
+            rtol = 1e-11
+        elif binary_operator == operator.pow:
+            rtol = 1e-13
+        else:
+            rtol = 0
+        self.assert_allclose(binary_operator(tensor1, tensor2), expected, rtol=rtol)
 
 
-class TestArithmetricDifferentBasis(TensorTests):
-
-    @classmethod
-    def setup_class(cls):
-        np.random.seed(0)
-        n1, n2 = 5, 6
-        n11, n12 = 3, 4
-        n21, n22 = 6, 2
-        b1 = btensor.Basis(n1)
-        b2 = btensor.Basis(n2)
-        cls.c11 = rand_orth_mat(n1, n11)
-        cls.c12 = rand_orth_mat(n1, n12)
-        cls.c21 = rand_orth_mat(n2, n21)
-        cls.c22 = rand_orth_mat(n2, n22)
-        b11 = btensor.Basis(cls.c11, parent=b1)
-        b12 = btensor.Basis(cls.c12, parent=b1)
-        b21 = btensor.Basis(cls.c21, parent=b2)
-        b22 = btensor.Basis(cls.c22, parent=b2)
-        cls.d1 = np.random.rand(n11, n21)
-        cls.d2 = np.random.rand(n12, n22)
-        cls.a1 = cls.tensor_cls(cls.d1, basis=(b11, b21))
-        cls.a2 = cls.tensor_cls(cls.d2, basis=(b12, b22))
-        # To check
-        cls.t1 = np.linalg.multi_dot((cls.c11, cls.d1, cls.c21.T))
-        cls.t2 = np.linalg.multi_dot((cls.c12, cls.d2, cls.c22.T))
-
-    # --- Scalar
-
-    def test_scalar_addition(self):
-        self.assert_allclose((self.a1 + 2)._data, self.d1 + 2)
-        self.assert_allclose((2 + self.a1)._data, self.d1 + 2)
-
-    def test_scalar_subtraction(self):
-        self.assert_allclose((self.a1 - 2)._data, self.d1 - 2)
-        self.assert_allclose((2 - self.a1)._data, 2 - self.d1)
-
-    def test_scalar_multiplication(self):
-        self.assert_allclose((self.a1 * 2)._data, self.d1 * 2)
-        self.assert_allclose((2 * self.a1)._data, 2 * self.d1)
-
-    def test_scalar_division(self):
-        self.assert_allclose((self.a1 / 2)._data, self.d1 / 2)
-        self.assert_allclose((2 / self.a1)._data, 2 / self.d1)
-
-    def test_scalar_floor_division(self):
-        val = 0.02
-        self.assert_allclose((self.a1 // val)._data, self.d1 // val)
-        self.assert_allclose((val // self.a1)._data, val // self.d1)
-
-    def test_scalar_power(self):
-        val = 0.02
-        self.assert_allclose((self.a1 // val)._data, self.d1 // val)
-        self.assert_allclose((val // self.a1)._data, val // self.d1)
-
-    # --- Other
-
-    def test_addition(self):
-        self.assert_allclose((self.a1 + self.a2)._data, self.t1 + self.t2)
-
-    def test_subtraction(self):
-        self.assert_allclose((self.a1 - self.a2)._data, self.t1 - self.t2)
-
-    def test_multiplication(self):
-        self.assert_allclose((self.a1 * self.a2)._data, self.t1 * self.t2)
-
-    def test_division(self):
-        self.assert_allclose((self.a1 / self.a2)._data, self.t1 / self.t2)
-
-    def test_floor_division(self):
-        self.assert_allclose((self.a1 // self.a2)._data, self.t1 // self.t2)
-
-    def test_power(self):
-        self.assert_allclose((self.a1 ** self.a2)._data, self.t1 ** self.t2)
-
-    #@unittest.skip("TODO")
-    #def test_iadd(self):
-    #    a1 = self.a1
-    #    a1 += 0
-    #    self.assertEqual(id(a1), id(self.a1))
+# class TestSubbasis(TestCase):
+#
+#     @classmethod
+#     def setup_class(cls):
+#        np.random.seed(0)
+#        n1, n2 = 5, 6
+#        m1, m2 = 3, 4
+#        b1 = btensor.Basis(n1)
+#        b2 = btensor.Basis(n2)
+#        cls.c1 = rand_orth_mat(n1, m1)
+#        cls.c2 = rand_orth_mat(n2, m2)
+#        sb1 = btensor.Basis(cls.c1, parent=b1)
+#        sb2 = btensor.Basis(cls.c2, parent=b2)
+#        cls.d1 = np.random.rand(n1, n2)
+#        cls.d2 = np.linalg.multi_dot((cls.c1.T, cls.d1, cls.c2))
+#        cls.a1 = cls.tensor_cls(cls.d1, basis=(b1, b2))
+#        cls.a2 = cls.tensor_cls(cls.d2, basis=(sb1, sb2))
+#
+#     def test_basis_setter(self):
+#        a1a = self.a1.project_onto(self.a2.basis)
+#        a1b = self.a1.copy()
+#        a1b.basis = self.a2.basis
+#        self.assertAllclose(a1a, a1b)
+#
+#     def test_subspace(self):
+#        a2 = self.a1.proj(self.a2.basis)
+#        self.assert_allclose(self.a2._data, a2._data)
 
 
-class TestSubbasis(TensorTests):
+class TestGetitem(TestCase):
 
-    @classmethod
-    def setup_class(cls):
-        np.random.seed(0)
-        n1, n2 = 5, 6
-        m1, m2 = 3, 4
-        b1 = btensor.Basis(n1)
-        b2 = btensor.Basis(n2)
-        cls.c1 = rand_orth_mat(n1, m1)
-        cls.c2 = rand_orth_mat(n2, m2)
-        sb1 = btensor.Basis(cls.c1, parent=b1)
-        sb2 = btensor.Basis(cls.c2, parent=b2)
-        cls.d1 = np.random.rand(n1, n2)
-        cls.d2 = np.linalg.multi_dot((cls.c1.T, cls.d1, cls.c2))
-        cls.a1 = cls.tensor_cls(cls.d1, basis=(b1, b2))
-        cls.a2 = cls.tensor_cls(cls.d2, basis=(sb1, sb2))
+    @pytest.mark.parametrize('subsize', [6, 3, 1])
+    def test_getitem(self, subsize, subbasis_type, get_rootbasis_subbasis, tensor_cls, ndim):
+        rootsize = 6
+        rootbasis, (subbasis, subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
+        rootbasis = ndim*(rootbasis,)
+        subbasis = ndim*(subbasis,)
+        np_array = np.random.random(ndim*(rootsize,))
+        tensor = tensor_cls(np_array, basis=rootbasis)
+        self.assert_allclose(tensor[subbasis], tensor.proj(subbasis))
 
-    #def test_basis_setter(self):
-    #    a1a = self.a1.project_onto(self.a2.basis)
-    #    a1b = self.a1.copy()
-    #    a1b.basis = self.a2.basis
-    #    self.assertAllclose(a1a, a1b)
+    def test_getitem_slice_none(self, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        self.assert_allclose(tensor[:], np_array[:])
 
-    def test_subspace(self):
-        a2 = self.a1.proj(self.a2.basis)
-        self.assert_allclose(self.a2._data, a2._data)
+    def test_getitem_ellipsis(self, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        self.assert_allclose(tensor[...], np_array[...])
+
+    @pytest.mark.parametrize('key', [(0, ...), (..., 0), (0, 0, ...), (0, ..., 0), (..., 0, 0),
+                                     (slice(None), ...), (..., slice(None)), (slice(None), slice(None), ...),
+                                     (slice(None), ..., slice(None)), (..., slice(None), slice(None)),
+                                     (0, slice(None), ...), (0, ..., slice(None)), (..., 0, slice(None)),
+                                     (slice(None), 0, ...), (slice(None), ..., 0), (..., slice(None), 0)],
+                             ids=lambda x: str(x).replace('slice(None, None, None)', ':').replace('Ellipsis', '...'))
+    def test_getitem_tuple_with_ellipsis(self, ndim_atleast2, get_array, key):
+        array, np_array = get_array(ndim=ndim_atleast2)
+        self.assert_allclose(array[key], np_array[key])
+
+    def test_getitem_newaxis(self, array):
+        array, np_array = array
+        self.assert_allclose(array[np.newaxis], np_array[np.newaxis])
+
+    @pytest.mark.parametrize('key', get_permutations_of_combinations([np.newaxis, slice(None)], 2),
+                             ids=lambda x: str(x))
+    def test_getitem_newaxis_tuple(self, ndim_atleast2, get_array, key):
+        array, np_array = get_array(ndim_atleast2)
+        self.assert_allclose(array[key], np_array[key])
+
+    @pytest.mark.parametrize('key', [0, slice(0, 100), [0], [True]], ids=lambda x: str(x))
+    def test_getitem_raises(self, key, tensor):
+        tensor = tensor[0]
+        with pytest.raises(IndexError):
+            assert tensor[key]

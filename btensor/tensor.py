@@ -1,11 +1,13 @@
 import functools
 import numbers
 import string
+
 import numpy as np
+
 from btensor.util import *
-from .basis import Basis, BasisClass, Cobasis, is_basis, is_nobasis, compatible_basis
-from .optemplate import OperatorTemplate
 from . import numpy_functions
+from .basis import BasisClass, Cobasis, is_basis, is_nobasis, compatible_basis
+from .optemplate import OperatorTemplate
 
 
 def value_if_scalar(array):
@@ -19,6 +21,12 @@ def as_tensor(obj, **kwargs):
     if isinstance(obj, Tensor):
         return obj
     return Tensor(obj, basis=obj.shape, **kwargs)
+
+
+def basis_to_tuple(basis):
+    if isinstance(basis, BasisClass):
+        return (basis,)
+    return tuple(basis)
 
 
 class Tensor(OperatorTemplate):
@@ -171,6 +179,36 @@ class Tensor(OperatorTemplate):
         # transform = (basis1 | basis2.dual()).value
         transform = basis2.dual()._as_basis_matprod(basis1, simplify=True)
         return transform
+
+    def __getitem__(self, key):
+        if key in (slice(None), Ellipsis):
+            return self
+        if isinstance(key, BasisClass):
+            key = (key,)
+
+        index_error = IndexError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
+                                 f'{type(self).__name__} class. '
+                                 f'Use Array class to index using integers, slices, and integer or boolean arrays')
+
+        if not isinstance(key, tuple):
+            raise index_error
+        for bas in key:
+            if not isinstance(bas, BasisClass) or key in (slice(None), Ellipsis):
+                raise index_error
+
+        return self.proj(key)
+
+    def is_valid_basis(self, basis):
+        try:
+            basis = basis_to_tuple(basis)
+        except TypeError:
+            return False
+        if len(basis) > self.ndim:
+            return False
+        for bas in basis:
+            if not (is_basis(bas) or bas is None):
+                return False
+        return True
 
     def proj(self, basis, inplace=False):
         """Transform to different set of basis.
