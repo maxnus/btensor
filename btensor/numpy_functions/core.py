@@ -8,6 +8,7 @@ from btensor.basis import is_nobasis
 
 
 __all__ = [
+    'newaxis',
     'empty', 'empty_like', 'ones', 'ones_like', 'zeros', 'zeros_like', 'sum', 'dot', 'trace',
 ]
 
@@ -15,6 +16,9 @@ __all__ = [
 def _to_tensor(*args):
     args = tuple(bt.Tensor(a, basis=a.shape) if isinstance(a, np.ndarray) else a for a in args)
     return args[0] if len(args) == 1 else args
+
+
+newaxis = np.newaxis
 
 
 def _empty_factory(numpy_func):
