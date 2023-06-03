@@ -57,10 +57,7 @@ class BasisClass:
     def dual(self):
         raise NotImplementedError
 
-    def __pos__(self):
-        raise NotImplementedError
-
-    def __neg__(self):
+    def get_nondual(self):
         raise NotImplementedError
 
     def __invert__(self):
@@ -85,8 +82,8 @@ class BasisClass:
         return other.as_basis(self)
 
     def same_root(self, other):
-        root1 = self.root or (+self)
-        root2 = other.root or (+other)
+        root1 = self.root or self.get_nondual()
+        root2 = other.root or other.get_nondual()
         return root1 == root2
 
     def check_same_root(self, other):
@@ -215,7 +212,7 @@ class Basis(BasisClass):
 
         self.check_same_root(basis)
         parents = self.get_parents()
-        nondual = +basis
+        nondual = basis.get_nondual()
         if nondual not in parents:
             raise ValueError(f"{basis} is not superbasis of {self}")
         matrices = []
@@ -279,7 +276,7 @@ class Basis(BasisClass):
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
-        parent = self.find_common_parent(+other)
+        parent = self.find_common_parent(other.get_nondual())
         matprod = other.coeff_in_basis(parent).T + [parent.metric] + self.coeff_in_basis(parent)
         if simplify:
             matprod = matprod.simplify()
@@ -287,6 +284,9 @@ class Basis(BasisClass):
 
     def dual(self):
         return self._dual
+
+    def get_nondual(self):
+        return self
 
     @staticmethod
     def is_cobasis():
@@ -313,9 +313,6 @@ class Basis(BasisClass):
         ortherr = abs(self.metric-np.identity(self.size)).max()
         return ortherr
 
-    def __pos__(self):
-        return self
-
     def __neg__(self):
         return self.dual()
 
@@ -337,6 +334,9 @@ class Cobasis(BasisClass):
     def dual(self):
         return self._basis
 
+    def get_nondual(self):
+        return self.dual()
+
     @property
     def name(self):
         return 'Cobasis(%s)' % self.dual().name
@@ -350,7 +350,7 @@ class Cobasis(BasisClass):
         return self.dual().root
 
     def coeff_in_basis(self, basis):
-        matrices = (+self).coeff_in_basis(basis)
+        matrices = self.get_nondual().coeff_in_basis(basis)
         # To raise right-hand index:
         matrices.append(self.metric)
         return matrices
@@ -361,16 +361,13 @@ class Cobasis(BasisClass):
 
     def _as_basis_matprod(self, other, simplify=False):
         """Append inverse metric (metric of dual space)"""
-        matprod = (+self)._as_basis_matprod(other) + [self.metric]
+        matprod = self.get_nondual()._as_basis_matprod(other) + [self.metric]
         if simplify:
             matprod = matprod.simplify()
         return matprod
 
     def __pos__(self):
         return self.dual()
-
-    def __neg__(self):
-        return self
 
     #@staticmethod
     #def is_cobasis():

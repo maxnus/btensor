@@ -276,8 +276,8 @@ class Tensor(OperatorTemplate):
         for b0, b1 in zip(self.basis, basis):
             if b1 is None:
                 continue
-            b0 = +b0
-            b1 = +b1
+            b0 = b0.get_nondual()
+            b1 = b1.get_nondual()
             if not (b1.space >= b0.space):
                 raise BasisError(f"{b1} does not span {b0}")
         return self.proj(basis, inplace=inplace)
