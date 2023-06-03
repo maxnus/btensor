@@ -31,6 +31,7 @@ class TestPermutationMatrix(TestCase):
 
     @staticmethod
     def get_permutation_matrix_input():
+        np.random.seed(0)
         size = 5
         return [
             [], [0], [4],
@@ -88,7 +89,6 @@ class TestMatrixProduct(TestCase):
                     'r': util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
                     }
         matrices = [(k, v) for (k, v) in matrices.items()]
-
         for i, args in enumerate(powerset(matrices, include_empty=False)):
             if len(args) == 1 and ('x', None) in args:
                 continue
