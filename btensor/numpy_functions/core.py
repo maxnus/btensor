@@ -14,16 +14,21 @@ __all__ = [
 
 
 def _to_tensor(*args):
-    args = tuple(bt.Tensor(a, basis=a.shape) if isinstance(a, np.ndarray) else a for a in args)
-    return args[0] if len(args) == 1 else args
+    args = tuple(bt.Tensor(a) if isinstance(a, np.ndarray) else a for a in args)
+    if len(args) == 1:
+        return args[0]
+    return args
 
 
 newaxis = np.newaxis
 
 
 def _empty_factory(numpy_func):
-    def func(basis, *args, **kwargs):
-        shape = tuple(b if is_int(b) else b.size for b in basis)
+    def func(basis, *args, shape=None, **kwargs):
+        if shape is None:
+            if any(is_nobasis(b) for b in basis):
+                raise ValueError("cannot deduce size of nobasis. Specify shape explicitly")
+            shape = tuple(b.size for b in basis)
         return bt.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
     return func
 
@@ -36,7 +41,7 @@ zeros = _empty_factory(np.zeros)
 def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
         a = _to_tensor(a)
-        return func(a.basis, *args, **kwargs)
+        return func(a.basis, *args, shape=a.shape, **kwargs)
     return func_like
 
 
@@ -63,10 +68,11 @@ def _overlap(a, b):
         return IdentityMatrix(None)
     if is_nobasis(a) or is_nobasis(b):
         raise BasisError
-    return (a | b)
+    return b.as_basis(a)
 
 
 def dot(a, b):
+    print("DOT")
     a, b = _to_tensor(a, b)
     if a.ndim == b.ndim == 1:
         ovlp = _overlap(a.basis[0], b.basis[0])

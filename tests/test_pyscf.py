@@ -130,6 +130,13 @@ class TestSCF(TestCase):
     def test_ao_mo_projector(self, mf, ao, mo, dot_function):
         i = np.identity(mf.nao)
         # 1
+        # t1 = (-ao | mo)
+        # t2 = (mo | ao)
+        # print(t1)
+        # print(t2)
+        # print(dot_function)
+        # np.dot(t1, t2)
+
         self.assert_allclose(dot_function((-ao | mo), (mo | ao)), i)
         self.assert_allclose(dot_function((-ao | -mo), (mo | ao)), i)
         self.assert_allclose(dot_function((-ao | mo), (-mo | ao)), i)
@@ -223,10 +230,10 @@ class TestSCF(TestCase):
         self.assert_allclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())
         self.assert_allclose(t2s.trace().trace(), t2b.trace().trace())
         # Restore
-        t2r = t2b.proj((mo_occ, mo_occ, mo_vir, mo_vir))
+        t2r = t2b.project((mo_occ, mo_occ, mo_vir, mo_vir))
         self.assert_allclose(t2s._data, t2r._data)
         # Empty array for orthogonal basis
-        t2e = t2s.proj((mo_vir, mo_vir, mo_occ, mo_occ))
+        t2e = t2s.project((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assert_allclose(t2e, 0)
-        t2e = t2b.proj((mo_vir, mo_vir, mo_occ, mo_occ))
+        t2e = t2b.project((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assert_allclose(t2e, 0)

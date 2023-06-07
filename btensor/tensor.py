@@ -1,19 +1,14 @@
-import functools
 import numbers
 import string
+from typing import Optional, Self
 
 import numpy as np
 
 from btensor.util import *
 from . import numpy_functions
-from .basis import BasisClass, Cobasis, is_basis, is_nobasis, compatible_basis
+from .basis import BasisOrDualBasis, Cobasis, is_basis, is_nobasis, compatible_basis, nobasis, BasisType
+from .basistuple import BasisTuple
 from .optemplate import OperatorTemplate
-
-
-def value_if_scalar(array):
-    if array.ndim > 0:
-        return array
-    return array._data
 
 
 def as_tensor(obj, **kwargs):
@@ -23,153 +18,76 @@ def as_tensor(obj, **kwargs):
     return Tensor(obj, basis=obj.shape, **kwargs)
 
 
-def basis_to_tuple(basis):
-    if isinstance(basis, BasisClass):
-        return (basis,)
-    return tuple(basis)
-
-
 class Tensor(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, data, basis=None, copy_data=True):
-        #if basis is nobasis or isinstance(basis, BasisBase):
-        #    basis = (basis,)
-        #if len(basis) != np.ndim(value):
-        #    raise ValueError("Array with shape %r requires %d bases, %d given" % (
-        #        value.shape, np.ndim(value), len(basis)))
-        #for i, b in enumerate(basis):
-        #    if b is nobasis:
-        #        continue
-        #    if not isinstance(b, BasisBase):
-        #        raise ValueError("Basis instance or nobasis required")
-        #    if value.shape[i] != b.size:
-        #        raise ValueError("Dimension %d with size %d incompatible with basis size %d" % (
-        #            i+1, value.shape[i], b.size)
-
+    def __init__(self, data, basis: Optional[tuple[BasisType]] = None, copy_data: bool = True):
         data = np.array(data, copy=copy_data)
         data.flags.writeable = False
         self._data = data
         if basis is None:
-            basis = data.shape
-        self.basis = basis
+            basis = data.ndim * (nobasis,)
+        basis = BasisTuple(basis)
+        self.check_basis(basis)
+        self._basis = basis
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
 
-    def copy(self):
+    def copy(self) -> Self:
         return type(self)(self._data, basis=self.basis, copy_data=True)
-
-    def __class_getitem__(cls, item):
-        return functools.partial(cls, basis=item)
 
     # --- Basis
 
     @property
-    def basis(self):
-        return self._basis
+    def basis(self) -> tuple[BasisType, ...]:
+        return self._basis.get_basistuple()
 
-    @basis.setter
-    def basis(self, value):
-        value = atleast_1d(value)
-        if len(value) != self.ndim:
-            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(value)} given)")
-        for i, (s, b) in enumerate(zip(self.shape, value)):
-            if is_nobasis(b):
+    def check_basis(self, basis: BasisTuple) -> None:
+        if len(basis) != self.ndim:
+            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
+        for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
+            if not is_basis(baselem):
+                raise ValueError(f"Basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
+            if is_nobasis(baselem):
                 continue
-            if not is_basis(b):
-                raise ValueError(f"Basis instance or nobasis required (given: {b} of type {type(b)}).")
-            if s != b.size:
-                raise ValueError(f"Dimension {i+1} with size {s} incompatible with basis size {b.size}")
-        if not hasattr(self, '_basis'):
-            self._basis = value
-        else:
-            self.as_basis(value, inplace=True)
+            if size != baselem.size:
+                raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
-    def replace_basis(self, basis, inplace=False):
+    def replace_basis(self, basis: tuple[Optional[BasisType], ...], inplace: bool = False) -> Self:
         """Replace basis with new basis."""
-        basis = atleast_1d(basis)
-        new_basis = list(self.basis)
-        for i, (size, b0, b1) in enumerate(zip(self.shape, self.basis, basis)):
-            if b1 is None:
-                continue
-            if b1 == -1:
-                b1 = size
-            size_new = b1 if is_nobasis(b1) else b1.size
-            if size_new != size:
-                raise ValueError(f"Dimension {i} with size {size} incompatible with basis size {size_new}")
-            new_basis[i] = b1
-        assert len(new_basis) == len(self.basis)
         tensor = self if inplace else self.copy()
-        tensor._basis = tuple(new_basis)
+        new_basis = self._basis.update_with(basis)
+        tensor.check_basis(new_basis)
+        tensor._basis = new_basis
         return tensor
 
     # --- Variance
 
     @property
-    def variance(self):
-        return tuple([1 if isinstance(b, Cobasis) else -1 for b in self.basis])
+    def variance(self) -> tuple[int]:
+        return tuple(-v for v in self._basis.variance)
 
-    def as_variance(self, variance):
-        if np.ndim(variance) == 0:
-            variance = self.ndim * (variance,)
-        if len(variance) != self.ndim:
-            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
-                             f"({len(variance)} given)")
-        if not np.isin(variance, (-1, 1)):
-            raise ValueError("Variance can only contain values -1 and 1")
-        new_basis = []
-        for i, (b, v0, v1) in enumerate(zip(self.basis, self.variance, variance)):
-            if v0 != v1:
-                b = b.dual()
-            new_basis.append(b)
-        return self.as_basis(basis=new_basis)
-
-    @property
-    def covariant_axes(self):
-        return tuple(np.asarray(self.variance) == 1)
+    #def as_variance(self, variance):
+    #    if np.ndim(variance) == 0:
+    #        variance = self.ndim * (variance,)
+    #    if len(variance) != self.ndim:
+    #        raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
+    #                         f"({len(variance)} given)")
+    #    if not np.isin(variance, (-1, 1)):
+    #        raise ValueError("Variance can only contain values -1 and 1")
+    #    new_basis = []
+    #    for i, (b, v0, v1) in enumerate(zip(self.basis, self.variance, variance)):
+    #        if v0 != v1:
+    #            b = b.dual()
+    #        new_basis.append(b)
+    #    return self.as_basis(basis=new_basis)
 
     @property
-    def contravariant_axes(self):
-        return tuple(np.asarray(self.variance) == -1)
-
-    @property
-    def variance_string(self):
+    def variance_string(self) -> str:
         """String representation of variance tuple."""
         symbols = {1: '+', -1: '-', 0: '*'}
         return ''.join(symbols[x] for x in self.variance)
-
-    # --- NumPy compatibility
-
-    def to_array(self, basis=None, project=False):
-        """Convert to NumPy ndarray"""
-        transform = self.proj if project else self.as_basis
-        tensor = transform(basis=basis) if basis is not None else self
-        return tensor._data.copy()
-
-    def __getattr__(self, name):
-        """Inherit from NumPy"""
-        if name in ['dtype', 'ndim', 'shape']:
-            return getattr(self._data, name)
-        raise AttributeError(f"{type(self).__name__} object has no attribute '{name}'")
-
-    def transpose(self, axes=None):
-        value = self._data.transpose(axes)
-        if axes is None:
-            basis = self.basis[::-1]
-        else:
-            basis = tuple(self.basis[ax] for ax in axes)
-        return type(self)(value, basis=basis)
-
-    @property
-    def T(self):
-        return self.transpose()
-
-    def trace(self, axis1=0, axis2=1):
-        return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
-
-    def dot(self, b):
-        return numpy_functions.dot(self, b)
 
     # ---
 
@@ -181,9 +99,9 @@ class Tensor(OperatorTemplate):
         return transform
 
     def __getitem__(self, key):
-        if key in (slice(None), Ellipsis):
+        if (isinstance(key, slice) and key == slice(None)) or key is Ellipsis:
             return self
-        if isinstance(key, BasisClass):
+        if isinstance(key, BasisOrDualBasis):
             key = (key,)
 
         index_error = IndexError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
@@ -193,24 +111,12 @@ class Tensor(OperatorTemplate):
         if not isinstance(key, tuple):
             raise index_error
         for bas in key:
-            if not isinstance(bas, BasisClass) or key in (slice(None), Ellipsis):
+            if not isinstance(bas, BasisOrDualBasis) or key in (slice(None), Ellipsis):
                 raise index_error
 
-        return self.proj(key)
+        return self.project(key)
 
-    def is_valid_basis(self, basis):
-        try:
-            basis = basis_to_tuple(basis)
-        except TypeError:
-            return False
-        if len(basis) > self.ndim:
-            return False
-        for bas in basis:
-            if not (is_basis(bas) or bas is None):
-                return False
-        return True
-
-    def proj(self, basis, inplace=False):
+    def project(self, basis, inplace=False):
         """Transform to different set of basis.
 
         None can be used to indicate no transformation.
@@ -271,7 +177,7 @@ class Tensor(OperatorTemplate):
         return type(self)(value, basis=basis_out)
 
     def as_basis(self, basis, inplace=False):
-        if isinstance(basis, BasisClass):
+        if isinstance(basis, BasisOrDualBasis):
             basis = (basis,)
         for b0, b1 in zip(self.basis, basis):
             if b1 is None:
@@ -280,13 +186,16 @@ class Tensor(OperatorTemplate):
             b1 = b1.get_nondual()
             if not (b1.space >= b0.space):
                 raise BasisError(f"{b1} does not span {b0}")
-        return self.proj(basis, inplace=inplace)
+        return self.project(basis, inplace=inplace)
 
-    def as_basis_at(self, index, basis, **kwargs):
+    def as_basis_at(self, index: int, basis: BasisType, **kwargs) -> Self:
         if index < 0:
             index += self.ndim
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.as_basis(basis_new, **kwargs)
+
+    def get_rootbasis_tuple(self):
+        return tuple(b.root for b in self.basis)
 
     def __or__(self, basis):
         """To allow basis transformation as (array | basis)"""
@@ -300,7 +209,7 @@ class Tensor(OperatorTemplate):
 
     def _broadcast_basis(self, basis, pad='right'):
         """Broadcast basis to same length as self.basis."""
-        if isinstance(basis, BasisClass):
+        if isinstance(basis, BasisOrDualBasis):
             basis = (basis,)
         npad = len(self.basis) - len(basis)
         if npad == 0:
@@ -331,8 +240,10 @@ class Tensor(OperatorTemplate):
         if not self.is_compatible(other):
             raise ValueError
         for b1, b2 in zip(self.basis, other.basis):
-            if b1.is_cobasis() ^ b2.is_cobasis():
-                raise ValueError()
+            #if b1.is_cobasis() ^ b2.is_cobasis():
+            #    raise ValueError()
+            b1 = b1.get_nondual()
+            b2 = b2.get_nondual()
             if is_nobasis(b1) and is_nobasis(b2):
                 if b1 == -1:
                     basis.append(b2)
@@ -372,19 +283,57 @@ class Tensor(OperatorTemplate):
                 v1 = self.as_basis(basis)._data
                 v2 = other.as_basis(basis)._data
             else:
-                raise ValueError
+                raise ValueError(f"{self} and {other} are not compatible")
         else:
             return NotImplemented
         if swap:
             v1, v2 = v2, v1
         return type(self)(operator(v1, v2), basis=basis)
 
+    # --- NumPy compatibility
+
+    @property
+    def dtype(self):
+        return self._data.dtype
+
+    @property
+    def ndim(self) -> int:
+        return self._data.ndim
+
+    @property
+    def shape(self) -> tuple[int]:
+        return self._data.shape
+
+    def to_numpy(self, basis=None, project: bool = False) -> np.ndarray:
+        """Convert to NumPy ndarray"""
+        transform = self.project if project else self.as_basis
+        tensor = transform(basis=basis) if basis is not None else self
+        return tensor._data.copy()
+
+    def transpose(self, axes: Optional[tuple[int]] = None) -> Self:
+        value = self._data.transpose(axes)
+        if axes is None:
+            basis = self.basis[::-1]
+        else:
+            basis = tuple(self.basis[ax] for ax in axes)
+        return type(self)(value, basis=basis)
+
+    @property
+    def T(self) -> Self:
+        return self.transpose()
+
+    def trace(self, axis1: int = 0, axis2: int = 1) -> Self:
+        return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
+
+    def dot(self, other: Self | np.ndarray) -> Self:
+        return numpy_functions.dot(self, other)
+
 
 class Cotensor(Tensor):
 
     @property
-    def variance(self):
-        return tuple([-1 if isinstance(b, Cobasis) else 1 for b in self.basis])
+    def variance(self) -> tuple[int]:
+        return self._basis.variance
 
     @staticmethod
     def _get_basis_transform(basis1, basis2):

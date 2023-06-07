@@ -1,5 +1,7 @@
 from contextlib import contextmanager
+
 import numpy as np
+
 from .matrix import Matrix, IdentityMatrix
 
 
@@ -9,11 +11,9 @@ __all__ = [
         'atleast_1d',
         'BasisError',
         'ndot',
-        #'overlap',
         'expand_axis',
         'replace_attr',
         ]
-
 
 
 def is_int(obj):
@@ -40,15 +40,11 @@ class BasisError(Exception):
 
 def ndot(*args):
     args = [x for x in args if not isinstance(x, IdentityMatrix)]
+    args = [a.to_numpy() if hasattr(a, 'to_numpy') else a for a in args]
+    #print([a.shape for a in args])
+    #print([type(a) for a in args])
+    #print(args)
     return np.linalg.multi_dot(args)
-
-
-def overlap(a, b):
-   if a is nobasis and b is nobasis:
-       return IdentityMatrix(None)
-   if a is nobasis or b is nobasis:
-       raise BasisError
-   return (a | b)
 
 
 def expand_axis(a, size, indices=None, axis=-1):

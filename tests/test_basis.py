@@ -1,4 +1,5 @@
 import numpy as np
+
 import btensor as basis
 from helper import TestCase, rand_orth_mat
 
@@ -59,6 +60,12 @@ class TestBasis(TestCase):
         assert (self.rootbasis_b.size == self.size_b)
         for i, b in enumerate(self.subbasis_a):
             assert (b.size == self.rootbasis_a.size - (i + 1))
+
+    #def test_hash(self, get_rootbasis_subbasis, subbasis_type):
+    #    rootsize = subsize = 10
+    #    rootbasis, (subbasis, subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
+    #    #print(hash(rootbasis))
+    #    print(hash(subbasis))
 
     def test_pos_neg_invert(self):
         b = self.basis_a[0]

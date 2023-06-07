@@ -19,11 +19,11 @@ Usage:
 
 """
 
-from .basis import Basis
+from .basis import Basis, nobasis
 from .tensor import Tensor
 from .tensor import Cotensor
 from .tensor import as_tensor
 from .array import Array
 from .array import Coarray
-
+from .tensorsum import TensorSum
 from .numpy_functions import *

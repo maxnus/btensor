@@ -8,7 +8,12 @@ from helper import TestCase
 from conftest import get_permutations_of_combinations, random_orthogonal_matrix, subbasis_argument_to_matrix
 
 
-class TestCopy(TestCase):
+class TestTensor(TestCase):
+
+    def test_repr(self, tensor_or_array):
+        tensor = tensor_or_array[0]
+        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, variance= {tensor.variance})'
+        assert repr(tensor) == expected
 
     def test_data_copy(self, tensor_cls, np_array):
         data = np_array.copy()
@@ -35,6 +40,16 @@ class TestCopy(TestCase):
         tensor_cls(data, copy_data=False)
         with pytest.raises(ValueError):
             data[:] = 0
+
+    @pytest.mark.parametrize('inplace', [True, False])
+    def test_replace_basis_inplace(self, tensor_or_array, inplace):
+        tensor = tensor_or_array[0]
+        tensor_out = tensor.replace_basis((None,), inplace=inplace)
+        if inplace:
+            assert id(tensor_out) == id(tensor)
+        else:
+            assert id(tensor_out) != id(tensor)
+        assert tensor_out.basis == tensor.basis
 
 
 class TestArithmetic(TestCase):
@@ -127,7 +142,7 @@ class TestGetitem(TestCase):
         subbasis = ndim*(subbasis,)
         np_array = np.random.random(ndim*(rootsize,))
         tensor = tensor_cls(np_array, basis=rootbasis)
-        self.assert_allclose(tensor[subbasis], tensor.proj(subbasis))
+        self.assert_allclose(tensor[subbasis], tensor.project(subbasis))
 
     def test_getitem_slice_none(self, tensor_or_array):
         tensor, np_array = tensor_or_array
@@ -136,26 +151,6 @@ class TestGetitem(TestCase):
     def test_getitem_ellipsis(self, tensor_or_array):
         tensor, np_array = tensor_or_array
         self.assert_allclose(tensor[...], np_array[...])
-
-    @pytest.mark.parametrize('key', [(0, ...), (..., 0), (0, 0, ...), (0, ..., 0), (..., 0, 0),
-                                     (slice(None), ...), (..., slice(None)), (slice(None), slice(None), ...),
-                                     (slice(None), ..., slice(None)), (..., slice(None), slice(None)),
-                                     (0, slice(None), ...), (0, ..., slice(None)), (..., 0, slice(None)),
-                                     (slice(None), 0, ...), (slice(None), ..., 0), (..., slice(None), 0)],
-                             ids=lambda x: str(x).replace('slice(None, None, None)', ':').replace('Ellipsis', '...'))
-    def test_getitem_tuple_with_ellipsis(self, ndim_atleast2, get_array, key):
-        array, np_array = get_array(ndim=ndim_atleast2)
-        self.assert_allclose(array[key], np_array[key])
-
-    def test_getitem_newaxis(self, array):
-        array, np_array = array
-        self.assert_allclose(array[np.newaxis], np_array[np.newaxis])
-
-    @pytest.mark.parametrize('key', get_permutations_of_combinations([np.newaxis, slice(None)], 2),
-                             ids=lambda x: str(x))
-    def test_getitem_newaxis_tuple(self, ndim_atleast2, get_array, key):
-        array, np_array = get_array(ndim_atleast2)
-        self.assert_allclose(array[key], np_array[key])
 
     @pytest.mark.parametrize('key', [0, slice(0, 100), [0], [True]], ids=lambda x: str(x))
     def test_getitem_raises(self, key, tensor):

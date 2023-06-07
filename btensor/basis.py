@@ -1,47 +1,88 @@
 import functools
-import numpy as np
 from functools import lru_cache
+import hashlib
+
+import numpy as np
+
 from btensor.util import *
 from btensor.space import Space
 
 
-def is_basis(obj, allow_int=True, allow_cobasis=True):
-    allowed = (BasisClass,) if allow_cobasis else (Basis,)
-    if allow_int:
-        allowed += (int, np.integer)
-    return isinstance(obj, allowed)
+def is_basis(obj, allow_nobasis=True, allow_cobasis=True):
+    nb = is_nobasis(obj) if allow_nobasis else False
+    btype = BasisOrDualBasis if allow_cobasis else Basis
+    return isinstance(obj, btype) or nb
 
 
-is_nobasis = is_int
+def is_nobasis(obj):
+    return obj is nobasis
 
 
-def compatible_basis(b1, b2):
-    if is_int(b1) and is_int(b2):
-        if b1 == -1 or b2 == -1:
-            return True
-        return b1 == b2
-    if is_int(b1):
-        return b2.compatible(b1)
-    return b1.compatible(b2)
+class BasisType:
 
-
-class BasisClass:
-
-    def __repr__(self):
-        return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
+    @property
+    def id(self) -> int:
+        raise NotImplementedError
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their ID."""
-        if not isinstance(other, BasisClass):
-            return False
-        return hash(self) == hash(other)
+        return isinstance(other, BasisType) and hash(self) == hash(other)
+
+    #def __hash__(self) -> int:
+    #    raise NotImplementedError
+
+    def __hash__(self) -> int:
+        return self.id
 
     @property
-    def id(self):
+    def variance(self) -> int:
         raise NotImplementedError
 
-    def __hash__(self):
-        return self.id
+
+def compatible_basis(basis1: BasisType, basis2: BasisType):
+    if not (isinstance(basis1, BasisType) and isinstance(basis2, BasisType)):
+        raise TypeError
+    if is_nobasis(basis1) or is_nobasis(basis2):
+        return True
+    if basis1.variance * basis2.variance == -1:
+        return False
+    return basis1.compatible(basis2)
+
+
+def find_common_parent(basis1: BasisType, basis2: BasisType) -> BasisType:
+    if basis1.is_cobasis() ^ basis2.is_cobasis():
+        raise ValueError()
+    if is_nobasis(basis2):
+        return basis1
+    if is_nobasis(basis1):
+        return basis2
+    return basis1.find_common_parent(basis2)
+
+
+class NoBasis(BasisType):
+
+    def __repr__(self):
+        return type(self).__name__
+
+    @property
+    def id(self) -> int:
+        return 0
+
+    #def __hash__(self) -> int:
+    #    return 0
+
+    @property
+    def variance(self) -> int:
+        return 0
+
+
+nobasis = NoBasis()
+
+
+class BasisOrDualBasis(BasisType):
+
+    def __repr__(self):
+        return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
 
     @property
     def size(self):
@@ -77,7 +118,7 @@ class BasisClass:
     def __or__(self, other):
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
-        if not isinstance(other, BasisClass):
+        if not isinstance(other, BasisOrDualBasis):
             return NotImplemented
         return other.as_basis(self)
 
@@ -91,7 +132,7 @@ class BasisClass:
             raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
 
-class Basis(BasisClass):
+class Basis(BasisOrDualBasis):
     """Basis class.
 
     Parameters
@@ -168,14 +209,23 @@ class Basis(BasisClass):
     def __class_getitem__(cls, item):
         return functools.partial(cls, parent=item)
 
+    # #@functools.cache
+    # def __hash__(self) -> int:
+    #     print(type(self.coeff))
+    #     return int(hashlib.sha256(self.coeff).hexdigest(), 16)
+
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
 
     @property
-    def size(self):
+    def size(self) -> int:
         """Number of basis functions."""
         return self.coeff.shape[1]
+
+    @property
+    def variance(self) -> int:
+        return 1
 
     @property
     def coeff(self):
@@ -204,8 +254,8 @@ class Basis(BasisClass):
         """Express coeffients in different (parent) basis (rather than the direct parent).
 
         Was BUGGY before, now fixed?"""
-        if not is_basis(basis, allow_int=False):
-            raise ValueError
+        if not is_basis(basis):
+            raise TypeError
 
         if basis == self:
             return MatrixProduct([IdentityMatrix(self.size)])
@@ -251,10 +301,8 @@ class Basis(BasisClass):
             parents = parents[:-1]
         return parents
 
-    def compatible(self, other):
-        if is_int(other):
-            return (other == self.size) or (other == -1)
-        return self.same_root(other)
+    def compatible(self, other: BasisType):
+        return is_nobasis(other) or self.same_root(other)
 
     def find_common_parent(self, other):
         """Find first common ancestor between two bases."""
@@ -317,7 +365,7 @@ class Basis(BasisClass):
         return self.dual()
 
 
-class Cobasis(BasisClass):
+class Cobasis(BasisOrDualBasis):
 
     def __init__(self, basis, **kwargs):
         super().__init__(**kwargs)
@@ -330,6 +378,10 @@ class Cobasis(BasisClass):
     @property
     def size(self):
         return self.dual().size
+
+    @property
+    def variance(self) -> int:
+        return -1
 
     def dual(self):
         return self._basis
@@ -369,9 +421,9 @@ class Cobasis(BasisClass):
     def __pos__(self):
         return self.dual()
 
-    #@staticmethod
-    #def is_cobasis():
-    #    return True
+    @staticmethod
+    def is_cobasis():
+        return True
 
 
 from .tensor import Tensor

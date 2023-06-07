@@ -1,8 +1,10 @@
-import pytest
 import itertools
+
+import pytest
 import numpy as np
 import scipy
 import scipy.stats
+
 import btensor
 
 

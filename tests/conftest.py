@@ -4,6 +4,8 @@ import pytest
 import itertools
 import numpy as np
 import scipy
+
+import btensor
 from btensor import Basis, Array, Tensor
 
 
@@ -120,12 +122,18 @@ def basis_size(request):
     return request.param
 
 
+#@pytest.fixture(params=[4], scope='module', ids=lambda x: f'size{x}')
+#def basis_size_large(request):
+#    return request.param
+
+
 @pytest.fixture(params=[operator.add, operator.sub, operator.mul, operator.truediv, operator.floordiv, operator.pow],
                 scope='module')
 def binary_operator(request):
     return request.param
 
 # --- Combi fixtures
+
 
 @pytest.fixture(params=[Tensor, Array], scope='module')
 def tensor_cls_2x(request, tensor_cls):
@@ -145,6 +153,11 @@ def tensor_cls_3x(request, tensor_cls_2x):
 @pytest.fixture(scope='module')
 def rootbasis(basis_size):
     return Basis(basis_size)
+
+
+#@pytest.fixture(scope='module')
+#def rootbasis_large(basis_size_large):
+#    return Basis(basis_size_large)
 
 
 @pytest.fixture(params=[0, -1], scope='module')
@@ -209,21 +222,6 @@ def get_rootbasis_subbasis():
         return rootbasis, (subbasis, subarg)
     return get_rootbasis_subbasis
 
-#@pytest.fixture(scope='module')
-#def get_tensors(tensor_cls, ndim, rootbasis):
-#
-#    def tensor_factory(number):
-#        np.random.seed(0)
-#        basis = tuple(ndim * [rootbasis])
-#        output = []
-#        for i in range(number):
-#            data = np.random.random(tuple([b.size for b in basis]))
-#            tensor = tensor_cls(data, basis=basis)
-#            output.append((tensor, data))
-#        return output
-#
-#    return tensor_factory
-
 
 @pytest.fixture(params=get_permutations_of_combinations([0, 1, 3]), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
@@ -237,14 +235,16 @@ def shape(request):
     return request.param
 
 
-@pytest.fixture(params=[True, False])
-def basis_for_shape(request, shape):
-    if not request.param:
-        return shape
-    basis = []
-    for size in shape:
-        basis.append(Basis(size))
-    return basis
+@pytest.fixture(params=get_permutations_of_combinations([4, 5], maxsize=4), scope='module',
+                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+def shape_large(request):
+    return request.param
+
+
+@pytest.fixture(params=get_permutations_of_combinations([4, 5], minsize=2, maxsize=4), scope='module',
+                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+def shape_large_atleast2d(request):
+    return request.param
 
 
 @pytest.fixture(scope='module')
@@ -252,35 +252,51 @@ def np_array(shape):
     return np.random.random(shape)
 
 
+@pytest.fixture(scope='module')
+def np_array_large(shape_large):
+    return np.random.random(shape_large)
+
+
+@pytest.fixture(scope='module')
+def np_array_large_atleast2d(shape_large_atleast2d):
+    return np.random.random(shape_large_atleast2d)
+
+
+@pytest.fixture
+def basis_for_shape(shape):
+    return [Basis(size) for size in shape]
+
+
+@pytest.fixture(params=get_permutations_of_combinations([1, 3, -1, -3], maxsize=4), scope='module',
+                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+def shape_and_basis(request):
+    shape = tuple(abs(size) for size in request.param)
+    basis = [Basis(size) if size > 0 else btensor.nobasis for size in request.param]
+    return shape, basis
+
+
+@pytest.fixture
+def basis_for_shape_large_atleast2d(shape_large_atleast2d):
+    return [Basis(size) for size in shape_large_atleast2d]
+
+
+@pytest.fixture
+def array_large_atleast2d(shape_large_atleast2d, basis_for_shape_large_atleast2d):
+    basis = basis_for_shape_large_atleast2d
+    np_array = np.random.random(shape_large_atleast2d)
+    array = Array(np_array, basis=basis)
+    return array, np_array, basis
+
+
+#def tensor_fixture_factory(sizes: list[int]):
+
+#@pytest.fixture(params=sizes, scope='module')
+#def basis_size(request):
+#    return request.param
+#
 #@pytest.fixture(scope='module')
-#def tensor(tensor_cls, ndim, rootbasis):
-#    np.random.seed(0)
-#    basis = tuple(ndim * [rootbasis])
-#    data = np.random.random(tuple([b.size for b in basis]))
-#    tensor = tensor_cls(data, basis=basis)
-#    return tensor, data
-
-
-#@pytest.fixture(scope='module')
-#def get_tensor(rootbasis):
-#    def get_array(ndim):
-#        np.random.seed(0)
-#        basis = tuple(ndim * [rootbasis])
-#        data = np.random.random(tuple([b.size for b in basis]))
-#        tensor = Array(data, basis=basis)
-#        return tensor, data
-#    return get_array
-
-
-#@pytest.fixture(scope='module')
-#def get_array(rootbasis):
-#    def get_array(ndim):
-#        np.random.seed(0)
-#        basis = tuple(ndim * [rootbasis])
-#        data = np.random.random(tuple([b.size for b in basis]))
-#        tensor = Array(data, basis=basis)
-#        return tensor, data
-#    return get_array
+#def rootbasis(basis_size):
+#    return Basis(basis_size)
 
 
 @pytest.fixture(scope='module')
@@ -341,3 +357,4 @@ def tensor_2x(tensor_cls_2x, ndim, rootbasis):
     tensor1 = tensor_cls1(data1, basis=basis)
     tensor2 = tensor_cls1(data2, basis=basis)
     return (tensor1, data1), (tensor2, data2)
+
