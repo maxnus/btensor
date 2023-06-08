@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numbers
 import string
 from typing import Optional, Self
@@ -21,7 +22,7 @@ def as_tensor(obj, **kwargs):
 class Tensor(OperatorTemplate):
     """NumPy array with basis attached for each dimension."""
 
-    def __init__(self, data, basis: Optional[tuple[BasisType]] = None, copy_data: bool = True):
+    def __init__(self, data, basis: Optional[tuple[BasisType, ...]] = None, copy_data: bool = True):
         data = np.array(data, copy=copy_data)
         data.flags.writeable = False
         self._data = data
@@ -222,32 +223,8 @@ class Tensor(OperatorTemplate):
             axes += (self.ndim-other.ndim)*[False]
         return axes
 
-    def common_basis(self, other):
+    def common_basis(self, other: Self) -> BasisTuple:
         return self.basis.get_common_basistuple(other.basis)
-        basis = []
-        if not self.is_compatible(other):
-            raise ValueError
-        for b1, b2 in zip(self.basis, other.basis):
-            #if b1.is_cobasis() ^ b2.is_cobasis():
-            #    raise ValueError()
-            b1 = b1.get_nondual()
-            b2 = b2.get_nondual()
-            if is_nobasis(b1) and is_nobasis(b2):
-                if b1 == -1:
-                    basis.append(b2)
-                elif b2 == -1:
-                    basis.append(b1)
-                elif b1 == b2:
-                    basis.append(b1)
-                else:
-                    raise ValueError
-            elif is_nobasis(b1):
-                basis.append(b2)
-            elif is_nobasis(b2):
-                basis.append(b1)
-            else:
-                basis.append(b1.find_common_parent(b2))
-        return tuple(basis)
 
     def _operator(self, operator, *other, swap=False):
         # Unary operator
@@ -281,7 +258,7 @@ class Tensor(OperatorTemplate):
     # --- NumPy compatibility
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self._data.dtype
 
     @property
@@ -292,11 +269,17 @@ class Tensor(OperatorTemplate):
     def shape(self) -> tuple[int]:
         return self._data.shape
 
-    def to_numpy(self, basis=None, project: bool = False) -> np.ndarray:
+    def to_numpy(self, basis=None, project: bool = False, copy: bool = True) -> np.ndarray:
         """Convert to NumPy ndarray"""
-        transform = self.project if project else self.as_basis
-        tensor = transform(basis=basis) if basis is not None else self
-        return tensor._data.copy()
+        if basis is not None:
+            transform = self.project if project else self.as_basis
+            tensor = transform(basis=basis)
+        else:
+            tensor = self
+        nparray = tensor._data
+        if copy:
+            return nparray.copy()
+        return nparray
 
     def transpose(self, axes: Optional[tuple[int]] = None) -> Self:
         value = self._data.transpose(axes)

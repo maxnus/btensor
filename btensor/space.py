@@ -1,18 +1,22 @@
 from __future__ import annotations
+from typing import Self, Any, TYPE_CHECKING
+
 import numpy as np
 import scipy
 import scipy.linalg
-import btensor as bt
+
+if TYPE_CHECKING:
+    from btensor import Basis
 
 
 class Space:
 
-    def __init__(self, basis: bt.Basis, svd_tol: float = 1e-12):
+    def __init__(self, basis: Basis, svd_tol: float = 1e-12):
         self._basis = basis
         self._svd_tol = svd_tol
 
     @property
-    def basis(self) -> bt.Basis:
+    def basis(self) -> Basis:
         return self._basis
 
     def __repr__(self) -> str:
@@ -21,13 +25,15 @@ class Space:
     def __len__(self) -> int:
         return len(self.basis)
 
-    def _svd(self, other: Space) -> np.ndarray:
-        ovlp = (~self.basis | other.basis)._data
+    def _svd(self, other: Self) -> np.ndarray:
+        ovlp = (~self.basis | other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return sv
 
-    def __eq__(self, other: Space) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """True, if self is the same space as other."""
+        if not isinstance(other, Space):
+            return False
         if len(self) != len(other):
             return False
         if not self.basis.same_root(other.basis):
@@ -39,12 +45,14 @@ class Space:
         sv = self._svd(other)
         return np.all(abs(sv-1) < self._svd_tol)
 
-    def __neq__(self, other: Space) -> bool:
+    def __neq__(self, other: Any) -> bool:
         """True, if self is not the same space as other."""
         return not (self == other)
 
-    def __lt__(self, other: Space) -> bool:
+    def __lt__(self, other: Any) -> bool:
         """True, if self is a true subspace of other."""
+        if not isinstance(other, Space):
+            return False
         if len(self) >= len(other):
             return False
         if not self.basis.same_root(other.basis):
@@ -55,20 +63,22 @@ class Space:
         sv = self._svd(other)
         return np.all(sv > 1-self._svd_tol)
 
-    def __le__(self, other: Space) -> bool:
+    def __le__(self, other: Any) -> bool:
         """True, if self a subspace of other or spans the same space."""
         return (self < other) or (self == other)
 
-    def __gt__(self, other: Space) -> bool:
+    def __gt__(self, other: Any) -> bool:
         """True, if self is a true superspace of other."""
         return other < self
 
-    def __ge__(self, other: Space) -> bool:
+    def __ge__(self, other: Any) -> bool:
         """True, if self a superspace of other or spans the same space."""
         return (self > other) or (self == other)
 
-    def __or__(self, other: Space) -> bool:
+    def __or__(self, other: Self) -> bool:
         """True, if self is orthogonal to other."""
+        if not isinstance(other, type(self)):
+            raise TypeError
         if not self.basis.same_root(other.basis):
             return True
         if self in other.basis.get_parents() or other in self.basis.get_parents():

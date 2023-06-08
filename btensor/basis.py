@@ -1,6 +1,8 @@
+from __future__ import annotations
 import functools
 from functools import lru_cache
 import hashlib
+from typing import Optional, Any, Self
 
 import numpy as np
 
@@ -41,12 +43,12 @@ class BasisType:
 
 def compatible_basis(basis1: BasisType, basis2: BasisType):
     if not (isinstance(basis1, BasisType) and isinstance(basis2, BasisType)):
-        raise TypeError
+        raise TypeError(f"{BasisType} required")
     if is_nobasis(basis1) or is_nobasis(basis2):
         return True
     if basis1.variance * basis2.variance == -1:
         return False
-    return basis1.compatible(basis2)
+    return basis1.is_compatible_with(basis2)
 
 
 def find_common_parent(basis1: BasisType, basis2: BasisType) -> BasisType:
@@ -93,11 +95,15 @@ class BasisOrDualBasis(BasisType):
     def size(self):
         raise NotImplementedError
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
 
     @property
     def root(self):
+        raise NotImplementedError
+
+    @property
+    def variance(self) -> int:
         raise NotImplementedError
 
     def dual(self):
@@ -115,26 +121,27 @@ class BasisOrDualBasis(BasisType):
     cache_size = 100
 
     @lru_cache(cache_size)
-    def as_basis(self, other):
+    def as_basis(self, other: Self) -> Tensor:
         """Get overlap matrix as an Array with another basis."""
         matprod = self._as_basis_matprod(other)
         return Tensor(matprod.evaluate(), basis=(~other, ~self))
 
-    def __or__(self, other):
+    def __or__(self, other: Any) -> NotImplemented | Self:
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
         if not isinstance(other, BasisOrDualBasis):
             return NotImplemented
         return other.as_basis(self)
 
-    def same_root(self, other):
+    def same_root(self, other: Self) -> bool:
         root1 = self.root or self.get_nondual()
         root2 = other.root or other.get_nondual()
         return root1 == root2
 
-    def check_same_root(self, other):
-        if not self.same_root(other):
-            raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
+    def check_same_root(self, other: Self) -> None:
+        if self.same_root(other):
+            return
+        raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
 
 class Basis(BasisOrDualBasis):
@@ -241,7 +248,7 @@ class Basis(BasisOrDualBasis):
         return self._metric
 
     @property
-    def root(self):
+    def root(self) -> Optional[Self]:
         if self.parent is None:
             return None
         if self.parent.root is None:
@@ -252,7 +259,7 @@ class Basis(BasisOrDualBasis):
         return self.parent is None
 
     @property
-    def space(self):
+    def space(self) -> Space:
         return Space(self)
 
     def coeff_in_basis(self, basis):
@@ -306,7 +313,7 @@ class Basis(BasisOrDualBasis):
             parents = parents[:-1]
         return parents
 
-    def compatible(self, other: BasisType):
+    def is_compatible_with(self, other: BasisType):
         return is_nobasis(other) or self.same_root(other)
 
     def find_common_parent(self, other):
