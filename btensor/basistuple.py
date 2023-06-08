@@ -3,30 +3,43 @@ from typing import Optional, Self
 from btensor.basis import BasisType, nobasis, compatible_basis, is_nobasis, find_common_parent
 
 
-class BasisTuple:
+class BasisTuple(tuple):
 
-    def __init__(self, basis: BasisType | tuple[BasisType, ...]):
-        if isinstance(basis, BasisType):
+    @classmethod
+    def create(cls, basis: BasisType | tuple[BasisType, ...] | Self) -> Self:
+        if isinstance(basis, cls):
+            return basis
+        if not isinstance(basis, tuple):
             basis = (basis,)
         for bas in basis:
             if not isinstance(bas, BasisType):
-                raise TypeError(f"type {type(BasisType)} required, not {type(bas)}")
-        self._basis = basis
+                raise TypeError(f"type {BasisType} required, not {type(bas)}")
+        return cls(basis)
+
+    @classmethod
+    def create_with_default(cls,
+                            basis: BasisType | None | tuple[BasisType | None, ...] | Self,
+                            default: Optional[Self] = None) -> Self:
+        if isinstance(basis, cls):
+            return basis
+        if not isinstance(basis, tuple):
+            basis = (basis,)
+        if default:
+            basis = [b1 if b1 is not None else b0 for (b1, b0) in zip(basis, default)]
+        for bas in basis:
+            if not isinstance(bas, BasisType):
+                raise TypeError(f"type {BasisType} required, not {type(bas)}")
+        return cls(basis)
 
     @property
     def shape(self) -> tuple[Optional[int], ...]:
         return tuple(getattr(basis, 'size', None) for basis in self)
 
-    def __len__(self) -> int:
-        return len(self._basis)
-
     def __getitem__(self, key) -> BasisType | Self:
-        if isinstance(key, slice):
-            return BasisTuple(self._basis[key])
-        return self._basis[key]
-
-    def get_basistuple(self) -> tuple[BasisType, ...]:
-        return self._basis
+        result = super().__getitem__(key)
+        if isinstance(result, tuple):
+            return type(self)(result)
+        return result
 
     def get_hashtuple(self) -> tuple[int, ...]:
         return tuple(hash(basis) for basis in self)
@@ -42,6 +55,9 @@ class BasisTuple:
                 return False
         return True
 
+    def get_root_basistuple(self) -> Self:
+        return type(self)(basis.root for basis in self)
+
     def get_common_basistuple(self, other: Self) -> Self:
         if not self.is_compatible_with(other):
             raise ValueError
@@ -50,7 +66,7 @@ class BasisTuple:
         return type(self)(common_parents)
 
     def update_with(self, update: tuple[Optional[BasisType]], check_size: bool = True) -> Self:
-        new_basis = list(self.get_basistuple())
+        new_basis = list(self)
         if len(update) > len(self):
             raise ValueError
         for axis, (size, b0, b1) in enumerate(zip(self.shape, self, update)):
@@ -59,7 +75,7 @@ class BasisTuple:
             if check_size and not is_nobasis(b1) and b1.size != size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {b1.size}")
             new_basis[axis] = b1
-        return BasisTuple(tuple(new_basis))
+        return BasisTuple.create(tuple(new_basis))
 
     # ---
 
@@ -84,3 +100,4 @@ class BasisTuple:
             if basis_other.space > basis_self.space:
                 return False
         return True
+

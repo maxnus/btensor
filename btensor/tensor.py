@@ -27,7 +27,7 @@ class Tensor(OperatorTemplate):
         self._data = data
         if basis is None:
             basis = data.ndim * (nobasis,)
-        basis = BasisTuple(basis)
+        basis = BasisTuple.create(basis)
         self.check_basis(basis)
         self._basis = basis
 
@@ -40,8 +40,8 @@ class Tensor(OperatorTemplate):
     # --- Basis
 
     @property
-    def basis(self) -> tuple[BasisType, ...]:
-        return self._basis.get_basistuple()
+    def basis(self) -> BasisTuple[BasisType, ...]:
+        return self._basis
 
     def check_basis(self, basis: BasisTuple) -> None:
         if len(basis) != self.ndim:
@@ -57,7 +57,7 @@ class Tensor(OperatorTemplate):
     def replace_basis(self, basis: tuple[Optional[BasisType], ...], inplace: bool = False) -> Self:
         """Replace basis with new basis."""
         tensor = self if inplace else self.copy()
-        new_basis = self._basis.update_with(basis)
+        new_basis = self.basis.update_with(basis)
         tensor.check_basis(new_basis)
         tensor._basis = new_basis
         return tensor
@@ -126,31 +126,26 @@ class Tensor(OperatorTemplate):
         """
         basis = self._broadcast_basis(basis)
         assert len(basis) == len(self.basis)
-        for bas in basis:
-            if not (is_basis(bas) or bas is None):
-                raise ValueError(f"Invalid basis: {bas} of type {type(bas)}")
+        for bas1 in basis:
+            if not (is_basis(bas1) or bas1 is None):
+                raise ValueError(f"Invalid basis: {bas1} of type {type(bas1)}")
 
         subscripts = string.ascii_lowercase[:self.ndim]
         operands = [self._data]
         result = list(subscripts)
         basis_out = list(self.basis)
-        for i, bas in enumerate(basis):
-            if bas is None or (bas == self.basis[i]):
+        for i, (bas0, bas1, sub) in enumerate(zip(self.basis, basis, subscripts)):
+            if bas1 is None or (bas1 == bas0):
                 continue
-            # Remove basis:
-            if is_nobasis(bas):
-                basis_out[i] = self.shape[i]
-                continue
-
-            basis_out[i] = bas
-            # Add basis (buggy):
-            if is_nobasis(self.basis[i]):
+            basis_out[i] = bas1
+            # Remove or add basis:
+            if is_nobasis(bas0) or is_nobasis(bas1):
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
             #ovlp = (self.basis[i] | bas.dual()).value
             #ovlp = bas.dual()._as_basis_matprod(self.basis[i], simplify=True)
-            ovlp = self._get_basis_transform(self.basis[i], bas)
+            ovlp = self._get_basis_transform(bas0, bas1)
             if len(ovlp) == 1 and isinstance(ovlp[0], IdentityMatrix):
                 raise NotImplementedError
             elif len(ovlp) == 1 and isinstance(ovlp[0], PermutationMatrix):
@@ -164,28 +159,23 @@ class Tensor(OperatorTemplate):
             else:
                 ovlp = ovlp.evaluate()
             operands.append(ovlp)
-            sub_new = subscripts[i].upper()
-            subscripts += (',%s%s' % (subscripts[i], sub_new))
-            result[i] = sub_new
+            subnew = sub.upper()
+            subscripts += f',{sub}{subnew}'
+            result[i] = subnew
+
         basis_out = tuple(basis_out)
         subscripts += '->%s' % (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
         if inplace:
             self._data = value
-            self._basis = basis_out
+            self._basis = BasisTuple(basis_out)
             return self
         return type(self)(value, basis=basis_out)
 
-    def as_basis(self, basis, inplace=False):
-        if isinstance(basis, BasisOrDualBasis):
-            basis = (basis,)
-        for b0, b1 in zip(self.basis, basis):
-            if b1 is None:
-                continue
-            b0 = b0.get_nondual()
-            b1 = b1.get_nondual()
-            if not (b1.space >= b0.space):
-                raise BasisError(f"{b1} does not span {b0}")
+    def as_basis(self, basis, inplace: bool = False) -> Self:
+        basis = BasisTuple.create_with_default(basis, default=self.basis)
+        if not basis.is_spanning(self._basis):
+            raise BasisError(f"{basis} does not span {self.basis}")
         return self.project(basis, inplace=inplace)
 
     def as_basis_at(self, index: int, basis: BasisType, **kwargs) -> Self:
@@ -194,16 +184,13 @@ class Tensor(OperatorTemplate):
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.as_basis(basis_new, **kwargs)
 
-    def get_rootbasis_tuple(self):
-        return tuple(b.root for b in self.basis)
-
-    def __or__(self, basis):
+    def __or__(self, basis) -> Self:
         """To allow basis transformation as (array | basis)"""
         # Left-pad:
         basis = self._broadcast_basis(basis, pad='left')
         return self.as_basis(basis)
 
-    def __ror__(self, basis):
+    def __ror__(self, basis) -> Self:
         """To allow basis transformation as (basis | array)"""
         return self.as_basis(basis)
 
@@ -236,6 +223,7 @@ class Tensor(OperatorTemplate):
         return axes
 
     def common_basis(self, other):
+        return self.basis.get_common_basistuple(other.basis)
         basis = []
         if not self.is_compatible(other):
             raise ValueError

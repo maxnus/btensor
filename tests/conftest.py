@@ -264,20 +264,20 @@ def np_array_large_atleast2d(shape_large_atleast2d):
 
 @pytest.fixture
 def basis_for_shape(shape):
-    return [Basis(size) for size in shape]
+    return tuple(Basis(size) for size in shape)
 
 
 @pytest.fixture(params=get_permutations_of_combinations([1, 3, -1, -3], maxsize=4), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape_and_basis(request):
     shape = tuple(abs(size) for size in request.param)
-    basis = [Basis(size) if size > 0 else btensor.nobasis for size in request.param]
+    basis = tuple(Basis(size) if size > 0 else btensor.nobasis for size in request.param)
     return shape, basis
 
 
 @pytest.fixture
 def basis_for_shape_large_atleast2d(shape_large_atleast2d):
-    return [Basis(size) for size in shape_large_atleast2d]
+    return tuple(Basis(size) for size in shape_large_atleast2d)
 
 
 @pytest.fixture

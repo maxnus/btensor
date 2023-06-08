@@ -16,7 +16,7 @@ class TensorSum:
 
     def add_tensor(self, tensor: Tensor):
         if len(self):
-            if self.tensors[0].get_rootbasis_tuple() != tensor.get_rootbasis_tuple():
+            if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
                 raise ValueError
         self.tensors.append(tensor)
 
