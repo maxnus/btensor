@@ -6,10 +6,10 @@ from typing import Optional, Self
 import numpy as np
 
 from btensor.util import *
-from . import numpy_functions
-from .basis import BasisOrDualBasis, Cobasis, is_basis, is_nobasis, compatible_basis, nobasis, BasisType
+from .basis import BasisOrDualBasis, is_basis, is_nobasis, compatible_basis, nobasis, BasisType
 from .basistuple import BasisTuple
 from .optemplate import OperatorTemplate
+from btensor import numpy_functions
 
 
 def as_tensor(obj, **kwargs):

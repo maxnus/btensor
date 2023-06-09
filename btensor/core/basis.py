@@ -1,23 +1,22 @@
 from __future__ import annotations
 import functools
 from functools import lru_cache
-import hashlib
 from typing import Optional, Any, Self
 
 import numpy as np
 
 from btensor.util import *
-from btensor.space import Space
+from .space import Space
+
+
+def is_nobasis(obj):
+    return obj is nobasis
 
 
 def is_basis(obj, allow_nobasis=True, allow_cobasis=True):
     nb = is_nobasis(obj) if allow_nobasis else False
     btype = BasisOrDualBasis if allow_cobasis else Basis
     return isinstance(obj, btype) or nb
-
-
-def is_nobasis(obj):
-    return obj is nobasis
 
 
 class BasisType:

@@ -1,15 +1,12 @@
 import numpy as np
+
 import btensor as bt
-from btensor.util import ndot
-from btensor.util import BasisError
-from btensor.util import is_int
-from btensor.util import IdentityMatrix
-from btensor.basis import is_nobasis
+from btensor.util import ndot, BasisError, IdentityMatrix
+from btensor.core.basis import is_nobasis
 
 
 __all__ = [
-    'newaxis',
-    'empty', 'empty_like', 'ones', 'ones_like', 'zeros', 'zeros_like', 'sum', 'dot', 'trace',
+    'newaxis', 'empty', 'empty_like', 'ones', 'ones_like', 'zeros', 'zeros_like', 'sum', 'dot', 'trace',
 ]
 
 
@@ -72,7 +69,6 @@ def _overlap(a, b):
 
 
 def dot(a, b):
-    print("DOT")
     a, b = _to_tensor(a, b)
     if a.ndim == b.ndim == 1:
         ovlp = _overlap(a.basis[0], b.basis[0])
@@ -112,3 +108,5 @@ def trace(a, axis1=0, axis2=1):
         axis2 += a.ndim
     basis_new = tuple(a.basis[i] for i in set(range(a.ndim)) - {axis1, axis2})
     return type(a)(value, basis_new)
+
+

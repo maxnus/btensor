@@ -1,10 +1,9 @@
-
 import numpy as np
-from btensor import Basis
-from btensor import Tensor
-from btensor import Cotensor
-from . import numpy_functions
+
 from btensor.util import *
+from .basis import Basis
+from .tensor import Tensor, Cotensor
+from btensor import numpy_functions
 
 
 class Array(Tensor):

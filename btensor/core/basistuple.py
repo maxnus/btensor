@@ -1,6 +1,6 @@
 from typing import Optional, Self
 
-from btensor.basis import BasisType, nobasis, compatible_basis, is_nobasis, find_common_parent
+from .basis import BasisType, compatible_basis, is_nobasis, find_common_parent
 
 
 class BasisTuple(tuple):
