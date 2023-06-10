@@ -1,51 +1,75 @@
-from typing import Optional, Self
+from typing import Optional, Self, TypeAlias, overload
+from types import EllipsisType
 
-from .basis import BasisType, compatible_basis, is_nobasis, find_common_parent
+from .basis import BasisInterface, compatible_basis, is_nobasis, find_common_parent, TBasis
+
+
+KeyLike: TypeAlias = BasisInterface | slice | EllipsisType
 
 
 class BasisTuple(tuple):
 
+    def __init__(self, args: TBasis) -> None:
+        for arg in args:
+            if not isinstance(arg, BasisInterface):
+                raise TypeError(f"{type(self).__name__} can only contain elements of type {BasisInterface.__name__} "
+                                f"(not {arg})")
+
     @classmethod
-    def create(cls, basis: BasisType | tuple[BasisType, ...] | Self) -> Self:
+    def create(cls, basis: TBasis) -> Self:
         if isinstance(basis, cls):
             return basis
         if not isinstance(basis, tuple):
             basis = (basis,)
-        for bas in basis:
-            if not isinstance(bas, BasisType):
-                raise TypeError(f"type {BasisType} required, not {type(bas)}")
         return cls(basis)
 
     @classmethod
-    def create_with_default(cls,
-                            basis: BasisType | None | tuple[BasisType | None, ...] | Self,
-                            default: Optional[Self] = None) -> Self:
-        if isinstance(basis, cls):
-            return basis
+    def create_from_default(cls,
+                            basis: KeyLike | tuple[KeyLike, ...],
+                            default: Self,
+                            leftpad: bool = False) -> Self:
+        if basis == slice(None) or basis == Ellipsis:
+            return default
+        if isinstance(basis, slice):
+            raise ValueError(f"Only slice(None) is accepted (given: {basis}")
         if not isinstance(basis, tuple):
             basis = (basis,)
-        if default:
-            basis = [b1 if b1 is not None else b0 for (b1, b0) in zip(basis, default)]
-        for bas in basis:
-            if not isinstance(bas, BasisType):
-                raise TypeError(f"type {BasisType} required, not {type(bas)}")
+
+        nmissing = len(default) - len(basis)
+        if nmissing < 0:
+            raise ValueError(f"basis tuple with size {len(basis)} is larger than default with size {len(default)}")
+        if nmissing > 0 and Ellipsis not in basis:
+            if leftpad:
+                basis = (Ellipsis,) + basis
+            else:
+                basis += (Ellipsis,)
+        if Ellipsis in basis:
+            idx = basis.index(Ellipsis)
+            basis = basis[:idx] + nmissing*(slice(None),) + basis[idx+1:]
+        if len(basis) != len(default):
+            raise RuntimeError
+
+        basis = [b1 if b1 != slice(None) else b0 for b1, b0 in zip(basis, default)]
+        #for bas in basis:
+        #    if not isinstance(bas, BasisInterface):
+        #        raise TypeError(f"type {BasisInterface} required, not {type(bas)}")
         return cls(basis)
 
     @property
     def shape(self) -> tuple[Optional[int], ...]:
         return tuple(getattr(basis, 'size', None) for basis in self)
 
-    def __getitem__(self, key) -> BasisType | Self:
+    @overload
+    def __getitem__(self, key: int) -> BasisInterface: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> Self: ...
+
+    def __getitem__(self, key: int | slice) -> BasisInterface | Self:
         result = super().__getitem__(key)
         if isinstance(result, tuple):
             return type(self)(result)
         return result
-
-    def get_hashtuple(self) -> tuple[int, ...]:
-        return tuple(hash(basis) for basis in self)
-
-    def __eq__(self, other: Self) -> bool:
-        return isinstance(other, BasisTuple) and self.get_hashtuple() == other.get_hashtuple()
 
     def is_compatible_with(self, other: Self) -> bool:
         if len(self) != len(other):
@@ -65,7 +89,7 @@ class BasisTuple(tuple):
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 
-    def update_with(self, update: tuple[Optional[BasisType]], check_size: bool = True) -> Self:
+    def update_with(self, update: tuple[Optional[BasisInterface]], check_size: bool = True) -> Self:
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError

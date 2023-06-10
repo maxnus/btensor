@@ -98,7 +98,7 @@ def trace(a, axis1=0, axis2=1):
         a = a
     else:
         parent = basis1.find_common_parent(basis2)
-        a = a.as_basis_at(axis1, parent).as_basis_at(axis2, parent)
+        a = a.change_basis_at(axis1, parent).change_basis_at(axis2, parent)
     value = a._data.trace(axis1=axis1, axis2=axis2)
     if value.ndim == 0:
         return value

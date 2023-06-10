@@ -10,7 +10,7 @@ Usage:
 >>> mo_vir = Basis.add_basis(mf.mo_coeff[:,vir], name='mo-vir')
 >>> fov = Tensor(fock[occ,vir], basis=(mo_occ, mo_vir))
 >>> # View in different basis:
->>> print(fov.as_basis((mo, mo)))
+>>> print(fov.change_basis((mo, mo)))
 >>> # Contract with other BasisArray:
 >>> result = basis_einsum('ia,ja->ij', fov, t1)
 >>> # The virtual dimension of `fov` and `t1` can be expressed in a different basis;
@@ -19,7 +19,7 @@ Usage:
 
 """
 
-from .core import BasisType, Basis, Cobasis
+from .core import BasisInterface, Basis, Dualbasis
 from .core import nobasis
 from .core import Tensor, Cotensor, Array, Coarray
 

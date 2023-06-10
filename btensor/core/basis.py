@@ -1,7 +1,20 @@
+"""
+Class hierarchy:
+
+ BasisInterface
+    ____|____
+   |         |
+NoBasis  BasisType
+        _____|_____
+       |           |
+     Basis      Dualbasis
+"""
+
+
 from __future__ import annotations
 import functools
 from functools import lru_cache
-from typing import Optional, Any, Self
+from typing import Optional, Any, Self, TypeAlias, Sequence
 
 import numpy as np
 
@@ -15,11 +28,11 @@ def is_nobasis(obj):
 
 def is_basis(obj, allow_nobasis=True, allow_cobasis=True):
     nb = is_nobasis(obj) if allow_nobasis else False
-    btype = BasisOrDualBasis if allow_cobasis else Basis
+    btype = BasisType if allow_cobasis else Basis
     return isinstance(obj, btype) or nb
 
 
-class BasisType:
+class BasisInterface:
 
     @property
     def id(self) -> int:
@@ -27,7 +40,7 @@ class BasisType:
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their ID."""
-        return isinstance(other, BasisType) and hash(self) == hash(other)
+        return isinstance(other, BasisInterface) and hash(self) == hash(other)
 
     #def __hash__(self) -> int:
     #    raise NotImplementedError
@@ -40,9 +53,12 @@ class BasisType:
         raise NotImplementedError
 
 
-def compatible_basis(basis1: BasisType, basis2: BasisType):
-    if not (isinstance(basis1, BasisType) and isinstance(basis2, BasisType)):
-        raise TypeError(f"{BasisType} required")
+TBasis: TypeAlias = BasisInterface | Sequence[BasisInterface]
+
+
+def compatible_basis(basis1: BasisInterface, basis2: BasisInterface):
+    if not (isinstance(basis1, BasisInterface) and isinstance(basis2, BasisInterface)):
+        raise TypeError(f"{BasisInterface} required")
     if is_nobasis(basis1) or is_nobasis(basis2):
         return True
     if basis1.variance * basis2.variance == -1:
@@ -50,7 +66,7 @@ def compatible_basis(basis1: BasisType, basis2: BasisType):
     return basis1.is_compatible_with(basis2)
 
 
-def find_common_parent(basis1: BasisType, basis2: BasisType) -> BasisType:
+def find_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisInterface:
     if basis1.is_cobasis() ^ basis2.is_cobasis():
         raise ValueError()
     if is_nobasis(basis2):
@@ -60,7 +76,7 @@ def find_common_parent(basis1: BasisType, basis2: BasisType) -> BasisType:
     return basis1.find_common_parent(basis2)
 
 
-class NoBasis(BasisType):
+class NoBasis(BasisInterface):
 
     def __repr__(self):
         return type(self).__name__
@@ -80,7 +96,7 @@ class NoBasis(BasisType):
 nobasis = NoBasis()
 
 
-class BasisOrDualBasis(BasisType):
+class BasisType(BasisInterface):
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
@@ -128,7 +144,7 @@ class BasisOrDualBasis(BasisType):
     def __or__(self, other: Any) -> NotImplemented | Self:
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
-        if not isinstance(other, BasisOrDualBasis):
+        if not isinstance(other, BasisType):
             return NotImplemented
         return other.as_basis(self)
 
@@ -143,7 +159,7 @@ class BasisOrDualBasis(BasisType):
         raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
 
-class Basis(BasisOrDualBasis):
+class Basis(BasisType):
     """Basis class.
 
     Parameters
@@ -153,8 +169,13 @@ class Basis(BasisOrDualBasis):
 
     __next_id = 1
 
-    def __init__(self, argument, parent=None, metric=None, name=None, debug=False, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self,
+                 argument: int | Sequence[int] | Sequence[bool] | np.ndarray,
+                 parent: Optional[Basis] = None,
+                 metric: Optional[np.darray] = None,
+                 name: Optional[str] = None,
+                 debug: bool = False):
+        super().__init__()
         self.parent = parent
         self._id = self._get_next_id()
         self.name = name
@@ -215,7 +236,7 @@ class Basis(BasisOrDualBasis):
         if self.is_orthonormal:
             self._dual = self
         else:
-            self._dual = Cobasis(self)
+            self._dual = Dualbasis(self)
 
     def __class_getitem__(cls, item):
         return functools.partial(cls, parent=item)
@@ -312,7 +333,7 @@ class Basis(BasisOrDualBasis):
             parents = parents[:-1]
         return parents
 
-    def is_compatible_with(self, other: BasisType):
+    def is_compatible_with(self, other: BasisInterface):
         return is_nobasis(other) or self.same_root(other)
 
     def find_common_parent(self, other):
@@ -376,10 +397,10 @@ class Basis(BasisOrDualBasis):
         return self.dual()
 
 
-class Cobasis(BasisOrDualBasis):
+class Dualbasis(BasisType):
 
-    def __init__(self, basis, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, basis: Basis):
+        super().__init__()
         self._basis = basis
 
     @property
