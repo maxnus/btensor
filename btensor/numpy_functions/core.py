@@ -1,23 +1,22 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from numbers import Number
+
 import numpy as np
+from numpy.typing import ArrayLike
 
-import btensor as bt
+import btensor
 from btensor.util import ndot, BasisError, IdentityMatrix
-from btensor.core.basis import is_nobasis
-
-
-__all__ = [
-    'newaxis', 'empty', 'empty_like', 'ones', 'ones_like', 'zeros', 'zeros_like', 'sum', 'dot', 'trace',
-]
+from btensor.core.basis import is_nobasis, BasisInterface
 
 
 def _to_tensor(*args):
-    args = tuple(bt.Tensor(a) if isinstance(a, np.ndarray) else a for a in args)
+    args = tuple(btensor.Tensor(a) if isinstance(a, np.ndarray) else a for a in args)
     if len(args) == 1:
         return args[0]
     return args
-
-
-newaxis = np.newaxis
 
 
 def _empty_factory(numpy_func):
@@ -26,7 +25,7 @@ def _empty_factory(numpy_func):
             if any(is_nobasis(b) for b in basis):
                 raise ValueError("cannot deduce size of nobasis. Specify shape explicitly")
             shape = tuple(b.size for b in basis)
-        return bt.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
+        return btensor.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
     return func
 
 
@@ -47,7 +46,7 @@ empty_like = _empty_like_factory(empty)
 ones_like = _empty_like_factory(ones)
 
 
-def sum(a, axis=None):
+def _sum(a: ArrayLike | btensor.Tensor, axis=None) -> btensor.Tensor | Number:
     a = _to_tensor(a)
     value = a._data.sum(axis=axis)
     if value.ndim == 0:
@@ -60,15 +59,15 @@ def sum(a, axis=None):
     return type(a)(value, basis=basis)
 
 
-def _overlap(a, b):
+def _overlap(a: BasisInterface, b: BasisInterface):
     if is_nobasis(a) and is_nobasis(b):
         return IdentityMatrix(None)
     if is_nobasis(a) or is_nobasis(b):
-        raise BasisError
+        raise BasisError(f"Cannot evaluate overlap between {a} and {b}")
     return b.as_basis(a)
 
 
-def dot(a, b):
+def dot(a: ArrayLike | btensor.Tensor, b: ArrayLike | btensor.Tensor) -> btensor.Tensor | Number:
     a, b = _to_tensor(a, b)
     if a.ndim == b.ndim == 1:
         ovlp = _overlap(a.basis[0], b.basis[0])
@@ -88,7 +87,7 @@ def dot(a, b):
     return type(a)(out, basis=basis)
 
 
-def trace(a, axis1=0, axis2=1):
+def trace(a: ArrayLike | btensor.Tensor, axis1: int = 0, axis2: int = 1) -> btensor.Tensor | Number:
     a = _to_tensor(a)
     basis1 = a.basis[axis1]
     basis2 = a.basis[axis2]

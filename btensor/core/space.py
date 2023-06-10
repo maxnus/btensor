@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 class Space:
 
-    def __init__(self, basis: Basis, svd_tol: float = 1e-12):
+    def __init__(self, basis: Basis, svd_tol: float = 1e-12) -> None:
         self._basis = basis
         self._svd_tol = svd_tol
 
@@ -25,7 +25,7 @@ class Space:
     def __len__(self) -> int:
         return len(self.basis)
 
-    def _svd(self, other: Self) -> np.ndarray:
+    def _singular_values_of_overlap(self, other: Self) -> np.ndarray:
         ovlp = (~self.basis | other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return sv
@@ -42,7 +42,7 @@ class Space:
         if len(parent) == len(self):
             return True
         # Perform SVD to determine relationship
-        sv = self._svd(other)
+        sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv-1) < self._svd_tol)
 
     def __neq__(self, other: Any) -> bool:
@@ -60,7 +60,7 @@ class Space:
         if self.basis.is_derived_from(other.basis):
             return True
         # Perform SVD to determine relationship
-        sv = self._svd(other)
+        sv = self._singular_values_of_overlap(other)
         return np.all(sv > 1-self._svd_tol)
 
     def __le__(self, other: Any) -> bool:
@@ -83,5 +83,5 @@ class Space:
             return True
         if self in other.basis.get_parents() or other in self.basis.get_parents():
             return True
-        sv = self._svd(other)
+        sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv) < self._svd_tol)

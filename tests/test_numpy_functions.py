@@ -84,9 +84,6 @@ class TestNumpyFunctions(TestCase):
         tr2 = array.project((subbasis, subbasis)).change_basis[array.basis].trace()
         self.assert_allclose(tr1, tr2, atol=1e-14, rtol=0)
 
-    def test_newaxis(self):
-        assert bt.newaxis == np.newaxis
-
     def test_eigh(self, get_array):
         array, np_array = get_array(ndim=2, hermitian=True)
         eig_expected = np.linalg.eigh(np_array)[0]

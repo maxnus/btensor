@@ -174,7 +174,7 @@ class Basis(BasisType):
                  parent: Optional[Basis] = None,
                  metric: Optional[np.darray] = None,
                  name: Optional[str] = None,
-                 debug: bool = False):
+                 debug: bool = False) -> None:
         super().__init__()
         self.parent = parent
         self._id = self._get_next_id()
@@ -260,11 +260,11 @@ class Basis(BasisType):
         return 1
 
     @property
-    def coeff(self):
+    def coeff(self) -> np.ndarray:
         return self._coeff
 
     @property
-    def metric(self):
+    def metric(self) -> Optional[Matrix]:
         return self._metric
 
     @property
@@ -275,14 +275,14 @@ class Basis(BasisType):
             return self.parent
         return self.parent.root
 
-    def is_root(self):
+    def is_root(self) -> bool:
         return self.parent is None
 
     @property
     def space(self) -> Space:
         return Space(self)
 
-    def coeff_in_basis(self, basis):
+    def coeff_in_basis(self, basis) -> MatrixProduct:
         """Express coeffients in different (parent) basis (rather than the direct parent).
 
         Was BUGGY before, now fixed?"""
@@ -312,17 +312,17 @@ class Basis(BasisType):
         return MatrixProduct(matrices)
 
     @staticmethod
-    def _get_next_id():
+    def _get_next_id() -> int:
         next_id = Basis.__next_id
         Basis.__next_id += 1
         return next_id
 
-    def make_basis(self, *args, **kwargs):
+    def make_basis(self, *args, **kwargs) -> Basis:
         """Make a new basis with coefficients or indices in reference to the current basis."""
         basis = Basis(*args, parent=self, **kwargs)
         return basis
 
-    def get_parents(self, include_root=True, include_self=False):
+    def get_parents(self, include_root: bool = True, include_self: bool = False) -> list[Basis]:
         """Get list of parent bases ordered from direct parent to root basis."""
         parents = [self] if include_self else []
         current = self
@@ -333,10 +333,10 @@ class Basis(BasisType):
             parents = parents[:-1]
         return parents
 
-    def is_compatible_with(self, other: BasisInterface):
+    def is_compatible_with(self, other: BasisInterface) -> bool:
         return is_nobasis(other) or self.same_root(other)
 
-    def find_common_parent(self, other):
+    def find_common_parent(self, other: BasisType) -> Basis:
         """Find first common ancestor between two bases."""
         if other.is_cobasis():
             raise ValueError
@@ -352,7 +352,7 @@ class Basis(BasisType):
         assert parent is not None
         return parent
 
-    def _as_basis_matprod(self, other, simplify=False):
+    def _as_basis_matprod(self, other, simplify=False) -> MatrixProduct:
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
@@ -362,21 +362,21 @@ class Basis(BasisType):
             matprod = matprod.simplify()
         return matprod
 
-    def dual(self):
+    def dual(self) -> Dualbasis | Self:
         return self._dual
 
-    def get_nondual(self):
+    def get_nondual(self) -> Self:
         return self
 
     @staticmethod
-    def is_cobasis():
+    def is_cobasis() -> bool:
         return False
 
     @property
-    def is_orthonormal(self):
+    def is_orthonormal(self) -> bool:
         return isinstance(self.metric, IdentityMatrix)
 
-    def is_derived_from(self, other, inclusive=False):
+    def is_derived_from(self, other: Basis, inclusive: bool = False) -> bool:
         """True if self is derived from other, else False"""
         if not self.same_root(other):
             return False
@@ -385,52 +385,52 @@ class Basis(BasisType):
                 return True
         return False
 
-    def is_parent_of(self, other, inclusive=False):
+    def is_parent_of(self, other: Basis, inclusive: bool = False) -> bool:
         """True if self is parent of other, else False"""
         return other.is_derived_from(self, inclusive=inclusive)
 
-    def get_orthonormal_error(self):
+    def get_orthonormal_error(self) -> float:
         ortherr = abs(self.metric-np.identity(self.size)).max()
         return ortherr
 
-    def __neg__(self):
+    def __neg__(self) -> Dualbasis | Self:
         return self.dual()
 
 
 class Dualbasis(BasisType):
 
-    def __init__(self, basis: Basis):
+    def __init__(self, basis: Basis) -> None:
         super().__init__()
         self._basis = basis
 
     @property
-    def id(self):
+    def id(self) -> int:
         return -(self.dual().id)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.dual().size
 
     @property
     def variance(self) -> int:
         return -1
 
-    def dual(self):
+    def dual(self) -> Basis:
         return self._basis
 
-    def get_nondual(self):
+    def get_nondual(self) -> Basis:
         return self.dual()
 
     @property
-    def name(self):
-        return 'Cobasis(%s)' % self.dual().name
+    def name(self) -> str:
+        return f"{type(self).__name__}{self.dual().name})"
 
     @staticmethod
-    def is_dual():
+    def is_dual() -> bool:
         return True
 
     @property
-    def root(self):
+    def root(self) -> Optional[Basis]:
         return self.dual().root
 
     def coeff_in_basis(self, basis):
@@ -450,11 +450,11 @@ class Dualbasis(BasisType):
             matprod = matprod.simplify()
         return matprod
 
-    def __pos__(self):
+    def __pos__(self) -> Basis:
         return self.dual()
 
     @staticmethod
-    def is_cobasis():
+    def is_cobasis() -> bool:
         return True
 
 

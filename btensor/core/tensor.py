@@ -199,26 +199,12 @@ class Tensor(OperatorTemplate):
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         return self.change_basis[basis]
 
-    def _broadcast_basis(self, basis: TBasis, leftpad: bool = False) -> TBasis:
-        """Broadcast basis to same length as self.basis."""
-        if isinstance(basis, BasisType):
-            basis = (basis,)
-        npad = len(self.basis) - len(basis)
-        if npad == 0:
-            return tuple(basis)
-        if npad < 0:
-            raise ValueError
-        if leftpad:
-            return npad * (None,) + tuple(basis)
-        else:
-            return tuple(basis) + npad*(None,)
-
     # Arithmetic
 
-    def is_compatible(self, other):
+    def is_compatible(self, other: Self) -> bool:
         return all(self.compatible_axes(other))
 
-    def compatible_axes(self, other):
+    def compatible_axes(self, other: Self) -> list[int]:
         axes = []
         for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
             axes.append(bool(compatible_basis(b1, b2)))
