@@ -212,7 +212,7 @@ class Basis(BasisType):
             else:
                 metric = SymmetricMatrix(metric)
         else:
-            metric_calc = MatrixProduct((argument.T, self.parent.metric, argument)).evaluate()
+            metric_calc = MatrixProductList((argument.T, self.parent.metric, argument)).evaluate()
             if metric is None:
                 # Automatically Promote to identity
                 idt = IdentityMatrix(self.size)
@@ -282,7 +282,7 @@ class Basis(BasisType):
     def space(self) -> Space:
         return Space(self)
 
-    def coeff_in_basis(self, basis) -> MatrixProduct:
+    def coeff_in_basis(self, basis) -> MatrixProductList:
         """Express coeffients in different (parent) basis (rather than the direct parent).
 
         Was BUGGY before, now fixed?"""
@@ -290,7 +290,7 @@ class Basis(BasisType):
             raise TypeError
 
         if basis == self:
-            return MatrixProduct([IdentityMatrix(self.size)])
+            return MatrixProductList([IdentityMatrix(self.size)])
 
         self.check_same_root(basis)
         parents = self.get_parents()
@@ -309,7 +309,7 @@ class Basis(BasisType):
 
         matrices = matrices[::-1]
         matrices.append(self.coeff)
-        return MatrixProduct(matrices)
+        return MatrixProductList(matrices)
 
     @staticmethod
     def _get_next_id() -> int:
@@ -352,7 +352,7 @@ class Basis(BasisType):
         assert parent is not None
         return parent
 
-    def _as_basis_matprod(self, other, simplify=False) -> MatrixProduct:
+    def _as_basis_matprod(self, other, simplify=False) -> MatrixProductList:
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis

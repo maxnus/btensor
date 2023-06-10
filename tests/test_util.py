@@ -15,19 +15,19 @@ class TestPermutationMatrix(TestCase):
         pc2 = np.random.permutation(range(m))[:k]
         c1 = util.ColumnPermutationMatrix(permutation=pc1, size=n)  # n x m
         c2 = util.ColumnPermutationMatrix(permutation=pc2, size=m)  # m x k
-        self.assert_allclose(util.MatrixProduct((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProductList((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
         # Row-row
         pr1 = np.random.permutation(range(n))[:m]
         pr2 = np.random.permutation(range(m))[:k]
         r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
         r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
-        self.assert_allclose(util.MatrixProduct((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
+        self.assert_allclose(util.MatrixProductList((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
         # Column-row
-        self.assert_allclose(util.MatrixProduct((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
-        self.assert_allclose(util.MatrixProduct((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
+        self.assert_allclose(util.MatrixProductList((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
+        self.assert_allclose(util.MatrixProductList((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
         # Row-column
-        self.assert_allclose(util.MatrixProduct((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
-        self.assert_allclose(util.MatrixProduct((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProductList((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
+        self.assert_allclose(util.MatrixProductList((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
 
     @staticmethod
     def get_permutation_matrix_input():
@@ -81,8 +81,7 @@ class TestMatrixProduct(TestCase):
     def get_matrices():
         n = 10
         a = util.GeneralMatrix(np.random.rand(n, n))
-        matrices = {'x': None,
-                    'i': util.IdentityMatrix(n),
+        matrices = {'i': util.IdentityMatrix(n),
                     'a': a,
                     'b': a.inverse,
                     'c': util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n),
@@ -90,8 +89,6 @@ class TestMatrixProduct(TestCase):
                     }
         matrices = [(k, v) for (k, v) in matrices.items()]
         for i, args in enumerate(powerset(matrices, include_empty=False)):
-            if len(args) == 1 and ('x', None) in args:
-                continue
             for perm in itertools.permutations(args):
                 name = ''.join([p[0] for p in perm])
                 mats = [p[1] for p in perm]
@@ -111,5 +108,6 @@ class TestMatrixProduct(TestCase):
             ref = args_ref[0]
         else:
             ref = np.linalg.multi_dot(args_ref)
-        mpl = util.MatrixProduct(matrices)
+        mpl = util.MatrixProductList(matrices)
+        result = mpl.evaluate(simplify=bool(matrix_product_simplify))
         self.assert_allclose(mpl.evaluate(simplify=bool(matrix_product_simplify)), ref, atol=atol, rtol=0)

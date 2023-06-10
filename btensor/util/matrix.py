@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Self, Sequence, overload
+
 import numpy as np
 import scipy
 import scipy.linalg
@@ -14,7 +17,7 @@ __all__ = [
         'PermutationMatrix',
         'RowPermutationMatrix',
         'ColumnPermutationMatrix',
-        'MatrixProduct',
+        'MatrixProductList',
         'to_array',
         ]
 
@@ -27,18 +30,18 @@ def to_array(object):
 
 class Matrix:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._inverse = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s%r' % (type(self).__name__, self.shape)
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return 2
 
     @property
-    def inverse(self):
+    def inverse(self) -> InverseMatrix:
         if self._inverse is None:
             self._inverse = InverseMatrix(self)
         return self._inverse
@@ -46,7 +49,7 @@ class Matrix:
     # --- Deferred
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         raise NotImplementedError
 
     def transpose(self):
@@ -59,9 +62,6 @@ class Matrix:
     def to_array(self):
         raise NotImplementedError
 
-    def to_array2(self):
-        return self.to_array()
-
 
 class GeneralMatrix(Matrix):
 
@@ -71,7 +71,7 @@ class GeneralMatrix(Matrix):
         self._values = values
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return self._values.shape
 
     def to_array(self):
@@ -95,7 +95,7 @@ class SymmetricMatrix(Symmetric, GeneralMatrix):
 
 class InverseMatrix(Matrix):
 
-    def __init__(self, matrix):
+    def __init__(self, matrix) -> None:
         super().__init__()
         self.matrix = matrix
         self._values = None
@@ -105,7 +105,7 @@ class InverseMatrix(Matrix):
                 raise RuntimeError("Cannot invert matrix %r: condition number= %e" % (self.matrix, cond))
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return self.matrix.shape
 
     def to_array(self):
@@ -126,12 +126,12 @@ class InverseMatrix(Matrix):
 
 class IdentityMatrix(Symmetric, Matrix):
 
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         super().__init__()
         self.size = size
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return (self.size, self.size)
 
     def to_array(self):
@@ -144,7 +144,7 @@ class IdentityMatrix(Symmetric, Matrix):
 
 class PermutationMatrix(Matrix):
 
-    def __init__(self, size, permutation):
+    def __init__(self, size: int, permutation: slice | list[int]) -> int:
         super().__init__()
         if isinstance(permutation, slice):
             nperm = len(np.arange(size)[permutation])
@@ -154,7 +154,7 @@ class PermutationMatrix(Matrix):
         self._permutation = permutation
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return self._shape
 
     @property
@@ -261,60 +261,70 @@ def _simplify_n_matrix_products(matrices, remove_permutation=True):
     return matrices_out
 
 
-class MatrixProduct:
+class MatrixProductList(list):
 
-    def __init__(self, matrices):
-        matrices = [m for m in matrices if m is not None]
-        self._matrices = matrices
+    def __init__(self, matrices: Sequence[Matrix]) -> None:
+        self.check_if_matrix(*matrices)
+        self.check_valid_shapes(matrices)
+        super().__init__(matrices)
+
+    def check_if_matrix(self, *matrices: Matrix) -> None:
+        for matrix in matrices:
+            if not isinstance(matrix, Matrix):
+                raise TypeError(f"only type {Matrix.__name__} allowed in {type(self).__name__} (not {matrix})")
+
+    def check_valid_shapes(self, matrices: Sequence[Matrix]) -> None:
         for m1, m2 in zip(matrices[:-1], matrices[1:]):
             if m1.shape[1] != m2.shape[0]:
                 raise ValueError(f"Invalid matrix product in {self}: {m1.shape} x {m2.shape}")
 
-    def __repr__(self):
-        return f'{type(self).__name__}(len ={len(self)}, shape= {self.shape})'
-
-    def __str__(self):
-        s = f'{type(self).__name__}('
-        s += ' x '.join(f'ndarray{m.shape}' if isinstance(m, np.ndarray) else str(m) for m in self.matrices)
-        s += ')'
-        return s
+    def __repr__(self) -> str:
+        return type(self).__name__ + super().__repr__()
 
     @property
-    def matrices(self):
-        return self._matrices
-
-    @property
-    def shape(self):
-        shape = (self.matrices[0].shape[0], self.matrices[-1].shape[-1])
+    def shape(self) -> tuple[int, int]:
+        if len(self) == 0:
+            raise RuntimeError(f"{type(self).__name__} is empty")
+        shape = (self[0].shape[0], self[-1].shape[-1])
         return shape
 
-    def append(self, matrix):
-        self.matrices.append(matrix)
+    def append(self, matrix: Matrix) -> None:
+        self.check_if_matrix(matrix)
+        super().append(matrix)
 
-    def extend(self, matrices):
-        self.matrices.extend(matrices)
+    def extend(self, matrices: Sequence[Matrix]) -> None:
+        if not isinstance(matrices, MatrixProductList):
+            self.check_if_matrix(*matrices)
+        super().extend(matrices)
 
-    def insert(self, index, matrix):
-        self.matrices.insert(index, matrix)
+    def insert(self, index: int, matrix: Matrix) -> None:
+        self.check_if_matrix(matrix)
+        super().insert(index, matrix)
 
-    def simplify(self):
-        if len(self.matrices) < 2:
+    def simplify(self) -> Self:
+        if len(self) < 2:
             return self
-        matrices = _simplify_n_matrix_products(self.matrices)
-        return MatrixProduct(matrices)
+        matrices = _simplify_n_matrix_products(self)
+        return type(self)(matrices)
 
-    def __getitem__(self, item):
-        if isinstance(item, (slice, list, np.ndarray)):
-            return MatrixProduct(self.matrices[item])
-        return self.matrices[item]
+    @overload
+    def __getitem__(self, key: int) -> Matrix: ...
 
-    def __len__(self):
-        return len(self.matrices)
+    @overload
+    def __getitem__(self, key: slice) -> Self: ...
 
-    def __add__(self, other):
-        return MatrixProduct(self.matrices + getattr(other, 'matrices', other))
+    def __getitem__(self, key: int | slice) -> Matrix | Self:
+        result = super().__getitem__(key)
+        if isinstance(result, list):
+            return MatrixProductList(result)
+        return result
 
-    def evaluate(self, simplify=True):
+    def __add__(self, other: list[Matrix] | Self) -> Self:
+        if not isinstance(other, MatrixProductList):
+            self.check_if_matrix(*other)
+        return type(self)(super().__add__(other))
+
+    def evaluate(self, simplify: bool = True) -> np.ndarray:
         matrices = self.simplify() if simplify else self
         if len(matrices) == 0:
             raise ValueError(f"Cannot evaluate empty {type(self).__name__}")
@@ -337,9 +347,9 @@ class MatrixProduct:
             return matrices[0]
         return np.linalg.multi_dot(matrices)
 
-    def transpose(self):
-        return MatrixProduct([m.T for m in reversed(self.matrices)])
+    def transpose(self) -> Self:
+        return type(self)([m.T for m in reversed(self)])
 
     @property
-    def T(self):
+    def T(self) -> Self:
         return self.transpose()

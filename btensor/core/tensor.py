@@ -162,6 +162,8 @@ class Tensor(OperatorTemplate):
         value = np.einsum(subscripts, *operands, optimize=True)
         return type(self)(value, basis=basis_out)
 
+    # --- Change of basis
+
     class ChangeBasisInterface:
 
         def __init__(self, tensor: Tensor) -> None:
