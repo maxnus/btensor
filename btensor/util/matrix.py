@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Self, Sequence, overload
+from collections import UserList
+from collections.abc import MutableSequence
 
 import numpy as np
 import scipy
@@ -261,9 +263,9 @@ def _simplify_n_matrix_products(matrices, remove_permutation=True):
     return matrices_out
 
 
-class MatrixProductList(list):
+class MatrixProductList(UserList):
 
-    def __init__(self, matrices: Sequence[Matrix]) -> None:
+    def __init__(self, matrices: MutableSequence[Matrix]) -> None:
         self.check_if_matrix(*matrices)
         self.check_valid_shapes(matrices)
         super().__init__(matrices)
@@ -273,7 +275,7 @@ class MatrixProductList(list):
             if not isinstance(matrix, Matrix):
                 raise TypeError(f"only type {Matrix.__name__} allowed in {type(self).__name__} (not {matrix})")
 
-    def check_valid_shapes(self, matrices: Sequence[Matrix]) -> None:
+    def check_valid_shapes(self, matrices: MutableSequence[Matrix]) -> None:
         for m1, m2 in zip(matrices[:-1], matrices[1:]):
             if m1.shape[1] != m2.shape[0]:
                 raise ValueError(f"Invalid matrix product in {self}: {m1.shape} x {m2.shape}")
@@ -292,7 +294,7 @@ class MatrixProductList(list):
         self.check_if_matrix(matrix)
         super().append(matrix)
 
-    def extend(self, matrices: Sequence[Matrix]) -> None:
+    def extend(self, matrices: MutableSequence[Matrix]) -> None:
         if not isinstance(matrices, MatrixProductList):
             self.check_if_matrix(*matrices)
         super().extend(matrices)

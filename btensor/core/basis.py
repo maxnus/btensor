@@ -136,17 +136,22 @@ class BasisType(BasisInterface):
     cache_size = 100
 
     @lru_cache(cache_size)
-    def as_basis(self, other: Self) -> Tensor:
+    def get_overlap(self, other: Self) -> Tensor:
         """Get overlap matrix as an Array with another basis."""
         matprod = self._as_basis_matprod(other)
-        return Tensor(matprod.evaluate(), basis=(~other, ~self))
+        return Tensor(matprod.evaluate(), basis=(~self, ~other))
 
-    def __or__(self, other: Any) -> NotImplemented | Self:
+    def __or__(self, other: Self) -> NotImplemented | Self:
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
         if not isinstance(other, BasisType):
             return NotImplemented
-        return other.as_basis(self)
+        return self.get_overlap(other)
+
+    #def get_transformation_to(self, other: Self) -> Tensor:
+    #    if not isinstance(other, BasisType):
+    #        return NotImplemented
+    #    return other.get_overlap(self)
 
     def same_root(self, other: Self) -> bool:
         root1 = self.root or self.get_nondual()
@@ -357,7 +362,7 @@ class Basis(BasisType):
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.find_common_parent(other.get_nondual())
-        matprod = other.coeff_in_basis(parent).T + [parent.metric] + self.coeff_in_basis(parent)
+        matprod = self.coeff_in_basis(parent).T + [parent.metric] + other.coeff_in_basis(parent)
         if simplify:
             matprod = matprod.simplify()
         return matprod
@@ -445,7 +450,7 @@ class Dualbasis(BasisType):
 
     def _as_basis_matprod(self, other, simplify=False):
         """Append inverse metric (metric of dual space)"""
-        matprod = self.get_nondual()._as_basis_matprod(other) + [self.metric]
+        matprod = [self.metric] + self.get_nondual()._as_basis_matprod(other)
         if simplify:
             matprod = matprod.simplify()
         return matprod

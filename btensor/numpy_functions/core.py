@@ -64,7 +64,7 @@ def _overlap(a: BasisInterface, b: BasisInterface):
         return IdentityMatrix(None)
     if is_nobasis(a) or is_nobasis(b):
         raise BasisError(f"Cannot evaluate overlap between {a} and {b}")
-    return b.as_basis(a)
+    return a.get_overlap(b)
 
 
 def dot(a: ArrayLike | btensor.Tensor, b: ArrayLike | btensor.Tensor) -> btensor.Tensor | Number:

@@ -37,36 +37,36 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
     overlaps = []
     basis_dict = {}
     #contravariant = {}
-    for idx in indices:
+    for index in indices:
 
         # Find smallest basis for given idx:
-        basis = None
+        basis_target = None
         for i, label in enumerate(labels):
             # The index might appear multiple times per label -> loop over positions
-            positions = np.asarray(np.asarray(label) == idx).nonzero()[0]
+            positions = np.asarray(np.asarray(label) == index).nonzero()[0]
             for pos in positions:
-                basis2 = operands[i].basis[pos]
-                if basis is None or (basis2.size < basis.size):
-                    basis = basis2
+                basis_current = operands[i].basis[pos]
+                if basis_target is None or (basis_current.size < basis_target.size):
+                    basis_target = basis_current
                 #contra = operands[i].contravariant[pos]
 
-        assert (basis is not None)
-        basis_dict[idx] = basis
+        assert (basis_target is not None)
+        basis_dict[index] = basis_target
         #contravariant[idx] =
 
         # Replace all other bases corresponding to the same index:
         for i, label in enumerate(labels):
-            positions = np.asarray(np.asarray(label) == idx).nonzero()[0]
+            positions = np.asarray(np.asarray(label) == index).nonzero()[0]
             for pos in positions:
-                basis2 = operands[i].basis[pos]
+                basis_current = operands[i].basis[pos]
                 # If the bases are the same, continue, to avoid inserting an unnecessary identity matrix:
-                if basis2 == basis:
+                if basis_current == basis_target:
                     continue
-                # Add transformation from basis2 to basis:
-                idx2 = free_indices.pop(0)
-                labels_out[i][pos] = idx2
-                labels_out.append([idx, idx2])
-                overlaps.append((basis | basis2)._data)
+                # Add transformation from basis_current to basis_target:
+                index_new = free_indices.pop(0)
+                labels_out[i][pos] = index_new
+                labels_out.append([index_new, index])
+                overlaps.append(basis_current.get_overlap(basis_target)._data)
 
     # Return
     subscripts_out = ','.join([''.join(label) for label in labels_out])

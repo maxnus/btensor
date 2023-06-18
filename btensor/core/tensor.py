@@ -93,7 +93,7 @@ class Tensor(OperatorTemplate):
     def _get_basis_transform(basis1: TBasis, basis2: TBasis):
         # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
         # transform = (basis1 | basis2.dual()).value
-        transform = basis2.dual()._as_basis_matprod(basis1, simplify=True)
+        transform = basis1._as_basis_matprod(basis2.dual(), simplify=True)
         return transform
 
     def __getitem__(self, key: slice | Ellipsis | TBasis) -> Self:
@@ -302,5 +302,5 @@ class Cotensor(Tensor):
 
     @staticmethod
     def _get_basis_transform(basis1: TBasis, basis2: TBasis):
-        transform = basis2._as_basis_matprod(basis1.dual(), simplify=True)
+        transform = basis1.dual()._as_basis_matprod(basis2, simplify=True)
         return transform
