@@ -130,7 +130,7 @@ class BasisType(BasisInterface):
     def __invert__(self):
         return self.dual()
 
-    def _as_basis_matprod(self, other, simplify=False):
+    def _get_overlap_mpl(self, other, simplify: bool = False) -> MatrixProductList:
         raise NotImplementedError
 
     cache_size = 100
@@ -138,20 +138,29 @@ class BasisType(BasisInterface):
     @lru_cache(cache_size)
     def get_overlap(self, other: Self) -> Tensor:
         """Get overlap matrix as an Array with another basis."""
-        matprod = self._as_basis_matprod(other)
-        return Tensor(matprod.evaluate(), basis=(~self, ~other))
+        values = self._get_overlap_mpl(other).evaluate()
+        basis = (self.dual(), other.dual())
+        return Tensor(values, basis=basis)
 
-    def __or__(self, other: Self) -> NotImplemented | Self:
+    def get_transformation_to(self, other: Self) -> Tensor:
+        return self.get_overlap(other.dual())
+
+    def __or__(self, other: Self) -> Self | NotImplemented:
         """Allows writing overlap as `(basis1 | basis2)`."""
         # other might still implement __ror__, so return NotImplemented instead of raising an exception
         if not isinstance(other, BasisType):
             return NotImplemented
         return self.get_overlap(other)
 
-    #def get_transformation_to(self, other: Self) -> Tensor:
-    #    if not isinstance(other, BasisType):
-    #        return NotImplemented
-    #    return other.get_overlap(self)
+    def __rshift__(self, other: Self) -> Self | NotImplemented:
+        if not isinstance(other, BasisType):
+            return NotImplemented
+        return self.get_transformation_to(other)
+
+    def __lshift__(self, other: Self) -> Self | NotImplemented:
+        if not isinstance(other, BasisType):
+            return NotImplemented
+        return other.get_transformation_to(self)
 
     def same_root(self, other: Self) -> bool:
         root1 = self.root or self.get_nondual()
@@ -357,7 +366,7 @@ class Basis(BasisType):
         assert parent is not None
         return parent
 
-    def _as_basis_matprod(self, other, simplify=False) -> MatrixProductList:
+    def _get_overlap_mpl(self, other, simplify=False) -> MatrixProductList:
         """Return MatrixProduct required for as_basis method"""
         self.check_same_root(other)
         # Find first common ancestor and express coefficients in corresponding basis
@@ -448,9 +457,9 @@ class Dualbasis(BasisType):
     def metric(self):
         return self.dual().metric.inverse
 
-    def _as_basis_matprod(self, other, simplify=False):
+    def _get_overlap_mpl(self, other, simplify=False):
         """Append inverse metric (metric of dual space)"""
-        matprod = [self.metric] + self.get_nondual()._as_basis_matprod(other)
+        matprod = [self.metric] + self.get_nondual()._get_overlap_mpl(other)
         if simplify:
             matprod = matprod.simplify()
         return matprod
