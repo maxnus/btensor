@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Self, Sequence, overload
+from typing import Self, overload
 from collections import UserList
 from collections.abc import MutableSequence
 
@@ -7,8 +7,6 @@ import numpy as np
 import scipy
 import scipy.linalg
 
-
-DEBUG = True
 
 __all__ = [
         'Matrix',
@@ -101,10 +99,6 @@ class InverseMatrix(Matrix):
         super().__init__()
         self.matrix = matrix
         self._values = None
-        if DEBUG:
-            cond = np.linalg.cond(self.matrix.to_array())
-            if cond > 1e14:
-                raise RuntimeError("Cannot invert matrix %r: condition number= %e" % (self.matrix, cond))
 
     @property
     def shape(self) -> tuple[int, int]:

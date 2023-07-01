@@ -32,7 +32,7 @@ class TestBasis(TestCase):
             while parent.size > 1:
                 if permutation:
                     t = np.random.permutation(range(parent.size))[:parent.size-1]
-                    trafos.append(np.identity(parent.size)[:,t])
+                    trafos.append(np.identity(parent.size)[:, t])
                 else:
                     t = rand_orth_mat(parent.size, parent.size-1)
                     trafos.append(t)
@@ -66,14 +66,6 @@ class TestBasis(TestCase):
     #    rootbasis, (subbasis, subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
     #    #print(hash(rootbasis))
     #    print(hash(subbasis))
-
-    def test_pos_neg_invert(self):
-        b = self.basis_a[0]
-        d = b.dual()
-        assert (-b == d)
-        assert (~b == d)
-        assert (+d == b)
-        assert (~d == b)
 
     def test_len_and_ordering(self):
         for i, b1 in enumerate(self.basis_a):

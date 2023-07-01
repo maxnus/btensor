@@ -1,38 +1,45 @@
 from __future__ import annotations
 import numbers
 import string
-from typing import Optional, Self, overload
+from typing import *
 
 import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from .basis import BasisType, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, TBasis
+from .basis import Basis, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, TBasis
 from .basistuple import BasisTuple
 from .optemplate import OperatorTemplate
 from btensor import numpy_functions
 
 
-
 class Tensor(OperatorTemplate):
+
+    DEFAULT_VARIANCE = -1
 
     def __init__(self,
                  data: ArrayLike,
-                 basis: Optional[TBasis] = None,
+                 basis: TBasis | None= None,
+                 variance: Sequence[int] | None = None,
                  copy_data: bool = True) -> None:
         data = np.array(data, copy=copy_data)
         data.flags.writeable = False
         self._data = data
         if basis is None:
             basis = data.ndim * (nobasis,)
+        if variance is None:
+            variance = data.ndim * [self.DEFAULT_VARIANCE]
+        variance = tuple(variance)
+
         basis = BasisTuple.create(basis)
         self.check_basis(basis)
         self._basis = basis
+        self._variance = variance
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
 
-    def copy(self) -> Self:
+    def copy(self) -> Tensor:
         return type(self)(self._data, basis=self.basis, copy_data=True)
 
     # --- Basis
@@ -52,7 +59,7 @@ class Tensor(OperatorTemplate):
             if size != baselem.size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
-    def replace_basis(self, basis: tuple[Optional[BasisInterface], ...], inplace: bool = False) -> Self:
+    def replace_basis(self, basis: tuple[BasisInterface | None, ...], inplace: bool = False) -> Tensor:
         """Replace basis with new basis."""
         tensor = self if inplace else self.copy()
         new_basis = self.basis.update_with(basis)
@@ -63,8 +70,8 @@ class Tensor(OperatorTemplate):
     # --- Variance
 
     @property
-    def variance(self) -> tuple[int]:
-        return tuple(-v for v in self._basis.variance)
+    def variance(self) -> tuple[int, ...]:
+        return self._variance
 
     #def as_variance(self, variance):
     #    if np.ndim(variance) == 0:
@@ -90,16 +97,13 @@ class Tensor(OperatorTemplate):
     # ---
 
     @staticmethod
-    def _get_basis_transform(basis1: TBasis, basis2: TBasis):
-        # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
-        # transform = (basis1 | basis2.dual()).value
-        transform = basis1._get_overlap_mpl(basis2.dual(), simplify=True)
-        return transform
+    def _get_basis_transform(basis1: TBasis, basis2: TBasis, variance: tuple[int, int]):
+        return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
 
-    def __getitem__(self, key: slice | Ellipsis | TBasis) -> Self:
+    def __getitem__(self, key: slice | Ellipsis | TBasis) -> Tensor:
         if (isinstance(key, slice) and key == slice(None)) or key is Ellipsis:
             return self
-        if isinstance(key, BasisType):
+        if isinstance(key, Basis):
             key = (key,)
 
         index_error = IndexError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
@@ -109,12 +113,12 @@ class Tensor(OperatorTemplate):
         if not isinstance(key, tuple):
             raise index_error
         for bas in key:
-            if not isinstance(bas, BasisType) or key in (slice(None), Ellipsis):
+            if not isinstance(bas, Basis) or key in (slice(None), Ellipsis):
                 raise index_error
 
         return self.project(key)
 
-    def project(self, basis: TBasis) -> Self:
+    def project(self, basis: TBasis) -> Tensor:
         """Transform to different set of basis.
 
         Slice(None) can be used to indicate no transformation.
@@ -128,16 +132,16 @@ class Tensor(OperatorTemplate):
         operands = [self._data]
         result = list(subscripts)
         basis_out = list(self.basis)
-        for i, (bas0, bas1, sub) in enumerate(zip(self.basis, basis, subscripts)):
-            if bas1 == bas0:
+        for i, (bas_curr, bas_out, var, sub) in enumerate(zip(self.basis, basis, self.variance, subscripts)):
+            if bas_out == bas_curr:
                 continue
-            basis_out[i] = bas1
+            basis_out[i] = bas_out
             # Remove or add basis:
-            if is_nobasis(bas0) or is_nobasis(bas1):
+            if is_nobasis(bas_curr) or is_nobasis(bas_out):
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
-            ovlp = self._get_basis_transform(bas0, bas1)
+            ovlp = bas_curr._get_overlap_mpl(bas_out, variance=(-var, var)).simplify()
             if len(ovlp) == 1 and isinstance(ovlp[0], IdentityMatrix):
                 raise NotImplementedError
             elif len(ovlp) == 1 and isinstance(ovlp[0], PermutationMatrix):
@@ -182,29 +186,29 @@ class Tensor(OperatorTemplate):
 
     cob = change_basis  # alias for convenience
 
-    def change_basis_at(self, index: int, basis: BasisInterface) -> Self:
+    def change_basis_at(self, index: int, basis: BasisInterface) -> Tensor:
         if index < 0:
             index += self.ndim
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.change_basis[basis_new]
 
-    def __or__(self, basis: TBasis) -> Self:
+    def __or__(self, basis: TBasis) -> Tensor:
         """To allow basis transformation as (array | basis)"""
         # Left-pad with slice(None), such that the basis transformation applies to the last n axes
         basis = BasisTuple.create_from_default(basis, default=self.basis, leftpad=True)
         return self.change_basis[basis]
 
-    def __ror__(self, basis: TBasis) -> Self:
+    def __ror__(self, basis: TBasis) -> Tensor:
         """To allow basis transformation as (basis | array)"""
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         return self.change_basis[basis]
 
     # Arithmetic
 
-    def is_compatible(self, other: Self) -> bool:
+    def is_compatible(self, other: Tensor) -> bool:
         return all(self.compatible_axes(other))
 
-    def compatible_axes(self, other: Self) -> list[int]:
+    def compatible_axes(self, other: Tensor) -> list[int]:
         axes = []
         for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
             axes.append(bool(compatible_basis(b1, b2)))
@@ -212,10 +216,10 @@ class Tensor(OperatorTemplate):
             axes += (self.ndim-other.ndim)*[False]
         return axes
 
-    def common_basis(self, other: Self) -> BasisTuple:
+    def common_basis(self, other: Tensor) -> BasisTuple:
         return self.basis.get_common_basistuple(other.basis)
 
-    def _operator(self, operator, *other, swap=False) -> Self:
+    def _operator(self, operator, *other, swap=False) -> Tensor:
         # Unary operator
         if len(other) == 0:
             return type(self)(operator(self._data), basis=self.basis)
@@ -259,7 +263,7 @@ class Tensor(OperatorTemplate):
         return self._data.shape
 
     def to_numpy(self,
-                 basis: Optional[TBasis] = None,
+                 basis: TBasis | None = None,
                  project: bool = False,
                  copy: bool = True) -> np.ndarray:
         """Convert to NumPy ndarray"""
@@ -273,7 +277,7 @@ class Tensor(OperatorTemplate):
             return nparray.copy()
         return nparray
 
-    def transpose(self, axes: Optional[tuple[int]] = None) -> Self:
+    def transpose(self, axes: tuple[int] | None = None) -> Tensor:
         value = self._data.transpose(axes)
         if axes is None:
             basis = self.basis[::-1]
@@ -282,23 +286,16 @@ class Tensor(OperatorTemplate):
         return type(self)(value, basis=basis)
 
     @property
-    def T(self) -> Self:
+    def T(self) -> Tensor:
         return self.transpose()
 
-    def trace(self, axis1: int = 0, axis2: int = 1) -> Self:
+    def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor:
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
-    def dot(self, other: Self | np.ndarray) -> Self:
+    def dot(self, other: Tensor | np.ndarray) -> Tensor:
         return numpy_functions.dot(self, other)
 
 
 class Cotensor(Tensor):
 
-    @property
-    def variance(self) -> tuple[int]:
-        return self._basis.variance
-
-    @staticmethod
-    def _get_basis_transform(basis1: TBasis, basis2: TBasis):
-        transform = basis1.dual()._get_overlap_mpl(basis2, simplify=True)
-        return transform
+    DEFAULT_VARIANCE = 1

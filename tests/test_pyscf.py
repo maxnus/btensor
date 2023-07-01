@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from collections import namedtuple
 import btensor as basis
+from btensor import Tensor, Cotensor
 from helper import TestCase, rand_orth_mat
 
 
@@ -102,104 +103,75 @@ class TestSCF(TestCase):
         bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
         self.assert_allclose(bdm._data, dm)
 
-    def test_ao_mo_transform(self, mf, ao2, mo):
+    def test_overlap(self, mf, ao2, mo):
         c = mf.mo_coeff
         s = mf.ovlp
         i = np.identity(mf.nao)
-        # Normal-normal
-        self.assert_allclose((ao2 | ao2), s)
-        self.assert_allclose((mo | mo), i)
-        self.assert_allclose((ao2 | mo), s.dot(c))
-        self.assert_allclose((mo | ao2), c.T.dot(s.T))
+        self.assert_allclose(ao2.get_overlap(ao2), s)
+        self.assert_allclose(mo.get_overlap(mo), i)
+        self.assert_allclose(ao2.get_overlap(mo), s.dot(c))
+        self.assert_allclose(mo.get_overlap(ao2), c.T.dot(s.T))
+
+    def test_transformation_to(self, mf, ao2, mo):
+        c = mf.mo_coeff
+        s = mf.ovlp
+        i = np.identity(mf.nao)
         # Dual-normal
-        self.assert_allclose((-ao2 | ao2), i)
-        self.assert_allclose((-mo | mo), i)
-        self.assert_allclose((-ao2 | mo), c)
-        self.assert_allclose((-mo | ao2), c.T.dot(s.T))
-        # Normal-dual
-        self.assert_allclose((ao2 | -ao2), i)
-        self.assert_allclose((mo | -mo), i)
-        self.assert_allclose((ao2 | -mo), s.dot(c))
-        self.assert_allclose((mo | -ao2), c.T)
-        # Dual-dual
-        self.assert_allclose((-ao2 | -ao2), np.linalg.inv(s))
-        self.assert_allclose((-mo | -mo), i)
-        self.assert_allclose((-ao2 | -mo), c)
-        self.assert_allclose((-mo | -ao2), c.T)
+        self.assert_allclose(ao2.get_transformation_to(ao2), i)
+        self.assert_allclose(mo.get_transformation_to(mo), i)
+        self.assert_allclose(ao2.get_transformation_to(mo), c)
+        self.assert_allclose(mo.get_transformation_to(ao2), c.T.dot(s.T))
+
+    def test_transformation_from(self, mf, ao2, mo):
+        c = mf.mo_coeff
+        s = mf.ovlp
+        i = np.identity(mf.nao)
+        # Dual-normal
+        self.assert_allclose(ao2.get_transformation_from(ao2), i)
+        self.assert_allclose(mo.get_transformation_from(mo), i)
+        self.assert_allclose(ao2.get_transformation_from(mo), c.T.dot(s))
+        self.assert_allclose(mo.get_transformation_from(ao2), c)
+
+    def test_inverse_overlap(self, mf, ao2, mo):
+        c = mf.mo_coeff
+        s = mf.ovlp
+        i = np.identity(mf.nao)
+        self.assert_allclose(ao2.get_overlap(ao2, variance=(-1, -1)), np.linalg.inv(s))
+        self.assert_allclose(mo.get_overlap(mo, variance=(-1, -1)), i)
+        self.assert_allclose(ao2.get_overlap(mo, variance=(-1, -1)), c)
+        self.assert_allclose(mo.get_overlap(ao2, variance=(-1, -1)), c.T)
 
     def test_ao_mo_projector(self, mf, ao, mo, dot_function):
         i = np.identity(mf.nao)
-        # 1
-        # t1 = (-ao | mo)
-        # t2 = (mo | ao)
-        # print(t1)
-        # print(t2)
-        # print(dot_function)
-        # np.dot(t1, t2)
+        self.assert_allclose(dot_function(ao.get_transformation_to(mo), mo.get_transformation_to(ao)), i)
 
-        self.assert_allclose(dot_function((-ao | mo), (mo | ao)), i)
-        self.assert_allclose(dot_function((-ao | -mo), (mo | ao)), i)
-        self.assert_allclose(dot_function((-ao | mo), (-mo | ao)), i)
-        self.assert_allclose(dot_function((-ao | -mo), (-mo | ao)), i)
-        # 2
-        self.assert_allclose(dot_function((mo | -ao), (ao | mo)), i)
-        self.assert_allclose(dot_function((-mo | -ao), (ao | mo)), i)
-        self.assert_allclose(dot_function((mo | -ao), (ao | -mo)), i)
-        self.assert_allclose(dot_function((-mo | -ao), (ao | -mo)), i)
-        # 3
-        self.assert_allclose(dot_function((mo | ao), (-ao | mo)), i)
-        self.assert_allclose(dot_function((-mo | ao), (-ao | mo)), i)
-        self.assert_allclose(dot_function((mo | ao), (-ao | -mo)), i)
-        self.assert_allclose(dot_function((-mo | ao), (-ao | -mo)), i)
-        # 4
-        self.assert_allclose(dot_function((ao | mo), (mo | -ao)), i)
-        self.assert_allclose(dot_function((ao | -mo), (mo | -ao)), i)
-        self.assert_allclose(dot_function((ao | mo), (-mo | -ao)), i)
-        self.assert_allclose(dot_function((ao | -mo), (-mo | -ao)), i)
+    def test_mo_ao_projector(self, mf, ao, mo, dot_function):
+        i = np.identity(mf.nao)
+        self.assert_allclose(dot_function(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
 
     def test_ao2mo_ovlp(self, mf, ao, mo, or_association):
-        s = basis.Tensor(mf.ovlp, basis=(-ao, -ao))
-        self.assert_allclose(or_association(mo, s, mo), np.identity(mf.nao))
-        s = basis.Cotensor(mf.ovlp, basis=(ao, ao))
+        s = Cotensor(mf.ovlp, basis=(ao, ao))
         self.assert_allclose(or_association(mo, s, mo), np.identity(mf.nao))
 
     def test_mo2ao_ovlp(self, mf, ao, mo, or_association):
-        s = basis.Tensor(np.identity(mf.nao), basis=(mo, mo))
-        self.assert_allclose(or_association(-ao, s, -ao), mf.ovlp)
-        s = basis.Cotensor(np.identity(mf.nao), basis=(mo, mo))
+        s = Cotensor(np.identity(mf.nao), basis=(mo, mo))
         self.assert_allclose(or_association(ao, s, ao), mf.ovlp)
 
-    def test_ao2mo_fock(self, mf, ao, mo):
-        f = basis.Tensor(mf.fock, basis=(-ao, -ao))
-        self.assert_allclose(((mo | f) | mo), np.diag(mf.mo_energy), atol=1e-9)
-        self.assert_allclose((mo | (f | mo)), np.diag(mf.mo_energy), atol=1e-9)
-        f = basis.Cotensor(mf.fock, basis=(ao, ao))
-        self.assert_allclose(((mo | f) | mo), np.diag(mf.mo_energy), atol=1e-9)
-        self.assert_allclose((mo | (f | mo)), np.diag(mf.mo_energy), atol=1e-9)
+    def test_ao2mo_fock(self, mf, ao, mo, or_association):
+        f = Cotensor(mf.fock, basis=(ao, ao))
+        self.assert_allclose(or_association(mo, f, mo), np.diag(mf.mo_energy), atol=1e-9)
 
-    def test_mo2ao_fock(self, mf, ao, mo):
-        f = basis.Tensor(np.diag(mf.mo_energy), basis=(mo, mo))
-        self.assert_allclose(((-ao | f) | -ao), mf.fock, atol=1e-9)
-        self.assert_allclose((-ao | (f | -ao)), mf.fock, atol=1e-9)
-        f = basis.Cotensor(np.diag(mf.mo_energy), basis=(mo, mo))
-        self.assert_allclose(((ao | f) | ao), mf.fock, atol=1e-9)
-        self.assert_allclose((ao | (f | ao)), mf.fock, atol=1e-9)
+    def test_mo2ao_fock(self, mf, ao, mo, or_association):
+        f = Cotensor(np.diag(mf.mo_energy), basis=(mo, mo))
+        self.assert_allclose(or_association(ao, f, ao), mf.fock, atol=1e-9)
 
-    def test_ao2mo_dm(self, mf, ao, mo):
-        d = basis.Tensor(mf.dm, basis=(ao, ao))
-        self.assert_allclose(((mo | d) | mo), np.diag(mf.mo_occ))
-        self.assert_allclose((mo | (d | mo)), np.diag(mf.mo_occ))
-        d = basis.Cotensor(mf.dm, basis=(-ao, -ao))
-        self.assert_allclose(((mo | d) | mo), np.diag(mf.mo_occ))
-        self.assert_allclose((mo | (d | mo)), np.diag(mf.mo_occ))
+    def test_ao2mo_dm(self, mf, ao, mo, or_association):
+        d = Tensor(mf.dm, basis=(ao, ao))
+        self.assert_allclose(or_association(mo, d, mo), np.diag(mf.mo_occ))
 
-    def test_mo2ao_dm(self, mf, ao, mo):
+    def test_mo2ao_dm(self, mf, ao, mo, or_association):
         d = basis.Tensor(np.diag(mf.mo_occ), basis=(mo, mo))
-        self.assert_allclose(((ao | d) | ao), mf.dm)
-        self.assert_allclose((ao | (d | ao)), mf.dm)
-        d = basis.Cotensor(np.diag(mf.mo_occ), basis=(mo, mo))
-        self.assert_allclose(((-ao | d) | -ao), mf.dm)
-        self.assert_allclose((-ao | (d | -ao)), mf.dm)
+        self.assert_allclose(or_association(ao, d, ao), mf.dm)
 
     def test_mo2mo_t2(self, mf, cc, ao, mo):
         mo_occ = basis.Basis(slice(mf.nocc), parent=mo)
@@ -237,3 +209,6 @@ class TestSCF(TestCase):
         self.assert_allclose(t2e, 0)
         t2e = t2b.project((mo_vir, mo_vir, mo_occ, mo_occ))
         self.assert_allclose(t2e, 0)
+
+    def test_foo(self, ao):
+        l = {ao : 2}

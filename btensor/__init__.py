@@ -19,7 +19,7 @@ Usage:
 
 """
 
-from .core import BasisInterface, Basis, Dualbasis
+from .core import BasisInterface, Basis
 from .core import nobasis
 from .core import Tensor, Cotensor, Array, Coarray
 

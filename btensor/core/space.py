@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Self, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import numpy as np
 import scipy
@@ -25,12 +25,14 @@ class Space:
     def __len__(self) -> int:
         return len(self.basis)
 
-    def _singular_values_of_overlap(self, other: Self) -> np.ndarray:
-        ovlp = (~self.basis | other.basis).to_numpy()
+    def _singular_values_of_overlap(self, other: Space) -> np.ndarray:
+        #ovlp = (~self.basis | other.basis).to_numpy()
+        ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
+        #ovlp = self.basis.get_overlap(other.basis, variance=[-1, -1]).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return sv
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: Space) -> bool:
         """True, if self is the same space as other."""
         if not isinstance(other, Space):
             return False
@@ -45,11 +47,11 @@ class Space:
         sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv-1) < self._svd_tol)
 
-    def __neq__(self, other: Any) -> bool:
+    def __neq__(self, other: Space) -> bool:
         """True, if self is not the same space as other."""
         return not (self == other)
 
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self, other: Space) -> bool:
         """True, if self is a true subspace of other."""
         if not isinstance(other, Space):
             return False
@@ -63,25 +65,31 @@ class Space:
         sv = self._singular_values_of_overlap(other)
         return np.all(sv > 1-self._svd_tol)
 
-    def __le__(self, other: Any) -> bool:
+    def __le__(self, other: Space) -> bool:
         """True, if self a subspace of other or spans the same space."""
         return (self < other) or (self == other)
 
-    def __gt__(self, other: Any) -> bool:
+    def __gt__(self, other: Space) -> bool:
         """True, if self is a true superspace of other."""
         return other < self
 
-    def __ge__(self, other: Any) -> bool:
+    def __ge__(self, other: Space) -> bool:
         """True, if self a superspace of other or spans the same space."""
         return (self > other) or (self == other)
 
-    def __or__(self, other: Self) -> bool:
+    def is_orthogonal(self, other: Space) -> bool:
         """True, if self is orthogonal to other."""
         if not isinstance(other, type(self)):
             raise TypeError
         if not self.basis.same_root(other.basis):
             return True
-        if self in other.basis.get_parents() or other in self.basis.get_parents():
-            return True
+        parent_basis = self.basis.find_common_parent(other.basis)
+        if parent_basis in (self, other):
+            return False
+        if len(self.basis) + len(other.basis) > len(parent_basis):
+            return False
         sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv) < self._svd_tol)
+
+    def __or__(self, other: Space) -> bool:
+        return self.is_orthogonal(other)

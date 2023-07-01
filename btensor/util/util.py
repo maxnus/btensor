@@ -1,8 +1,13 @@
+from __future__ import annotations
 from contextlib import contextmanager
+from typing import *
 
 import numpy as np
 
-from .matrix import Matrix, IdentityMatrix
+from .matrix import IdentityMatrix
+
+if TYPE_CHECKING:
+    from numbers import Number
 
 
 __all__ = [
@@ -38,7 +43,7 @@ class BasisError(Exception):
     pass
 
 
-def ndot(*args):
+def ndot(*args) -> np.ndarray | Number:
     args = [x for x in args if not isinstance(x, IdentityMatrix)]
     args = [a.to_numpy() if hasattr(a, 'to_numpy') else a for a in args]
     #print([a.shape for a in args])

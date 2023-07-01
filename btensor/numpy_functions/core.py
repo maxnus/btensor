@@ -1,8 +1,5 @@
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from numbers import Number
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -10,6 +7,10 @@ from numpy.typing import ArrayLike
 import btensor
 from btensor.util import ndot, BasisError, IdentityMatrix
 from btensor.core.basis import is_nobasis, BasisInterface
+
+if TYPE_CHECKING:
+    from numbers import Number
+    from btensor import Tensor
 
 
 def _to_tensor(*args):
@@ -46,7 +47,7 @@ empty_like = _empty_like_factory(empty)
 ones_like = _empty_like_factory(ones)
 
 
-def _sum(a: ArrayLike | btensor.Tensor, axis=None) -> btensor.Tensor | Number:
+def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
     a = _to_tensor(a)
     value = a._data.sum(axis=axis)
     if value.ndim == 0:
@@ -59,35 +60,45 @@ def _sum(a: ArrayLike | btensor.Tensor, axis=None) -> btensor.Tensor | Number:
     return type(a)(value, basis=basis)
 
 
-def _overlap(a: BasisInterface, b: BasisInterface):
-    if is_nobasis(a) and is_nobasis(b):
-        return IdentityMatrix(None)
-    if is_nobasis(a) or is_nobasis(b):
-        raise BasisError(f"Cannot evaluate overlap between {a} and {b}")
-    return a.get_overlap(b)
-
-
-def dot(a: ArrayLike | btensor.Tensor, b: ArrayLike | btensor.Tensor) -> btensor.Tensor | Number:
+def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
     a, b = _to_tensor(a, b)
+    basis = variance = None
     if a.ndim == b.ndim == 1:
-        ovlp = _overlap(a.basis[0], b.basis[0])
-        return ndot(a._data, ovlp, b._data)
-    if a.ndim == b.ndim == 2:
-        ovlp = _overlap(a.basis[-1], b.basis[0])
-        out = ndot(a._data, ovlp, b._data)
+        leftaxis, rightaxis = 0, 0
+    elif a.ndim == b.ndim == 2:
+        leftaxis, rightaxis = -1, 0
         basis = (a.basis[0], b.basis[1])
+        variance = (a.variance[0], b.variance[1])
     elif b.ndim == 1:
-        ovlp = _overlap(a.basis[-1], b.basis[0])
-        out = ndot(a._data, ovlp, b._data)
+        leftaxis, rightaxis = -1, 0
         basis = a.basis[:-1]
+        variance = a.variance[:-1]
     elif b.ndim >= 2:
-        ovlp = _overlap(a.basis[-1], b.basis[-2])
-        out = ndot(a._data, ovlp, b._data)
-        basis = (a.basis[:-1] + b.basis[:-2] + b.basis[-1:])
-    return type(a)(out, basis=basis)
+        leftaxis, rightaxis = -1, -2
+        basis = a.basis[:-1] + b.basis[:-2] + b.basis[-1:]
+        variance = a.variance[:-1] + b.variance[:-2] + b.variance[-1:]
+    else:
+        raise ValueError(f"invalid dimensions: {a.ndim} and {b.ndim}")
+    basis_left = a.basis[leftaxis]
+    basis_right = b.basis[rightaxis]
+    if basis_left is not btensor.nobasis and basis_right is not btensor.nobasis:
+        variance_ovlp = (-a.variance[leftaxis], -b.variance[rightaxis])
+        ovlp = basis_left.get_overlap(basis_right, variance=variance_ovlp)
+    elif basis_left is btensor.nobasis and basis_right is btensor.nobasis:
+        size = a.shape[leftaxis]
+        if b.shape[rightaxis] != size:
+            raise BasisError
+        ovlp = IdentityMatrix(size)
+    else:
+        raise BasisError(f"Cannot evaluate overlap between {a} and {b}")
+
+    value = ndot(a.to_numpy(copy=False), ovlp, b.to_numpy(copy=False))
+    if not isinstance(value, np.ndarray):
+        return value
+    return type(a)(value, basis=basis, variance=variance)
 
 
-def trace(a: ArrayLike | btensor.Tensor, axis1: int = 0, axis2: int = 1) -> btensor.Tensor | Number:
+def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
     a = _to_tensor(a)
     basis1 = a.basis[axis1]
     basis2 = a.basis[axis2]

@@ -51,7 +51,7 @@ class Array(Tensor):
                 if isinstance(ki, (int, np.integer)):
                     del basis[idx]
                 elif isinstance(ki, slice):
-                    basis[idx] = Basis(argument=ki, parent=basis[idx])
+                    basis[idx] = Basis(definition=ki, parent=basis[idx])
                 elif ki is np.newaxis:
                     pass
                 else:

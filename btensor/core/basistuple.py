@@ -103,24 +103,12 @@ class BasisTuple(tuple):
 
     # ---
 
-    @property
-    def variance(self) -> tuple[int]:
-        return tuple(basis.variance for basis in self)
-
-    @property
-    def variance_string(self) -> str:
-        """String representation of variance tuple."""
-        symbols = {1: '+', -1: '-', 0: '*'}
-        return ''.join(symbols[x] for x in self.variance)
-
     def is_spanning(self, other: Self) -> bool:
         for basis_self, basis_other in zip(self, other):
             if is_nobasis(basis_other):
                 continue
             if is_nobasis(basis_self):
                 return False
-            basis_self = basis_self.get_nondual()
-            basis_other = basis_other.get_nondual()
             if basis_other.space > basis_self.space:
                 return False
         return True
