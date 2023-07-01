@@ -175,16 +175,17 @@ class Tensor(OperatorTemplate):
             return f"{type(self).__name__}({self.tensor})"
 
         def __getitem__(self, key: TBasis) -> Tensor:
-            basis = BasisTuple.create_from_default(key, default=self.tensor.basis)
-            if not basis.is_spanning(self.tensor._basis):
-                raise BasisError(f"{basis} does not span {self.tensor.basis}")
-            return self.tensor.project(basis)
+            return self.tensor.change_basis(key)
+
+    def change_basis(self, basis: TBasis) -> Tensor:
+        basis = BasisTuple.create_from_default(basis, default=self.basis)
+        if not basis.is_spanning(self._basis):
+            raise BasisError(f"{basis} does not span {self.basis}")
+        return self.project(basis)
 
     @property
-    def change_basis(self):
+    def cob(self):
         return self.ChangeBasisInterface(self)
-
-    cob = change_basis  # alias for convenience
 
     def change_basis_at(self, index: int, basis: BasisInterface) -> Tensor:
         if index < 0:
@@ -196,12 +197,12 @@ class Tensor(OperatorTemplate):
         """To allow basis transformation as (array | basis)"""
         # Left-pad with slice(None), such that the basis transformation applies to the last n axes
         basis = BasisTuple.create_from_default(basis, default=self.basis, leftpad=True)
-        return self.change_basis[basis]
+        return self.change_basis(basis)
 
     def __ror__(self, basis: TBasis) -> Tensor:
         """To allow basis transformation as (basis | array)"""
         basis = BasisTuple.create_from_default(basis, default=self.basis)
-        return self.change_basis[basis]
+        return self.change_basis(basis)
 
     # Arithmetic
 
@@ -238,8 +239,8 @@ class Tensor(OperatorTemplate):
                 v2 = other._data
             elif self.is_compatible(other):
                 basis = self.common_basis(other)
-                v1 = self.change_basis[basis]._data
-                v2 = other.change_basis[basis]._data
+                v1 = self.change_basis(basis)._data
+                v2 = other.change_basis(basis)._data
             else:
                 raise ValueError(f"{self} and {other} are not compatible")
         else:

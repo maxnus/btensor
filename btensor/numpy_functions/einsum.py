@@ -1,5 +1,6 @@
 import copy
 import string
+
 import numpy as np
 
 
@@ -21,7 +22,7 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
         result = ''.join([s for s in sorted(set(subscripts.replace(',', ''))) if labels.count(s) == 1])
     labels = labels.split(',')
     if len(labels) != len(operands):
-        raise ValueError("Invalid number of operands")
+        raise ValueError("invalid number of operands")
 
     labels = [list(label) for label in labels]
     labels_out = copy.deepcopy(labels)
@@ -36,7 +37,6 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
     # Loop over all indices
     overlaps = []
     basis_dict = {}
-    #contravariant = {}
     for index in indices:
 
         # Find smallest basis for given idx:
@@ -48,11 +48,9 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
                 basis_current = operands[i].basis[pos]
                 if basis_target is None or (basis_current.size < basis_target.size):
                     basis_target = basis_current
-                #contra = operands[i].contravariant[pos]
 
         assert (basis_target is not None)
         basis_dict[index] = basis_target
-        #contravariant[idx] =
 
         # Replace all other bases corresponding to the same index:
         for i, label in enumerate(labels):
@@ -66,12 +64,12 @@ def einsum(subscripts, *operands, einsumfunc=np.einsum, **kwargs):
                 index_new = free_indices.pop(0)
                 labels_out[i][pos] = index_new
                 labels_out.append([index_new, index])
-                overlaps.append(basis_current.get_overlap(basis_target)._data)
+                overlaps.append(basis_current.get_overlap(basis_target).to_numpy(copy=False))
 
     # Return
     subscripts_out = ','.join([''.join(label) for label in labels_out])
     subscripts_out = '->'.join((subscripts_out, result))
-    operands_out = [op._data for op in operands]
+    operands_out = [op.to_numpy(copy=False) for op in operands]
     operands_out.extend(overlaps)
     values = einsumfunc(subscripts_out, *operands_out, **kwargs)
     basis_out = tuple([basis_dict[idx] for idx in result])

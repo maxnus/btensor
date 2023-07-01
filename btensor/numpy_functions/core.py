@@ -6,7 +6,7 @@ from numpy.typing import ArrayLike
 
 import btensor
 from btensor.util import ndot, BasisError, IdentityMatrix
-from btensor.core.basis import is_nobasis, BasisInterface
+from btensor.core.basis import is_nobasis
 
 if TYPE_CHECKING:
     from numbers import Number
@@ -49,7 +49,7 @@ ones_like = _empty_like_factory(ones)
 
 def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
     a = _to_tensor(a)
-    value = a._data.sum(axis=axis)
+    value = a.to_numpy(copy=False).sum(axis=axis)
     if value.ndim == 0:
         return value
     if axis is None:
@@ -109,7 +109,7 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     else:
         parent = basis1.find_common_parent(basis2)
         a = a.change_basis_at(axis1, parent).change_basis_at(axis2, parent)
-    value = a._data.trace(axis1=axis1, axis2=axis2)
+    value = a.to_numpy(copy=False).trace(axis1=axis1, axis2=axis2)
     if value.ndim == 0:
         return value
     if axis1 < 0:

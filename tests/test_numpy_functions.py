@@ -81,7 +81,7 @@ class TestNumpyFunctions(TestCase):
     def test_trace_subspace(self, ndim_atleast2, subbasis, get_array):
         array, np_array = get_array(ndim_atleast2)
         tr1 = array.project((subbasis, subbasis)).trace()
-        tr2 = array.project((subbasis, subbasis)).change_basis[array.basis].trace()
+        tr2 = array.project((subbasis, subbasis)).change_basis(array.basis).trace()
         self.assert_allclose(tr1, tr2, atol=1e-14, rtol=0)
 
     def test_eigh(self, get_array):

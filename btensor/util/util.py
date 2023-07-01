@@ -46,9 +46,6 @@ class BasisError(Exception):
 def ndot(*args) -> np.ndarray | Number:
     args = [x for x in args if not isinstance(x, IdentityMatrix)]
     args = [a.to_numpy() if hasattr(a, 'to_numpy') else a for a in args]
-    #print([a.shape for a in args])
-    #print([type(a) for a in args])
-    #print(args)
     return np.linalg.multi_dot(args)
 
 

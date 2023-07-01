@@ -9,9 +9,12 @@ if TYPE_CHECKING:
     from btensor import Basis
 
 
+DEFAULT_SVD_TOL = 1e-12
+
+
 class Space:
 
-    def __init__(self, basis: Basis, svd_tol: float = 1e-12) -> None:
+    def __init__(self, basis: Basis, svd_tol: float = DEFAULT_SVD_TOL) -> None:
         self._basis = basis
         self._svd_tol = svd_tol
 
@@ -26,16 +29,13 @@ class Space:
         return len(self.basis)
 
     def _singular_values_of_overlap(self, other: Space) -> np.ndarray:
-        #ovlp = (~self.basis | other.basis).to_numpy()
         ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
-        #ovlp = self.basis.get_overlap(other.basis, variance=[-1, -1]).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return sv
 
-    def __eq__(self, other: Space) -> bool:
-        """True, if self is the same space as other."""
+    def trivially_equal(self, other: Space) -> bool | None:
         if not isinstance(other, Space):
-            return False
+            raise TypeError
         if len(self) != len(other):
             return False
         if not self.basis.same_root(other.basis):
@@ -43,6 +43,35 @@ class Space:
         parent = self.basis.find_common_parent(other.basis)
         if len(parent) == len(self):
             return True
+        return None
+
+    def trivially_less_than(self, other: Space) -> bool | None:
+        if not isinstance(other, Space):
+            raise TypeError
+        if len(self) >= len(other):
+            return False
+        if not self.basis.same_root(other.basis):
+            return False
+        if self.basis.is_derived_from(other.basis):
+            return True
+        return None
+
+    def trivially_orthogonal(self, other: Space) -> bool | None:
+        if not isinstance(other, Space):
+            raise TypeError
+        if not self.basis.same_root(other.basis):
+            return True
+        parent_basis = self.basis.find_common_parent(other.basis)
+        if parent_basis in (self, other):
+            return False
+        if len(self.basis) + len(other.basis) > len(parent_basis):
+            return False
+        return None
+
+    def __eq__(self, other: Space) -> bool:
+        """True, if self is the same space as other."""
+        if (eq := self.trivially_equal(other)) is not None:
+            return eq
         # Perform SVD to determine relationship
         sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv-1) < self._svd_tol)
@@ -53,14 +82,8 @@ class Space:
 
     def __lt__(self, other: Space) -> bool:
         """True, if self is a true subspace of other."""
-        if not isinstance(other, Space):
-            return False
-        if len(self) >= len(other):
-            return False
-        if not self.basis.same_root(other.basis):
-            return False
-        if self.basis.is_derived_from(other.basis):
-            return True
+        if (lt := self.trivially_less_than(other)) is not None:
+            return lt
         # Perform SVD to determine relationship
         sv = self._singular_values_of_overlap(other)
         return np.all(sv > 1-self._svd_tol)
@@ -77,19 +100,9 @@ class Space:
         """True, if self a superspace of other or spans the same space."""
         return (self > other) or (self == other)
 
-    def is_orthogonal(self, other: Space) -> bool:
+    def __or__(self, other: Space) -> bool:
         """True, if self is orthogonal to other."""
-        if not isinstance(other, type(self)):
-            raise TypeError
-        if not self.basis.same_root(other.basis):
-            return True
-        parent_basis = self.basis.find_common_parent(other.basis)
-        if parent_basis in (self, other):
-            return False
-        if len(self.basis) + len(other.basis) > len(parent_basis):
-            return False
+        if (orth := self.trivially_orthogonal(other)) is not None:
+            return orth
         sv = self._singular_values_of_overlap(other)
         return np.all(abs(sv) < self._svd_tol)
-
-    def __or__(self, other: Space) -> bool:
-        return self.is_orthogonal(other)
