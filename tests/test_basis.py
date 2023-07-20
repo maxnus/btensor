@@ -1,8 +1,171 @@
 import numpy as np
+import pytest
 
-import btensor as basis
+import btensor
 from helper import TestCase, rand_orth_mat
+from conftest import get_subbasis_definition_random
 
+
+@pytest.fixture
+def size_a():
+    return 10
+
+
+@pytest.fixture(params=[None, 0, 1], ids=['Orth', 'Orth2', 'NonOrth'])
+def metric_a(request, size_a):
+    if request.param is None:
+        return None
+    if request.param == 0:
+        return np.identity(size_a)
+    if request.param == 1:
+        noise = np.random.random((size_a, size_a)) - 0.5
+        return np.identity(size_a) + noise + noise.T
+
+
+@pytest.fixture
+def basis_a0(size_a, metric_a):
+    return btensor.Basis(size_a, metric=metric_a)
+
+
+@pytest.fixture
+def basis_a1(basis_a0, subbasis_type):
+    d = get_subbasis_definition_random(len(basis_a0), len(basis_a0) - 2, subbasis_type)
+    return basis_a0.make_basis(d)
+
+
+@pytest.fixture
+def basis_a2(basis_a1, subbasis_type):
+    d = get_subbasis_definition_random(len(basis_a1), len(basis_a1) - 2, subbasis_type)
+    return basis_a1.make_basis(d)
+
+
+@pytest.fixture
+def basis_a3(basis_a2, subbasis_type):
+    d = get_subbasis_definition_random(len(basis_a2), len(basis_a2) - 2, subbasis_type)
+    return basis_a2.make_basis(d)
+
+
+@pytest.fixture
+def basis_as(basis_a0, basis_a1, basis_a2, basis_a3):
+    return [basis_a0, basis_a1, basis_a2, basis_a3]
+
+
+@pytest.fixture(params=range(4))
+def basis_a(request, basis_as):
+    return basis_as[request.param]
+
+
+@pytest.fixture(params=range(4))
+def basis_a_two(request, basis_as):
+    return basis_as[request.param]
+
+
+class TestBasisNew(TestCase):
+
+    def test_is_root(self, basis_a0):
+        assert basis_a0.is_root()
+
+    def test_is_not_root(self, basis_a1):
+        assert not basis_a1.is_root()
+
+    @pytest.mark.parametrize('i', list(range(4)))
+    @pytest.mark.parametrize('j', list(range(4)))
+    def test_length(self, i, j, basis_as):
+        bi = basis_as[i]
+        bj = basis_as[j]
+        if i == j:
+            assert len(bi) == len(bj)
+            assert (len(bi) >= len(bj))
+            assert (len(bi) <= len(bj))
+            assert not (len(bi) > len(bj))
+            assert not (len(bi) < len(bj))
+            assert not (len(bi) != len(bj))
+            assert (len(bj) == len(bi))
+            assert (len(bj) >= len(bi))
+            assert (len(bj) <= len(bi))
+            assert not (len(bj) > len(bi))
+            assert not (len(bj) < len(bi))
+            assert not (len(bj) != len(bi))
+        elif i > j:
+            assert not (len(bi) == len(bj))
+            assert not (len(bi) >= len(bj))
+            assert (len(bi) <= len(bj))
+            assert not (len(bi) > len(bj))
+            assert (len(bi) < len(bj))
+            assert (len(bi) != len(bj))
+            assert not (len(bj) == len(bi))
+            assert (len(bj) >= len(bi))
+            assert not (len(bj) <= len(bi))
+            assert (len(bj) > len(bi))
+            assert not (len(bj) < len(bi))
+            assert (len(bj) != len(bi))
+        else:
+            assert not (len(bi) == len(bj))
+            assert (len(bi) >= len(bj))
+            assert not (len(bi) <= len(bj))
+            assert (len(bi) > len(bj))
+            assert not (len(bi) < len(bj))
+            assert (len(bi) != len(bj))
+            assert not (len(bj) == len(bi))
+            assert not (len(bj) >= len(bi))
+            assert (len(bj) <= len(bi))
+            assert not (len(bj) > len(bi))
+            assert (len(bj) < len(bi))
+            assert (len(bj) != len(bi))
+
+    def test_same_space(self, basis_a):
+        assert (basis_a.space == basis_a.space)
+        assert not (basis_a.space != basis_a.space)
+        assert (basis_a.space >= basis_a.space)
+        assert (basis_a.space <= basis_a.space)
+        assert not (basis_a.space > basis_a.space)
+        assert not (basis_a.space < basis_a.space)
+        assert (basis_a.space == basis_a.space)
+        assert not (basis_a.space != basis_a.space)
+        assert (basis_a.space >= basis_a.space)
+        assert (basis_a.space <= basis_a.space)
+        assert not (basis_a.space > basis_a.space)
+        assert not (basis_a.space < basis_a.space)
+
+    @pytest.mark.parametrize('ij', list(zip(*np.tril_indices(4, -1))), ids=str)
+    def test_super_space(self, ij, basis_as):
+        i, j = ij
+        bi = basis_as[i]
+        bj = basis_as[j]
+        # space(b1) < space(b2)
+        assert i > j
+        assert not (bi.space == bj.space)
+        assert (bi.space != bj.space)
+        assert not (bi.space >= bj.space)
+        assert (bi.space <= bj.space)
+        assert not (bi.space > bj.space)
+        assert (bi.space < bj.space)
+        assert not (bj.space == bi.space)
+        assert (bj.space != bi.space)
+        assert (bj.space >= bi.space)
+        assert not (bj.space <= bi.space)
+        assert (bj.space > bi.space)
+        assert not (bj.space < bi.space)
+
+    @pytest.mark.parametrize('ij', list(zip(*np.triu_indices(4, 1))), ids=str)
+    def test_sub_space(self, ij, basis_as):
+        i, j = ij
+        bi = basis_as[i]
+        bj = basis_as[j]
+        # space(b1) > space(b2)
+        assert i < j
+        assert not (bi.space == bj.space)
+        assert (bi.space != bj.space)
+        assert (bi.space >= bj.space)
+        assert not (bi.space <= bj.space)
+        assert (bi.space > bj.space)
+        assert not (bi.space < bj.space)
+        assert not (bj.space == bi.space)
+        assert (bj.space != bi.space)
+        assert not (bj.space >= bi.space)
+        assert (bj.space <= bi.space)
+        assert not (bj.space > bi.space)
+        assert (bj.space < bi.space)
 
 class TestBasis(TestCase):
 
@@ -20,8 +183,8 @@ class TestBasis(TestCase):
         cls.metric_a = metric(cls.size_a)
         cls.metric_b = metric(cls.size_b)
 
-        cls.rootbasis_a = ba = basis.Basis(cls.size_a, metric=cls.metric_a)
-        cls.rootbasis_b = bb = basis.Basis(cls.size_b, metric=cls.metric_b)
+        cls.rootbasis_a = ba = btensor.Basis(cls.size_a, metric=cls.metric_a)
+        cls.rootbasis_b = bb = btensor.Basis(cls.size_b, metric=cls.metric_b)
 
         # Subbasis
 
@@ -36,7 +199,7 @@ class TestBasis(TestCase):
                 else:
                     t = rand_orth_mat(parent.size, parent.size-1)
                     trafos.append(t)
-                b = basis.Basis(t, parent=parent)
+                b = btensor.Basis(t, parent=parent)
                 subbasis.append(b)
                 parent = b
             return subbasis, trafos
@@ -47,121 +210,11 @@ class TestBasis(TestCase):
         cls.basis_a = [cls.rootbasis_a, *cls.subbasis_a]
         cls.basis_b = [cls.rootbasis_b, *cls.subbasis_b]
 
-    def test_is_root(self):
-        assert (self.rootbasis_a.is_root())
-        assert (self.rootbasis_b.is_root())
-        for b in self.subbasis_a:
-            assert not (b.is_root())
-        for b in self.subbasis_b:
-            assert not (b.is_root())
-
-    def test_size(self):
-        assert (self.rootbasis_a.size == self.size_a)
-        assert (self.rootbasis_b.size == self.size_b)
-        for i, b in enumerate(self.subbasis_a):
-            assert (b.size == self.rootbasis_a.size - (i + 1))
-
-    #def test_hash(self, get_rootbasis_subbasis, subbasis_type):
-    #    rootsize = subsize = 10
-    #    rootbasis, (subbasis, subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
-    #    #print(hash(rootbasis))
-    #    print(hash(subbasis))
-
-    def test_len_and_ordering(self):
-        for i, b1 in enumerate(self.basis_a):
-            for j, b2 in enumerate(self.basis_a):
-                if i == j:
-                    assert (len(b1) == len(b2))
-                    assert (len(b1) >= len(b2))
-                    assert (len(b1) <= len(b2))
-                    assert not (len(b1) > len(b2))
-                    assert not (len(b1) < len(b2))
-                    assert not (len(b1) != len(b2))
-                    assert (len(b2) == len(b1))
-                    assert (len(b2) >= len(b1))
-                    assert (len(b2) <= len(b1))
-                    assert not (len(b2) > len(b1))
-                    assert not (len(b2) < len(b1))
-                    assert not (len(b2) != len(b1))
-                elif i > j:
-                    assert not (len(b1) == len(b2))
-                    assert not (len(b1) >= len(b2))
-                    assert (len(b1) <= len(b2))
-                    assert not (len(b1) > len(b2))
-                    assert (len(b1) < len(b2))
-                    assert (len(b1) != len(b2))
-                    assert not (len(b2) == len(b1))
-                    assert (len(b2) >= len(b1))
-                    assert not (len(b2) <= len(b1))
-                    assert (len(b2) > len(b1))
-                    assert not (len(b2) < len(b1))
-                    assert (len(b2) != len(b1))
-                else:
-                    assert not (len(b1) == len(b2))
-                    assert (len(b1) >= len(b2))
-                    assert not (len(b1) <= len(b2))
-                    assert (len(b1) > len(b2))
-                    assert not (len(b1) < len(b2))
-                    assert (len(b1) != len(b2))
-                    assert not (len(b2) == len(b1))
-                    assert not (len(b2) >= len(b1))
-                    assert (len(b2) <= len(b1))
-                    assert not (len(b2) > len(b1))
-                    assert (len(b2) < len(b1))
-                    assert (len(b2) != len(b1))
-
-    def test_space_same_root(self):
-        for bas in (self.basis_a, self.basis_b):
-            for i, b1 in enumerate(bas):
-                for j, b2 in enumerate(bas):
-                    # space(b1) == space(b2)
-                    if i == j:
-                        assert (b1.space == b2.space)
-                        assert not (b1.space != b2.space)
-                        assert (b1.space >= b2.space)
-                        assert (b1.space <= b2.space)
-                        assert not (b1.space > b2.space)
-                        assert not (b1.space < b2.space)
-                        assert (b2.space == b1.space)
-                        assert not (b2.space != b1.space)
-                        assert (b2.space >= b1.space)
-                        assert (b2.space <= b1.space)
-                        assert not (b2.space > b1.space)
-                        assert not (b2.space < b1.space)
-                    # space(b1) < space(b2)
-                    elif i > j:
-                        assert not (b1.space == b2.space)
-                        assert (b1.space != b2.space)
-                        assert not (b1.space >= b2.space)
-                        assert (b1.space <= b2.space)
-                        assert not (b1.space > b2.space)
-                        assert (b1.space < b2.space)
-                        assert not (b2.space == b1.space)
-                        assert (b2.space != b1.space)
-                        assert (b2.space >= b1.space)
-                        assert not (b2.space <= b1.space)
-                        assert (b2.space > b1.space)
-                        assert not (b2.space < b1.space)
-                    # space(b1) > space(b2)
-                    else:
-                        assert not (b1.space == b2.space)
-                        assert (b1.space != b2.space)
-                        assert (b1.space >= b2.space)
-                        assert not (b1.space <= b2.space)
-                        assert (b1.space > b2.space)
-                        assert not (b1.space < b2.space)
-                        assert not (b2.space == b1.space)
-                        assert (b2.space != b1.space)
-                        assert not (b2.space >= b1.space)
-                        assert (b2.space <= b1.space)
-                        assert not (b2.space > b1.space)
-                        assert (b2.space < b1.space)
-
     def test_same_space(self):
         for bas in (self.basis_a, self.basis_b):
             for b in bas:
                 b1 = b
-                b2 = basis.Basis(rand_orth_mat(b.size), parent=b)
+                b2 = btensor.Basis(rand_orth_mat(b.size), parent=b)
                 assert (b1.space == b2.space)
                 assert not (b1.space != b2.space)
                 assert (b1.space >= b2.space)
@@ -178,8 +231,8 @@ class TestBasis(TestCase):
     def test_same_space_2(self):
         for bas in (self.basis_a, self.basis_b):
             for i, b in enumerate(bas):
-                b1 = basis.Basis(rand_orth_mat(b.size), parent=b)
-                b2 = basis.Basis(rand_orth_mat(b.size), parent=b)
+                b1 = btensor.Basis(rand_orth_mat(b.size), parent=b)
+                b2 = btensor.Basis(rand_orth_mat(b.size), parent=b)
                 assert (b1.space == b2.space)
                 assert not (b1.space != b2.space)
                 assert (b1.space >= b2.space)
@@ -197,8 +250,8 @@ class TestBasis(TestCase):
         for bas in (self.basis_a, self.basis_b):
             for i, b in enumerate(bas[:-1]):
                 r = rand_orth_mat(b.size, b.size-1)
-                b1 = basis.Basis(r, parent=b)
-                b2 = basis.Basis(r, parent=b)
+                b1 = btensor.Basis(r, parent=b)
+                b2 = btensor.Basis(r, parent=b)
                 assert (b1.space == b2.space)
                 assert not (b1.space != b2.space)
                 assert (b1.space >= b2.space)
@@ -217,8 +270,8 @@ class TestBasis(TestCase):
             for i, b in enumerate(bas[:-1]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 1)
-                b1 = basis.Basis(r1, parent=b)
-                b2 = basis.Basis(r2, parent=b)
+                b1 = btensor.Basis(r1, parent=b)
+                b2 = btensor.Basis(r2, parent=b)
                 assert not (b1.space == b2.space)
                 assert (b1.space != b2.space)
                 assert not (b1.space >= b2.space)
@@ -237,8 +290,8 @@ class TestBasis(TestCase):
             for i, b in enumerate(bas[:-2]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 2)
-                b1 = basis.Basis(r1, parent=b)
-                b2 = basis.Basis(r2, parent=b)
+                b1 = btensor.Basis(r1, parent=b)
+                b2 = btensor.Basis(r2, parent=b)
                 assert not (b1.space == b2.space)
                 assert (b1.space != b2.space)
                 assert not (b1.space >= b2.space)
@@ -258,8 +311,8 @@ class TestBasis(TestCase):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = r1[:, :-1]
                 # b2 is subspace of b1
-                b1 = basis.Basis(r1, parent=b)
-                b2 = basis.Basis(r2, parent=b)
+                b1 = btensor.Basis(r1, parent=b)
+                b2 = btensor.Basis(r2, parent=b)
                 assert not (b1.space == b2.space)
                 assert (b1.space != b2.space)
                 assert (b1.space >= b2.space)

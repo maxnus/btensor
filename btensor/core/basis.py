@@ -63,12 +63,12 @@ def compatible_basis(basis1: BasisInterface, basis2: BasisInterface):
     return basis1.is_compatible_with(basis2)
 
 
-def find_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisInterface:
+def get_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisInterface:
     if is_nobasis(basis2):
         return basis1
     if is_nobasis(basis1):
         return basis2
-    return basis1.find_common_parent(basis2)
+    return basis1.get_common_parent(basis2)
 
 
 class NoBasis(BasisInterface):
@@ -236,7 +236,7 @@ class Basis(BasisInterface):
             return
         raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
-    def find_common_parent(self, other: Basis) -> Basis:
+    def get_common_parent(self, other: Basis) -> Basis:
         """Find first common ancestor between two bases."""
         self.check_same_root(other)
         parents_self = self.get_parents(include_self=True)[::-1]
@@ -274,7 +274,7 @@ class Basis(BasisInterface):
         if variance is None:
             variance = (Variance.COVARIANT, Variance.COVARIANT)
         # Find first common ancestor and express coefficients in corresponding basis
-        parent = self.find_common_parent(other)
+        parent = self.get_common_parent(other)
         if variance[0] == Variance.CONTRAVARIANT:
             mpl = [self.metric.inverse]
         else:

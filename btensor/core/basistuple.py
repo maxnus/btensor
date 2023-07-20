@@ -5,7 +5,7 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from .basis import BasisInterface, compatible_basis, is_nobasis, find_common_parent, TBasis
+from .basis import BasisInterface, compatible_basis, is_nobasis, get_common_parent, TBasis
 
 
 KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
@@ -89,7 +89,7 @@ class BasisTuple(tuple):
     def get_common_basistuple(self, other: Self) -> Self:
         if not self.is_compatible_with(other):
             raise ValueError
-        common_parents = tuple(find_common_parent(basis_self, basis_other)
+        common_parents = tuple(get_common_parent(basis_self, basis_other)
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 

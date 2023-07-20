@@ -40,7 +40,7 @@ class Space:
             return False
         if not self.basis.same_root(other.basis):
             return False
-        parent = self.basis.find_common_parent(other.basis)
+        parent = self.basis.get_common_parent(other.basis)
         if len(parent) == len(self):
             return True
         return None
@@ -63,7 +63,7 @@ class Space:
             raise TypeError(type(other))
         if not self.basis.same_root(other.basis):
             return True
-        parent_basis = self.basis.find_common_parent(other.basis)
+        parent_basis = self.basis.get_common_parent(other.basis)
         if parent_basis == self.basis or parent_basis == other.basis:
             return False
         if len(self.basis) + len(other.basis) > len(parent_basis):

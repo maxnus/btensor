@@ -21,7 +21,7 @@ class HashableSlice:
         return f"{type(self).__name__}({self.start}, {self.stop}, {self.step})"
 
     @classmethod
-    def from_slice(cls, slc: slice) -> 'HashableSlice':
+    def from_slice(cls, slc: slice) -> HashableSlice:
         return cls(slc.start, slc.stop, slc.step)
 
     def to_slice(self) -> slice:
