@@ -5,7 +5,7 @@ import numpy as np
 
 import btensor
 from helper import TestCase
-from conftest import get_permutations_of_combinations, random_orthogonal_matrix, subbasis_argument_to_matrix
+from conftest import get_permutations_of_combinations, random_orthogonal_matrix, subbasis_definition_to_matrix
 
 
 class TestTensor(TestCase):
@@ -89,8 +89,8 @@ class TestArithmetic(TestCase):
         tensor1 = tensor_cls1(np_array1, basis=(rootbasis, subbasis1, subbasis1))
         tensor2 = tensor_cls2(np_array2, basis=(rootbasis, subbasis2, subbasis2))
 
-        subarg1 = subbasis_argument_to_matrix(subarg1, rootbasis.size)
-        subarg2 = subbasis_argument_to_matrix(subarg2, rootbasis.size)
+        subarg1 = subbasis_definition_to_matrix(subarg1, rootbasis.size)
+        subarg2 = subbasis_definition_to_matrix(subarg2, rootbasis.size)
 
         expected = binary_operator(np.einsum('xab,ia,jb->xij', np_array1, subarg1, subarg1),
                                    np.einsum('xab,ia,jb->xij', np_array2, subarg2, subarg2))

@@ -186,7 +186,8 @@ def subbasis_type_2x(request, subbasis_type):
     return request.param, subbasis_type
 
 
-def get_subbasis_argument(rootsize, subsize, subtype):
+def get_subbasis_definition_random(rootsize, subsize, subtype):
+    np.random.seed(0)
     if subtype == 'rotation':
         return random_orthogonal_matrix(rootsize, ncolumn=subsize)
     if subtype in ('indices', 'mask'):
@@ -201,7 +202,7 @@ def get_subbasis_argument(rootsize, subsize, subtype):
     raise ValueError(subtype)
 
 
-def subbasis_argument_to_matrix(subarg, rootsize):
+def subbasis_definition_to_matrix(subarg, rootsize):
     if getattr(subarg, 'ndim', None) == 2:
         return subarg
     return np.identity(rootsize)[:, subarg]
@@ -213,10 +214,10 @@ def get_rootbasis_subbasis():
         if subsize > rootsize:
             raise ValueError
         rootbasis = Basis(rootsize)
-        subarg = get_subbasis_argument(rootsize, subsize, subtype)
+        subarg = get_subbasis_definition_random(rootsize, subsize, subtype)
         subbasis = rootbasis.make_basis(subarg)
         if subsize2 is not None and subtype2 is not None:
-            subarg2 = get_subbasis_argument(rootsize, subsize2, subtype2)
+            subarg2 = get_subbasis_definition_random(rootsize, subsize2, subtype2)
             subbasis2 = rootbasis.make_basis(subarg2)
             return rootbasis, (subbasis, subarg), (subbasis2, subarg2)
         return rootbasis, (subbasis, subarg)

@@ -32,9 +32,9 @@ class Tensor(OperatorTemplate):
         variance = tuple(variance)
 
         basis = BasisTuple.create(basis)
-        self.check_basis(basis)
         self._basis = basis
         self._variance = variance
+        self.check_basis(basis)
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'

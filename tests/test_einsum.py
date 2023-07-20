@@ -55,15 +55,15 @@ def einsum_contraction(request):
 
 class TestEinsum(TestCase):
 
-    def test_summation(self, einsum_summation, get_array):
+    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls):
         ndim = len(einsum_summation.split('->')[0])
-        array, data = get_array(ndim)
+        array, data = get_tensor_or_array(ndim, tensor_cls=tensor_cls)
         self.assert_allclose(bt.einsum(einsum_summation, array), np.einsum(einsum_summation, data))
 
-    def test_contraction(self, einsum_contraction, get_array):
+    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls):
         ndim1, ndim2 = [len(x) for x in einsum_contraction.split('->')[0].split(',')]
-        array1, data1 = get_array(ndim1)
-        array2, data2 = get_array(ndim2)
+        array1, data1 = get_tensor_or_array(ndim1, tensor_cls=tensor_cls)
+        array2, data2 = get_tensor_or_array(ndim2, tensor_cls=tensor_cls)
         self.assert_allclose(bt.einsum(einsum_contraction, array1, array2), np.einsum(einsum_contraction, data1, data2))
 
     def test_matmul(self, tensor_cls_2x):

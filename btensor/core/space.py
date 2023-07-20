@@ -9,10 +9,9 @@ if TYPE_CHECKING:
     from btensor import Basis
 
 
-DEFAULT_SVD_TOL = 1e-12
-
-
 class Space:
+
+    DEFAULT_SVD_TOL = 1e-12
 
     def __init__(self, basis: Basis, svd_tol: float = DEFAULT_SVD_TOL) -> None:
         self._basis = basis
@@ -34,8 +33,9 @@ class Space:
         return sv
 
     def trivially_equal(self, other: Space) -> bool | None:
+        """Check if spaces are trivially equal (without performing SVD)"""
         if not isinstance(other, Space):
-            raise TypeError
+            raise TypeError(type(other))
         if len(self) != len(other):
             return False
         if not self.basis.same_root(other.basis):
@@ -46,8 +46,9 @@ class Space:
         return None
 
     def trivially_less_than(self, other: Space) -> bool | None:
+        """Check if space is trivially a true subspace (without performing SVD)"""
         if not isinstance(other, Space):
-            raise TypeError
+            raise TypeError(type(other))
         if len(self) >= len(other):
             return False
         if not self.basis.same_root(other.basis):
@@ -57,12 +58,13 @@ class Space:
         return None
 
     def trivially_orthogonal(self, other: Space) -> bool | None:
+        """Check if spaces are trivially orthogonal (without performing SVD)"""
         if not isinstance(other, Space):
-            raise TypeError
+            raise TypeError(type(other))
         if not self.basis.same_root(other.basis):
             return True
         parent_basis = self.basis.find_common_parent(other.basis)
-        if parent_basis in (self, other):
+        if parent_basis == self.basis or parent_basis == other.basis:
             return False
         if len(self.basis) + len(other.basis) > len(parent_basis):
             return False
