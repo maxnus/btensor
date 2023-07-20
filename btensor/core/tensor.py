@@ -297,26 +297,6 @@ class Tensor(OperatorTemplate):
     def dot(self, other: Tensor | np.ndarray) -> Tensor:
         return numpy_functions.dot(self, other)
 
-    # --- Advanced
-
-    def get_hosvd(self, svtol: float | None = None):
-        """Calculate core tensor of higher order SVD (HOSVD)."""
-        if self.ndim < 3:
-            raise NotImplementedError(f"cannot perform HOSVD for {self.ndim}-dimensional tensor.")
-        array = self.to_numpy(copy=False)
-        core = array
-        basis = []
-        for dim, bas in enumerate(self.basis):
-            if not isinstance(bas, Basis):
-                raise RuntimeError
-            a = np.moveaxis(array, dim, 0).reshape((array.shape[dim], -1))
-            u, s, _ = scipy.linalg.svd(a, check_finite=False)
-            if svtol is not None:
-                u = u[:, s >= svtol]
-            basis.append(bas.make_basis(u))
-            core = np.tensordot(core, u.T.conj(), axes=(0, 1))
-        return type(self)(core, basis=tuple(basis))
-
 
 class Cotensor(Tensor):
 

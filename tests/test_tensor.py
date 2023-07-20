@@ -158,12 +158,3 @@ class TestGetitem(TestCase):
         with pytest.raises(IndexError):
             assert tensor[key]
 
-
-class TestAdvanced(TestCase):
-
-    @pytest.mark.parametrize('dim', [3, 4, 5, 6])
-    def test_hosvd(self, get_tensor, dim):
-        tensor, nparray = get_tensor(ndim=dim)
-        hosvd = tensor.get_hosvd()
-        delta = (hosvd - tensor).to_numpy()
-        self.assert_allclose(delta, 0)
