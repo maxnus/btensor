@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Self, overload
+from typing import overload
 from collections import UserList
 from collections.abc import MutableSequence
 
@@ -297,7 +297,7 @@ class MatrixProductList(UserList):
         self.check_if_matrix(matrix)
         super().insert(index, matrix)
 
-    def simplify(self) -> Self:
+    def simplify(self) -> MatrixProductList:
         if len(self) < 2:
             return self
         matrices = _simplify_n_matrix_products(self)
@@ -307,15 +307,15 @@ class MatrixProductList(UserList):
     def __getitem__(self, key: int) -> Matrix: ...
 
     @overload
-    def __getitem__(self, key: slice) -> Self: ...
+    def __getitem__(self, key: slice) -> MatrixProductList: ...
 
-    def __getitem__(self, key: int | slice) -> Matrix | Self:
+    def __getitem__(self, key: int | slice) -> Matrix | MatrixProductList:
         result = super().__getitem__(key)
         if isinstance(result, list):
             return MatrixProductList(result)
         return result
 
-    def __add__(self, other: list[Matrix] | Self) -> Self:
+    def __add__(self, other: list[Matrix] | MatrixProductList) -> MatrixProductList:
         if not isinstance(other, MatrixProductList):
             self.check_if_matrix(*other)
         return type(self)(super().__add__(other))
@@ -343,9 +343,9 @@ class MatrixProductList(UserList):
             return matrices[0]
         return np.linalg.multi_dot(matrices)
 
-    def transpose(self) -> Self:
+    def transpose(self) -> MatrixProductList:
         return type(self)([m.T for m in reversed(self)])
 
     @property
-    def T(self) -> Self:
+    def T(self) -> MatrixProductList:
         return self.transpose()
