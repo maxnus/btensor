@@ -51,7 +51,7 @@ class BasisInterface:
         return self.id
 
 
-TBasis: TypeAlias = BasisInterface | Sequence[BasisInterface]
+TBasis: TypeAlias = Union[BasisInterface, Sequence[BasisInterface]]
 TBasisDefinition: int | Sequence[int] | Sequence[bool] | slice | np.ndarray
 
 

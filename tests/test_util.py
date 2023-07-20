@@ -39,7 +39,7 @@ class TestPermutationMatrix(TestCase):
             slice(None), slice(0, 5), slice(5, size), slice(None, None, 2), slice(None, None, -2), slice(3, 8)
         ]
 
-    @pytest.fixture(params=get_permutation_matrix_input(), ids=lambda x: str(x))
+    @pytest.fixture(params=get_permutation_matrix_input.__func__(), ids=str)
     def permutation_matrix_input(self, request):
         return request.param
 
@@ -94,7 +94,7 @@ class TestMatrixProduct(TestCase):
                 mats = [p[1] for p in perm]
                 yield name, mats
 
-    @pytest.fixture(params=get_matrices(), ids=lambda x: x[0])
+    @pytest.fixture(params=get_matrices.__func__(), ids=lambda x: x[0])
     def matrices(self, request):
         return request.param
 

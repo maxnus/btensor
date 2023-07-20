@@ -1,10 +1,14 @@
-from typing import Optional, Self, TypeAlias, overload
-from types import EllipsisType
+from __future__ import annotations
+from typing import *
+try:
+    from types import EllipsisType
+except ImportError:
+    EllipsisType = type(Ellipsis)
 
 from .basis import BasisInterface, compatible_basis, is_nobasis, find_common_parent, TBasis
 
 
-KeyLike: TypeAlias = BasisInterface | slice | EllipsisType
+KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
 
 
 class BasisTuple(tuple):
