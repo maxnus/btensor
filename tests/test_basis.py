@@ -11,15 +11,15 @@ def size_a():
     return 10
 
 
-@pytest.fixture(params=[None, 0, 1], ids=['Orth', 'Orth2', 'NonOrth'])
+@pytest.fixture(params=[None, 0, 0.1, 1.0, 3.0],
+                ids=['Orth', 'ZeroNonOrth', 'SmallNonOrth', 'MediumNonOrth', 'LargeNonOrth'])
 def metric_a(request, size_a):
     if request.param is None:
         return None
-    if request.param == 0:
-        return np.identity(size_a)
-    if request.param == 1:
-        noise = np.random.random((size_a, size_a)) - 0.5
-        return np.identity(size_a) + noise + noise.T
+    np.random.seed(0)
+    noise = request.param * (np.random.random((size_a, size_a)) - 0.5)
+    noise = np.dot(noise, noise.T)
+    return np.identity(size_a) + noise
 
 
 @pytest.fixture
@@ -68,50 +68,55 @@ class TestBasisNew(TestCase):
     def test_is_not_root(self, basis_a1):
         assert not basis_a1.is_root()
 
-    @pytest.mark.parametrize('i', list(range(4)))
-    @pytest.mark.parametrize('j', list(range(4)))
-    def test_length(self, i, j, basis_as):
+    def test_length_same_space(self, basis_a):
+        assert len(basis_a) == len(basis_a)
+        assert (len(basis_a) >= len(basis_a))
+        assert (len(basis_a) <= len(basis_a))
+        assert not (len(basis_a) > len(basis_a))
+        assert not (len(basis_a) < len(basis_a))
+        assert not (len(basis_a) != len(basis_a))
+        assert (len(basis_a) == len(basis_a))
+        assert (len(basis_a) >= len(basis_a))
+        assert (len(basis_a) <= len(basis_a))
+        assert not (len(basis_a) > len(basis_a))
+        assert not (len(basis_a) < len(basis_a))
+        assert not (len(basis_a) != len(basis_a))
+
+    @pytest.mark.parametrize('ij', list(zip(*np.tril_indices(4, -1))), ids=str)
+    def test_length_super_space(self, ij, basis_as):
+        i, j = ij
         bi = basis_as[i]
         bj = basis_as[j]
-        if i == j:
-            assert len(bi) == len(bj)
-            assert (len(bi) >= len(bj))
-            assert (len(bi) <= len(bj))
-            assert not (len(bi) > len(bj))
-            assert not (len(bi) < len(bj))
-            assert not (len(bi) != len(bj))
-            assert (len(bj) == len(bi))
-            assert (len(bj) >= len(bi))
-            assert (len(bj) <= len(bi))
-            assert not (len(bj) > len(bi))
-            assert not (len(bj) < len(bi))
-            assert not (len(bj) != len(bi))
-        elif i > j:
-            assert not (len(bi) == len(bj))
-            assert not (len(bi) >= len(bj))
-            assert (len(bi) <= len(bj))
-            assert not (len(bi) > len(bj))
-            assert (len(bi) < len(bj))
-            assert (len(bi) != len(bj))
-            assert not (len(bj) == len(bi))
-            assert (len(bj) >= len(bi))
-            assert not (len(bj) <= len(bi))
-            assert (len(bj) > len(bi))
-            assert not (len(bj) < len(bi))
-            assert (len(bj) != len(bi))
-        else:
-            assert not (len(bi) == len(bj))
-            assert (len(bi) >= len(bj))
-            assert not (len(bi) <= len(bj))
-            assert (len(bi) > len(bj))
-            assert not (len(bi) < len(bj))
-            assert (len(bi) != len(bj))
-            assert not (len(bj) == len(bi))
-            assert not (len(bj) >= len(bi))
-            assert (len(bj) <= len(bi))
-            assert not (len(bj) > len(bi))
-            assert (len(bj) < len(bi))
-            assert (len(bj) != len(bi))
+        assert not (len(bi) == len(bj))
+        assert not (len(bi) >= len(bj))
+        assert (len(bi) <= len(bj))
+        assert not (len(bi) > len(bj))
+        assert (len(bi) < len(bj))
+        assert (len(bi) != len(bj))
+        assert not (len(bj) == len(bi))
+        assert (len(bj) >= len(bi))
+        assert not (len(bj) <= len(bi))
+        assert (len(bj) > len(bi))
+        assert not (len(bj) < len(bi))
+        assert (len(bj) != len(bi))
+
+    @pytest.mark.parametrize('ij', list(zip(*np.triu_indices(4, 1))), ids=str)
+    def test_length_sub_space(self, ij, basis_as):
+        i, j = ij
+        bi = basis_as[i]
+        bj = basis_as[j]
+        assert not (len(bi) == len(bj))
+        assert (len(bi) >= len(bj))
+        assert not (len(bi) <= len(bj))
+        assert (len(bi) > len(bj))
+        assert not (len(bi) < len(bj))
+        assert (len(bi) != len(bj))
+        assert not (len(bj) == len(bi))
+        assert not (len(bj) >= len(bi))
+        assert (len(bj) <= len(bi))
+        assert not (len(bj) > len(bi))
+        assert (len(bj) < len(bi))
+        assert (len(bj) != len(bi))
 
     def test_same_space(self, basis_a):
         assert (basis_a.space == basis_a.space)
@@ -166,6 +171,26 @@ class TestBasisNew(TestCase):
         assert (bj.space <= bi.space)
         assert not (bj.space > bi.space)
         assert (bj.space < bi.space)
+
+    def test_union(self, basis_a0, basis_a2, subbasis_type):
+        np.random.seed(0)
+        bi = basis_a2
+        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type)
+        bj = basis_a0.make_basis(d)
+        bij = bi.make_union(bj)
+        assert len(bij) > max(len(bi), len(bj))
+        assert len(bij) <= len(bi.get_common_parent(bj))
+        assert bi.space <= bij.space
+        assert bj.space <= bij.space
+        # bi -> bij
+        t = btensor.Tensor(np.random.random((len(bi), len(bi))), basis=(bi, bi))
+        t2 = t.cob[bij, bij]
+        self.assert_allclose(t - t2, 0)
+        # bj -> bij
+        t = btensor.Tensor(np.random.random((len(bj), len(bj))), basis=(bj, bj))
+        t2 = t.cob[bij, bij]
+        self.assert_allclose(t - t2, 0)
+
 
 class TestBasis(TestCase):
 

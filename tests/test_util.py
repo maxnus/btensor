@@ -15,19 +15,19 @@ class TestPermutationMatrix(TestCase):
         pc2 = np.random.permutation(range(m))[:k]
         c1 = util.ColumnPermutationMatrix(permutation=pc1, size=n)  # n x m
         c2 = util.ColumnPermutationMatrix(permutation=pc2, size=m)  # m x k
-        self.assert_allclose(util.MatrixProductList((c1, c2)).evaluate(), np.dot(c1.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProductList((c1, c2)).evaluate(), np.dot(c1.to_numpy(), c2.to_numpy()))
         # Row-row
         pr1 = np.random.permutation(range(n))[:m]
         pr2 = np.random.permutation(range(m))[:k]
         r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
         r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
-        self.assert_allclose(util.MatrixProductList((r2, r1)).evaluate(), np.dot(r2.to_array(), r1.to_array()))
+        self.assert_allclose(util.MatrixProductList((r2, r1)).evaluate(), np.dot(r2.to_numpy(), r1.to_numpy()))
         # Column-row
-        self.assert_allclose(util.MatrixProductList((c1, r1)).evaluate(), np.dot(c1.to_array(), r1.to_array()))
-        self.assert_allclose(util.MatrixProductList((c2, r2)).evaluate(), np.dot(c2.to_array(), r2.to_array()))
+        self.assert_allclose(util.MatrixProductList((c1, r1)).evaluate(), np.dot(c1.to_numpy(), r1.to_numpy()))
+        self.assert_allclose(util.MatrixProductList((c2, r2)).evaluate(), np.dot(c2.to_numpy(), r2.to_numpy()))
         # Row-column
-        self.assert_allclose(util.MatrixProductList((r1, c1)).evaluate(), np.dot(r1.to_array(), c1.to_array()))
-        self.assert_allclose(util.MatrixProductList((r2, c2)).evaluate(), np.dot(r2.to_array(), c2.to_array()))
+        self.assert_allclose(util.MatrixProductList((r1, c1)).evaluate(), np.dot(r1.to_numpy(), c1.to_numpy()))
+        self.assert_allclose(util.MatrixProductList((r2, c2)).evaluate(), np.dot(r2.to_numpy(), c2.to_numpy()))
 
     @staticmethod
     def get_permutation_matrix_input():
@@ -58,11 +58,11 @@ class TestPermutationMatrix(TestCase):
             pt = util.RowPermutationMatrix(permutation=perm, size=n)
             p = pt.T
         # Test transpose
-        self.assert_allclose(p.to_array().T, pt.to_array())
+        self.assert_allclose(p.to_numpy().T, pt.to_numpy())
         # Test p.T x p
-        self.assert_allclose(pt.to_array().dot(p.to_array()), np.identity(m))
+        self.assert_allclose(pt.to_numpy().dot(p.to_numpy()), np.identity(m))
         # Test p x p.T
-        ppt = p.to_array().dot(pt.to_array())
+        ppt = p.to_numpy().dot(pt.to_numpy())
         self.assert_allclose(ppt - np.diag(np.diag(ppt)), 0)
         nonzero = np.diag(ppt).nonzero()[0]
         if isinstance(perm, slice):
@@ -101,7 +101,7 @@ class TestMatrixProduct(TestCase):
     def test_chained_dot(self, matrices, matrix_product_simplify, atol=1e-10):
         matrices = matrices[1]
         args_ref = [x for x in matrices if x is not None]
-        args_ref = [(x.to_array() if hasattr(x, 'to_array') else x) for x in args_ref]
+        args_ref = [(x.to_numpy() if hasattr(x, 'to_numpy') else x) for x in args_ref]
         if len(args_ref) == 0:
             ref = None
         elif len(args_ref) == 1:

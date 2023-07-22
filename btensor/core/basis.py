@@ -7,12 +7,12 @@ Class hierarchy:
 NoBasis    Basis
 """
 
-
 from __future__ import annotations
 from functools import lru_cache
 from typing import *
 
 import numpy as np
+import scipy
 
 from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermutationMatrix, GeneralMatrix,
                           MatrixProductList, is_int, array_like, BasisError)
@@ -193,9 +193,29 @@ class Basis(BasisInterface):
 
     # --- Tree related
 
-    def make_basis(self, *args, **kwargs) -> Basis:
+    def make_basis(self, *args, name: str | None = None, orthonormal: bool = False, **kwargs) -> Basis:
         """Make a new basis with coefficients or indices in reference to the current basis."""
-        return type(self)(*args, parent=self, **kwargs)
+        return type(self)(*args, parent=self, name=name, orthonormal=orthonormal, **kwargs)
+
+    def make_union(self, other: Basis, eigtol: float | None = 1e-12, name: str | None = None) -> Basis:
+        """Make smallest possible orthonormal basis, which spans both self and other."""
+        base = self.get_common_parent(other)
+        for x in [self, other]:
+            if base == x:
+                return x
+        m = self._projector_in_basis(base) + other._projector_in_basis(base)
+        #metric = base.metric.to_numpy() if not base.is_orthonormal else None
+        #e, v = scipy.linalg.eigh(m, b=metric)
+        # metric should not be here?
+        e, v = np.linalg.eigh(m)
+        if eigtol is not None:
+            v = v[:, e >= eigtol]
+        return base.make_basis(v, name=name, orthonormal=base.is_orthonormal)
+
+    def _projector_in_basis(self, basis: Basis) -> np.ndarray:
+        c = self.coeff_in_basis(basis)
+        p = c + c.T if self.is_orthonormal else c + [self.metric] + c.T
+        return p.evaluate()
 
     def is_root(self) -> bool:
         return self.parent is None

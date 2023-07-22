@@ -10,7 +10,7 @@ import btensor
 from btensor import Basis, Array, Tensor
 
 
-class HashableSlice:
+class UserSlice:
 
     def __init__(self, start=None, stop=None, step=None):
         self.start = start
@@ -21,7 +21,7 @@ class HashableSlice:
         return f"{type(self).__name__}({self.start}, {self.stop}, {self.step})"
 
     @classmethod
-    def from_slice(cls, slc: slice) -> HashableSlice:
+    def from_slice(cls, slc: slice) -> UserSlice:
         return cls(slc.start, slc.stop, slc.step)
 
     def to_slice(self) -> slice:
@@ -31,14 +31,14 @@ class HashableSlice:
 def get_permutations_of_combinations(values, minsize=1, maxsize=None):
     if maxsize is None:
         maxsize = len(values)
-    values = [HashableSlice.from_slice(v) if isinstance(v, slice) else v for v in values]
+    values = [UserSlice.from_slice(v) if isinstance(v, slice) else v for v in values]
     output = []
     for size in range(minsize, maxsize+1):
         combinations = list(itertools.combinations_with_replacement(values, size))
         for comb in combinations:
             perms = set(itertools.permutations(comb))
             output += list(perms)
-    output = [tuple(y.to_slice() if isinstance(y, HashableSlice) else y for y in x) for x in output]
+    output = [tuple(y.to_slice() if isinstance(y, UserSlice) else y for y in x) for x in output]
     return output
 
 

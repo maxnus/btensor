@@ -24,7 +24,6 @@ def powerset(iterable, include_empty=True):
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
 
 
-
 class TestCase:
 
     allclose_atol = 1e-13

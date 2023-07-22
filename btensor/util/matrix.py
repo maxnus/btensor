@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import overload
+from typing import *
 from collections import UserList
 from collections.abc import MutableSequence
 
@@ -9,23 +9,23 @@ import scipy.linalg
 
 
 __all__ = [
-        'Matrix',
-        'GeneralMatrix',
-        'SymmetricMatrix',
-        'InverseMatrix',
-        'IdentityMatrix',
-        'PermutationMatrix',
-        'RowPermutationMatrix',
-        'ColumnPermutationMatrix',
-        'MatrixProductList',
-        'to_array',
-        ]
+    'Matrix',
+    'GeneralMatrix',
+    'SymmetricMatrix',
+    'InverseMatrix',
+    'IdentityMatrix',
+    'PermutationMatrix',
+    'RowPermutationMatrix',
+    'ColumnPermutationMatrix',
+    'MatrixProductList',
+    'to_numpy',
+]
 
 
-def to_array(object):
-    if hasattr(object, 'to_array'):
-        return object.to_array()
-    return object
+def to_numpy(obj):
+    if hasattr(obj, 'to_numpy'):
+        return obj.to_numpy()
+    return obj
 
 
 class Matrix:
@@ -59,7 +59,7 @@ class Matrix:
     def T(self):
         return self.transpose()
 
-    def to_array(self):
+    def to_numpy(self):
         raise NotImplementedError
 
 
@@ -74,12 +74,12 @@ class GeneralMatrix(Matrix):
     def shape(self) -> tuple[int, int]:
         return self._values.shape
 
-    def to_array(self):
+    def to_numpy(self):
         return self._values
 
     def transpose(self):
         if self._transpose is None:
-            self._transpose = GeneralMatrix(self.to_array().T)
+            self._transpose = GeneralMatrix(self.to_numpy().T)
         return self._transpose
 
 
@@ -104,12 +104,12 @@ class InverseMatrix(Matrix):
     def shape(self) -> tuple[int, int]:
         return self.matrix.shape
 
-    def to_array(self):
+    def to_numpy(self):
         if self._values is None:
             if isinstance(self.matrix, IdentityMatrix):
-                self._values = self.matrix.inverse.to_array()
+                self._values = self.matrix.inverse.to_numpy()
             else:
-                self._values = np.linalg.inv(self.matrix.to_array())
+                self._values = np.linalg.inv(self.matrix.to_numpy())
         return self._values
 
     @property
@@ -130,7 +130,7 @@ class IdentityMatrix(Symmetric, Matrix):
     def shape(self) -> tuple[int, int]:
         return (self.size, self.size)
 
-    def to_array(self):
+    def to_numpy(self):
         return np.identity(self.size)
 
     @property
@@ -140,7 +140,7 @@ class IdentityMatrix(Symmetric, Matrix):
 
 class PermutationMatrix(Matrix):
 
-    def __init__(self, size: int, permutation: slice | list[int]) -> int:
+    def __init__(self, size: int, permutation: slice | Sequence[int]) -> None:
         super().__init__()
         if isinstance(permutation, slice):
             nperm = len(np.arange(size)[permutation])
@@ -160,7 +160,7 @@ class PermutationMatrix(Matrix):
 
 class ColumnPermutationMatrix(PermutationMatrix):
 
-    def to_array(self):
+    def to_numpy(self):
         return np.identity(self.shape[0])[:, self.permutation]
 
     def transpose(self):
@@ -179,7 +179,7 @@ class RowPermutationMatrix(PermutationMatrix):
         super().__init__(size, permutation)
         self._shape = self._shape[::-1]
 
-    def to_array(self):
+    def to_numpy(self):
         return np.identity(self.shape[1])[self.permutation]
 
     def transpose(self):
@@ -207,10 +207,10 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
     if remove_permutation:
         # Combine permutation matrices
         if isinstance(a, ColumnPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
-            permutation = a.permutation[b.permutation]
+            permutation = a.indices[b.permutation]
             return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
         if isinstance(a, RowPermutationMatrix) and isinstance(b, RowPermutationMatrix):
-            permutation = b.permutation[a.permutation]
+            permutation = b.indices[a.permutation]
             return [RowPermutationMatrix(permutation=permutation, size=b.shape[1])]
         # TODO
         # Combine Row with Column permutation matrices
@@ -231,9 +231,9 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
 
         # NEW
         if isinstance(a, RowPermutationMatrix) and not isinstance(b, InverseMatrix):
-            return [GeneralMatrix(to_array(b)[a.permutation])]
+            return [GeneralMatrix(to_numpy(b)[a.permutation])]
         if isinstance(b, ColumnPermutationMatrix) and not isinstance(a, InverseMatrix):
-            return [GeneralMatrix(to_array(a)[:, b.permutation])]
+            return [GeneralMatrix(to_numpy(a)[:, b.permutation])]
 
     return [a, b]
 
@@ -257,7 +257,8 @@ def _simplify_n_matrix_products(matrices, remove_permutation=True):
     return matrices_out
 
 
-class MatrixProductList(UserList):
+#class MatrixProductList(UserList):
+class MatrixProductList(list):
 
     def __init__(self, matrices: MutableSequence[Matrix]) -> None:
         self.check_if_matrix(*matrices)
@@ -330,15 +331,15 @@ class MatrixProductList(UserList):
                 a = matrices[0].inverse
                 b = matrices[1:].evaluate()
                 assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
-                return scipy.linalg.solve(a.to_array(), b, assume_a=assume_a)
+                return scipy.linalg.solve(a.to_numpy(), b, assume_a=assume_a)
             # If last matrix Z^-1 in ...Y Z^-1 = X is an inverse, solve (...Y)^T = Z^T X^T instead
             if isinstance(matrices[-1], InverseMatrix):
                 a = matrices[-1].inverse
                 b = matrices[:-1].evaluate()
                 assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
-                return scipy.linalg.solve(a.to_array(), b.T, assume_a=assume_a, transposed=True).T
+                return scipy.linalg.solve(a.to_numpy(), b.T, assume_a=assume_a, transposed=True).T
 
-        matrices = [to_array(m) for m in matrices]
+        matrices = [to_numpy(m) for m in matrices]
         if len(matrices) == 1:
             return matrices[0]
         return np.linalg.multi_dot(matrices)
