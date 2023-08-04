@@ -42,10 +42,10 @@ def get_permutations_of_combinations(values, minsize=1, maxsize=None):
     return output
 
 
-def random_orthogonal_matrix(n, ncolumn=None):
+def random_orthogonal_matrix(n, ncolumn=None, rng=np.random.default_rng()):
     if n == 1:
         return np.asarray([[1.0]])[:, :ncolumn]
-    m = scipy.stats.ortho_group.rvs(n)
+    m = scipy.stats.ortho_group.rvs(n, random_state=rng)
     if ncolumn is not None:
         m = m[:, :ncolumn]
     return m
@@ -86,6 +86,11 @@ def get_ndims_and_axis12(mindim=1, maxdim=4):
 
 
 # --- Root fixtures
+
+@pytest.fixture(params=range(3), scope='module', ids=lambda x: f'seed{x}')
+def rng(request):
+    return np.random.default_rng(request.param)
+
 
 @pytest.fixture(params=[1, 2, 3, 4], scope='module', ids=lambda x: f'ndim{x}')
 def ndim(request):
@@ -187,17 +192,16 @@ def subbasis_type_2x(request, subbasis_type):
     return request.param, subbasis_type
 
 
-def get_subbasis_definition_random(rootsize, subsize, subtype):
-    np.random.seed(0)
+def get_subbasis_definition_random(rootsize, subsize, subtype, rng=np.random.default_rng()):
     if subtype == 'rotation':
-        return random_orthogonal_matrix(rootsize, ncolumn=subsize)
+        return random_orthogonal_matrix(rootsize, ncolumn=subsize, rng=rng)
     if subtype in ('indices', 'mask'):
-        r = np.random.permutation(range(rootsize))[:subsize]
+        r = rng.permutation(range(rootsize))[:subsize]
         if subtype == 'mask':
             r = np.isin(np.arange(rootsize), r)
         return r
     if subtype == 'slice':
-        start = np.random.randint(0, rootsize - subsize + 1)
+        start = rng.integers(0, rootsize - subsize + 1)
         stop = start + subsize
         return slice(start, stop, 1)
     raise ValueError(subtype)

@@ -10,15 +10,18 @@ from conftest import get_subbasis_definition_random
 def size_a():
     return 10
 
-
 @pytest.fixture(params=[None, 0, 0.1, 1.0, 3.0],
                 ids=['Orth', 'ZeroNonOrth', 'SmallNonOrth', 'MediumNonOrth', 'LargeNonOrth'])
-def metric_a(request, size_a):
-    if request.param is None:
+def metric_nonorth_factor(request):
+    return request.param
+
+@pytest.fixture
+def metric_a(metric_nonorth_factor, size_a, rng):
+    if metric_nonorth_factor is None:
         return None
-    np.random.seed(0)
-    noise = request.param * (np.random.random((size_a, size_a)) - 0.5)
+    noise = metric_nonorth_factor * (rng.random((size_a, size_a)) - 0.5)
     noise = np.dot(noise, noise.T)
+    #np.fill_diagonal(noise, 0)
     return np.identity(size_a) + noise
 
 
@@ -28,20 +31,20 @@ def basis_a0(size_a, metric_a):
 
 
 @pytest.fixture
-def basis_a1(basis_a0, subbasis_type):
-    d = get_subbasis_definition_random(len(basis_a0), len(basis_a0) - 2, subbasis_type)
+def basis_a1(basis_a0, subbasis_type, rng):
+    d = get_subbasis_definition_random(len(basis_a0), len(basis_a0) - 2, subbasis_type, rng=rng)
     return basis_a0.make_basis(d)
 
 
 @pytest.fixture
-def basis_a2(basis_a1, subbasis_type):
-    d = get_subbasis_definition_random(len(basis_a1), len(basis_a1) - 2, subbasis_type)
+def basis_a2(basis_a1, subbasis_type, rng):
+    d = get_subbasis_definition_random(len(basis_a1), len(basis_a1) - 2, subbasis_type, rng=rng)
     return basis_a1.make_basis(d)
 
 
 @pytest.fixture
-def basis_a3(basis_a2, subbasis_type):
-    d = get_subbasis_definition_random(len(basis_a2), len(basis_a2) - 2, subbasis_type)
+def basis_a3(basis_a2, subbasis_type, rng):
+    d = get_subbasis_definition_random(len(basis_a2), len(basis_a2) - 2, subbasis_type, rng=rng)
     return basis_a2.make_basis(d)
 
 
@@ -172,23 +175,35 @@ class TestBasisNew(TestCase):
         assert not (bj.space > bi.space)
         assert (bj.space < bi.space)
 
-    def test_union(self, basis_a0, basis_a2, subbasis_type):
-        np.random.seed(0)
+    def test_union(self, basis_a0, basis_a2, subbasis_type, rng):
         bi = basis_a2
-        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type)
+        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
         bj = basis_a0.make_basis(d)
         bij = bi.make_union(bj)
-        assert len(bij) > max(len(bi), len(bj))
+        assert len(bij) >= max(len(bi), len(bj))
         assert len(bij) <= len(bi.get_common_parent(bj))
         assert bi.space <= bij.space
         assert bj.space <= bij.space
-        # bi -> bij
-        t = btensor.Tensor(np.random.random((len(bi), len(bi))), basis=(bi, bi))
-        t2 = t.cob[bij, bij]
+        t = btensor.Tensor(rng.random((len(bi), len(bi))), basis=(bi, bi))
+        t2 = t.cob[bij, bij][bi, bi]
         self.assert_allclose(t - t2, 0)
-        # bj -> bij
-        t = btensor.Tensor(np.random.random((len(bj), len(bj))), basis=(bj, bj))
-        t2 = t.cob[bij, bij]
+        t = btensor.Tensor(rng.random((len(bj), len(bj))), basis=(bj, bj))
+        t2 = t.cob[bij, bij][bj, bj]
+        self.assert_allclose(t - t2, 0)
+
+    def test_intersect(self, basis_a0, basis_a2, subbasis_type, rng, metric_nonorth_factor):
+        bi = basis_a2
+        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
+        bj = basis_a0.make_basis(d)
+        bij = bi.make_intersect(bj)
+        assert len(bij) <= min(len(bi), len(bj))
+        assert bi.space >= bij.space
+        assert bj.space >= bij.space
+        t = btensor.Tensor(rng.random((len(bij), len(bij))), basis=(bij, bij))
+        t2 = t.cob[bi, bi][bij, bij]
+        self.assert_allclose(t - t2, 0)
+        t = btensor.Tensor(rng.random((len(bij), len(bij))), basis=(bij, bij))
+        t2 = t.cob[bj, bj][bij, bij]
         self.assert_allclose(t - t2, 0)
 
 

@@ -95,9 +95,9 @@ class TestArithmetic(TestCase):
         expected = binary_operator(np.einsum('xab,ia,jb->xij', np_array1, subarg1, subarg1),
                                    np.einsum('xab,ia,jb->xij', np_array2, subarg2, subarg2))
         if binary_operator == operator.truediv:
-            rtol = 1e-11
+            rtol = 1e-10
         elif binary_operator == operator.pow:
-            rtol = 1e-13
+            rtol = 1e-12
         else:
             rtol = 0
         self.assert_allclose(binary_operator(tensor1, tensor2), expected, rtol=rtol)

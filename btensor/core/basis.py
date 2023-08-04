@@ -197,7 +197,7 @@ class Basis(BasisInterface):
         """Make a new basis with coefficients or indices in reference to the current basis."""
         return type(self)(*args, parent=self, name=name, orthonormal=orthonormal, **kwargs)
 
-    def make_union(self, other: Basis, eigtol: float | None = 1e-12, name: str | None = None) -> Basis:
+    def make_union(self, other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
         """Make smallest possible orthonormal basis, which spans both self and other."""
         base = self.get_common_parent(other)
         for x in [self, other]:
@@ -208,11 +208,37 @@ class Basis(BasisInterface):
         #e, v = scipy.linalg.eigh(m, b=metric)
         # metric should not be here?
         e, v = np.linalg.eigh(m)
-        if eigtol is not None:
-            v = v[:, e >= eigtol]
+        v = v[:, e >= tol]
         return base.make_basis(v, name=name, orthonormal=base.is_orthonormal)
 
+    def make_intersect(self,
+                       other: Basis,
+                       parent: str = 'smaller',
+                       tol: float = 1e-12,
+                       name: str | None = None) -> Basis:
+        basis_p, basis_q = (self, other)
+        if parent == 'other' or (parent == 'smaller' and len(other) < len(self)):
+            basis_p, basis_q = basis_q, basis_p
+        elif parent not in {'self', 'smaller'}:
+            raise ValueError(f"invalid value for 'parent': {parent}")
+
+        # Alternative method (works only for orthonormal basis?)
+        #m = parent.get_transformation_to(non_parent).to_numpy()
+        #u, s, vh = scipy.linalg.svd(m, full_matrices=False)
+        #u = u[:, s >= 1-tol]
+        #return parent.make_basis(u, name=name, orthonormal=parent.is_orthonormal)
+
+        s = basis_p.get_overlap(basis_q).to_numpy()
+        if basis_q.is_orthonormal:
+            p = np.dot(s, s.T)
+        else:
+            p = np.linalg.multi_dot([s, basis_q.metric.inverse.to_numpy(), s.T])
+        e, v = scipy.linalg.eigh(p, b=basis_p.metric.to_numpy())
+        v = v[:, e >= 1-tol]
+        return basis_p.make_basis(v, name=name, orthonormal=basis_p.is_orthonormal)
+
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
+        """Projector onto self in basis."""
         c = self.coeff_in_basis(basis)
         p = c + c.T if self.is_orthonormal else c + [self.metric] + c.T
         return p.evaluate()
@@ -308,18 +334,16 @@ class Basis(BasisInterface):
     cache_size = 100
 
     @lru_cache(cache_size)
-    def get_overlap(self, other: Basis, variance: tuple[int, int] | None = None) -> Tensor:
+    def get_overlap(self, other: Basis, variance: tuple[int, int] = (Variance.COVARIANT, Variance.COVARIANT)) -> Tensor:
         """Get overlap matrix as an Array with another basis."""
-        if variance is None:
-            variance = (Variance.COVARIANT, Variance.COVARIANT)
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
         return Tensor(values, basis=(self, other), variance=variance)
 
     def get_transformation_to(self, other: Basis) -> Tensor:
-        return self.get_overlap(other, variance=(-1, 1))
+        return self.get_overlap(other, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
     def get_transformation_from(self, other: Basis) -> Tensor:
-        return other.get_overlap(self, variance=(-1, 1))
+        return other.get_overlap(self, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
 
 from .tensor import Tensor
