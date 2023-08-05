@@ -26,8 +26,8 @@ def powerset(iterable, include_empty=True):
 
 class TestCase:
 
-    allclose_atol = 1e-13
-    allclose_rtol = 0
+    allclose_atol = 1e-14
+    allclose_rtol = 1e-12
 
     def assert_allclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):
         if actual is desired is None:

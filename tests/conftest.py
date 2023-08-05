@@ -28,16 +28,17 @@ class UserSlice:
         return slice(self.start, self.stop, self.step)
 
 
-def get_permutations_of_combinations(values, minsize=1, maxsize=None):
+def variable_sized_product(values, minsize=1, maxsize=None):
     if maxsize is None:
         maxsize = len(values)
     values = [UserSlice.from_slice(v) if isinstance(v, slice) else v for v in values]
     output = []
     for size in range(minsize, maxsize+1):
-        combinations = list(itertools.combinations_with_replacement(values, size))
-        for comb in combinations:
-            perms = set(itertools.permutations(comb))
-            output += list(perms)
+        #combinations = list(itertools.combinations_with_replacement(values, size))
+        #for comb in combinations:
+        #    perms = set(itertools.permutations(comb))
+        #    output += list(perms)
+        output += list(itertools.product(values, repeat=size))
     output = [tuple(y.to_slice() if isinstance(y, UserSlice) else y for y in x) for x in output]
     return output
 
@@ -169,7 +170,7 @@ def rootbasis(basis_size):
 @pytest.fixture(params=[0, -1], scope='module')
 def subbasis(request, rootbasis):
     size = max(rootbasis.size + request.param, 1)
-    return rootbasis.make_basis(random_orthogonal_matrix(rootbasis.size, ncolumn=size))
+    return rootbasis.make_subbasis(random_orthogonal_matrix(rootbasis.size, ncolumn=size))
 
 
 @pytest.fixture(params=[(0, 0), (-1, 0), (0, -1), (-1, -1)], scope='module')
@@ -177,8 +178,8 @@ def subbasis_2x(request, rootbasis):
     n = rootbasis.size
     size1 = n + request.param[0]
     size2 = n + request.param[1]
-    basis1 = rootbasis.make_basis(random_orthogonal_matrix(n, ncolumn=size1))
-    basis2 = rootbasis.make_basis(random_orthogonal_matrix(n, ncolumn=size2))
+    basis1 = rootbasis.make_subbasis(random_orthogonal_matrix(n, ncolumn=size1))
+    basis2 = rootbasis.make_subbasis(random_orthogonal_matrix(n, ncolumn=size2))
     return basis1, basis2
 
 
@@ -192,7 +193,7 @@ def subbasis_type_2x(request, subbasis_type):
     return request.param, subbasis_type
 
 
-def get_subbasis_definition_random(rootsize, subsize, subtype, rng=np.random.default_rng()):
+def get_random_subbasis_definition(rootsize, subsize, subtype, rng=np.random.default_rng()):
     if subtype == 'rotation':
         return random_orthogonal_matrix(rootsize, ncolumn=subsize, rng=rng)
     if subtype in ('indices', 'mask'):
@@ -201,7 +202,9 @@ def get_subbasis_definition_random(rootsize, subsize, subtype, rng=np.random.def
             r = np.isin(np.arange(rootsize), r)
         return r
     if subtype == 'slice':
-        start = rng.integers(0, rootsize - subsize + 1)
+        size = rootsize - subsize + 1
+        assert size > 0
+        start = rng.integers(0, size)
         stop = start + subsize
         return slice(start, stop, 1)
     raise ValueError(subtype)
@@ -219,35 +222,35 @@ def get_rootbasis_subbasis():
         if subsize > rootsize:
             raise ValueError
         rootbasis = Basis(rootsize)
-        subarg = get_subbasis_definition_random(rootsize, subsize, subtype)
-        subbasis = rootbasis.make_basis(subarg)
+        subarg = get_random_subbasis_definition(rootsize, subsize, subtype)
+        subbasis = rootbasis.make_subbasis(subarg)
         if subsize2 is not None and subtype2 is not None:
-            subarg2 = get_subbasis_definition_random(rootsize, subsize2, subtype2)
-            subbasis2 = rootbasis.make_basis(subarg2)
+            subarg2 = get_random_subbasis_definition(rootsize, subsize2, subtype2)
+            subbasis2 = rootbasis.make_subbasis(subarg2)
             return rootbasis, (subbasis, subarg), (subbasis2, subarg2)
         return rootbasis, (subbasis, subarg)
     return get_rootbasis_subbasis
 
 
-@pytest.fixture(params=get_permutations_of_combinations([0, 1, 3]), scope='module',
+@pytest.fixture(params=variable_sized_product([0, 1, 3]), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape_incl_empty(request):
     return request.param
 
 
-@pytest.fixture(params=get_permutations_of_combinations([1, 3], maxsize=4), scope='module',
+@pytest.fixture(params=variable_sized_product([1, 3], maxsize=4), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape(request):
     return request.param
 
 
-@pytest.fixture(params=get_permutations_of_combinations([4, 5], maxsize=4), scope='module',
+@pytest.fixture(params=variable_sized_product([4, 5], maxsize=4), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape_large(request):
     return request.param
 
 
-@pytest.fixture(params=get_permutations_of_combinations([4, 5], minsize=2, maxsize=4), scope='module',
+@pytest.fixture(params=variable_sized_product([4, 5], minsize=2, maxsize=4), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape_large_atleast2d(request):
     return request.param
@@ -273,7 +276,7 @@ def basis_for_shape(shape):
     return tuple(Basis(size) for size in shape)
 
 
-@pytest.fixture(params=get_permutations_of_combinations([1, 3, -1, -3], maxsize=4), scope='module',
+@pytest.fixture(params=variable_sized_product([1, 3, -1, -3], maxsize=4), scope='module',
                 ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
 def shape_and_basis(request):
     shape = tuple(abs(size) for size in request.param)

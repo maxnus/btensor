@@ -3,7 +3,7 @@ import pytest
 
 import btensor
 from helper import TestCase, rand_orth_mat
-from conftest import get_subbasis_definition_random
+from conftest import get_random_subbasis_definition
 
 
 @pytest.fixture
@@ -32,20 +32,20 @@ def basis_a0(size_a, metric_a):
 
 @pytest.fixture
 def basis_a1(basis_a0, subbasis_type, rng):
-    d = get_subbasis_definition_random(len(basis_a0), len(basis_a0) - 2, subbasis_type, rng=rng)
-    return basis_a0.make_basis(d)
+    d = get_random_subbasis_definition(len(basis_a0), len(basis_a0) - 2, subbasis_type, rng=rng)
+    return basis_a0.make_subbasis(d)
 
 
 @pytest.fixture
 def basis_a2(basis_a1, subbasis_type, rng):
-    d = get_subbasis_definition_random(len(basis_a1), len(basis_a1) - 2, subbasis_type, rng=rng)
-    return basis_a1.make_basis(d)
+    d = get_random_subbasis_definition(len(basis_a1), len(basis_a1) - 2, subbasis_type, rng=rng)
+    return basis_a1.make_subbasis(d)
 
 
 @pytest.fixture
 def basis_a3(basis_a2, subbasis_type, rng):
-    d = get_subbasis_definition_random(len(basis_a2), len(basis_a2) - 2, subbasis_type, rng=rng)
-    return basis_a2.make_basis(d)
+    d = get_random_subbasis_definition(len(basis_a2), len(basis_a2) - 2, subbasis_type, rng=rng)
+    return basis_a2.make_subbasis(d)
 
 
 @pytest.fixture
@@ -177,9 +177,9 @@ class TestBasisNew(TestCase):
 
     def test_union(self, basis_a0, basis_a2, subbasis_type, rng):
         bi = basis_a2
-        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
-        bj = basis_a0.make_basis(d)
-        bij = bi.make_union(bj)
+        d = get_random_subbasis_definition(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
+        bj = basis_a0.make_subbasis(d)
+        bij = bi.make_union_basis(bj)
         assert len(bij) >= max(len(bi), len(bj))
         assert len(bij) <= len(bi.get_common_parent(bj))
         assert bi.space <= bij.space
@@ -193,9 +193,9 @@ class TestBasisNew(TestCase):
 
     def test_intersect(self, basis_a0, basis_a2, subbasis_type, rng, metric_nonorth_factor):
         bi = basis_a2
-        d = get_subbasis_definition_random(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
-        bj = basis_a0.make_basis(d)
-        bij = bi.make_intersect(bj)
+        d = get_random_subbasis_definition(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
+        bj = basis_a0.make_subbasis(d)
+        bij = bi.make_intersect_basis(bj)
         assert len(bij) <= min(len(bi), len(bj))
         assert bi.space >= bij.space
         assert bj.space >= bij.space
@@ -438,10 +438,10 @@ class TestBasisOrthogonal(TestBasis):
 
     def test_space_orthogonal_disjoint(self):
         b = self.basis_a[0]
-        b1 = b.make_basis([0, 1])
-        b2 = b.make_basis([2, 3, 4])
+        b1 = b.make_subbasis([0, 1])
+        b2 = b.make_subbasis([2, 3, 4])
         assert (b1.space | b2.space)
         b = self.basis_b[0]
-        b1 = b.make_basis([0, 1])
-        b2 = b.make_basis([2, 3, 4])
+        b1 = b.make_subbasis([0, 1])
+        b2 = b.make_subbasis([2, 3, 4])
         assert (b1.space | b2.space)

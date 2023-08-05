@@ -1,3 +1,4 @@
+import itertools
 from collections import namedtuple
 
 import pytest
@@ -7,12 +8,11 @@ import btensor
 import btensor as basis
 from btensor import Tensor, Cotensor
 from helper import TestCase, rand_orth_mat
-from conftest import get_subbasis_definition_random, subbasis_definition_to_matrix
-
+from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix, variable_sized_product
 
 scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'nvir', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock',
                                    'dm'))
-cc_data = namedtuple('cc_data', ('mf', 'dm', 't2', 'l2'))
+cc_data = namedtuple('cc_data', ('mf', 'dm', 't1', 't2', 'l1', 'l2'))
 
 
 def make_scf_data(nonorth):
@@ -40,9 +40,11 @@ def make_cc_data(scf):
     e = np.clip(e, 0.0, 2.0)
     dm = np.dot(v*e[None], v.T)
     nvir = scf.nmo - scf.nocc
+    t1 = np.random.random((scf.nocc, nvir))
+    l1 = np.random.random((scf.nocc, nvir))
     t2 = np.random.random((scf.nocc, scf.nocc, nvir, nvir))
     l2 = np.random.random((scf.nocc, scf.nocc, nvir, nvir))
-    return cc_data(scf, dm, t2, l2)
+    return cc_data(scf, dm, t1=t1, t2=t2, l1=l1, l2=l2)
 
 
 @pytest.fixture(params=[0, 0.1], ids=['Orthogonal', 'NonOrthogonal'], scope='module')
@@ -86,13 +88,13 @@ def get_subbasis_definition(subtype, start, stop, size):
 @pytest.fixture
 def mo_occ(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, 0, mf.nocc, mf.nmo)
-    return mo.make_basis(definition, name='mo-occ', orthonormal=mo_orthonormal_keyword)
+    return mo.make_subbasis(definition, name='mo-occ', orthonormal=mo_orthonormal_keyword)
 
 
 @pytest.fixture
 def mo_vir(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, mf.nocc, mf.nmo, mf.nmo)
-    return mo.make_basis(definition, name='mo-vir', orthonormal=mo_orthonormal_keyword)
+    return mo.make_subbasis(definition, name='mo-vir', orthonormal=mo_orthonormal_keyword)
 
 
 @pytest.fixture(params=['ao', 'ao_from_mo'], scope='module')
@@ -247,106 +249,64 @@ class TestCC(TestCase):
         self.assert_allclose(t2e, 0)
 
 
-@pytest.fixture(params=[1, 3])
-def r_occ_x(request, mo_occ, subbasis_type):
-    size = request.param
-    return get_subbasis_definition_random(len(mo_occ), size, subbasis_type)
-
-
-@pytest.fixture(params=[1, 3])
-def r_vir_x(request, mo_vir, subbasis_type):
-    size = request.param
-    return get_subbasis_definition_random(len(mo_vir), size, subbasis_type)
-
-
-@pytest.fixture(params=[1, 3])
-def r_occ_y(request, mo_occ, subbasis_type):
-    size = request.param
-    return get_subbasis_definition_random(len(mo_occ), size, subbasis_type)
-
-
-@pytest.fixture(params=[1, 3])
-def r_vir_y(request, mo_vir, subbasis_type):
-    size = request.param
-    return get_subbasis_definition_random(len(mo_vir), size, subbasis_type)
-
-
-@pytest.fixture
-def mo_occ_x(mf, mo_occ, r_occ_x, mo_orthonormal_keyword):
-    return mo_occ.make_basis(r_occ_x, name='mo-occ-x', orthonormal=mo_orthonormal_keyword)
-
-
-@pytest.fixture
-def mo_vir_x(mf, mo_vir, r_vir_x, mo_orthonormal_keyword):
-    return mo_vir.make_basis(r_vir_x, name='mo-vir-x', orthonormal=mo_orthonormal_keyword)
-
-
-@pytest.fixture
-def mo_occ_y(mf, mo_occ, r_occ_y, mo_orthonormal_keyword):
-    return mo_occ.make_basis(r_occ_y, name='mo-occ-y', orthonormal=mo_orthonormal_keyword)
-
-
-@pytest.fixture
-def mo_vir_y(mf, mo_vir, r_vir_y, mo_orthonormal_keyword):
-    return mo_vir.make_basis(r_vir_y, name='mo-vir-y', orthonormal=mo_orthonormal_keyword)
-
-
-@pytest.fixture()
-def t2x(cc, r_occ_x, r_vir_x):
-    r_occ_x = subbasis_definition_to_matrix(r_occ_x, cc.mf.nocc)
-    r_vir_x = subbasis_definition_to_matrix(r_vir_x, cc.mf.nvir)
-    return np.einsum('ijab,iI,jJ,aA,bB->IJAB', cc.t2, r_occ_x, r_occ_x, r_vir_x, r_vir_x)
-
-
-@pytest.fixture()
-def l2x(cc, r_occ_x, r_vir_x):
-    r_occ_x = subbasis_definition_to_matrix(r_occ_x, cc.mf.nocc)
-    r_vir_x = subbasis_definition_to_matrix(r_vir_x, cc.mf.nvir)
-    return np.einsum('ijab,iI,jJ,aA,bB->IJAB', cc.l2, r_occ_x, r_occ_x, r_vir_x, r_vir_x)
-
-
-@pytest.fixture()
-def t2y(cc, r_occ_y, r_vir_y):
-    r_occ_y = subbasis_definition_to_matrix(r_occ_y, cc.mf.nocc)
-    r_vir_y = subbasis_definition_to_matrix(r_vir_y, cc.mf.nvir)
-    return np.einsum('ijab,iI,jJ,aA,bB->IJAB', cc.t2, r_occ_y, r_occ_y, r_vir_y, r_vir_y)
-
-
-@pytest.fixture()
-def l2y(cc, r_occ_y, r_vir_y):
-    r_occ_y = subbasis_definition_to_matrix(r_occ_y, cc.mf.nocc)
-    r_vir_y = subbasis_definition_to_matrix(r_vir_y, cc.mf.nvir)
-    return np.einsum('ijab,iI,jJ,aA,bB->IJAB', cc.l2, r_occ_y, r_occ_y, r_vir_y, r_vir_y)
-
-
-@pytest.fixture()
-def tensor_t2x(t2x, mo_occ_x, mo_vir_x):
-    return Tensor(t2x, basis=(mo_occ_x, mo_occ_x, mo_vir_x, mo_vir_x))
-
-
-@pytest.fixture()
-def tensor_l2y(t2y, mo_occ_y, mo_vir_y):
-    return Tensor(t2y, basis=(mo_occ_y, mo_occ_y, mo_vir_y, mo_vir_y))
-
-
 class TestCluster(TestCase):
 
-    @pytest.mark.skip("WIP")
-    def test_t2_l2_contraction(self, cc, r_occ_x, r_vir_x, r_occ_y, r_vir_y, t2x, l2y, tensor_t2x, tensor_l2y,
-                               mo, mo_occ, mo_occ_x):
-        r_occ_x = subbasis_definition_to_matrix(r_occ_x, cc.mf.nocc)
-        r_vir_x = subbasis_definition_to_matrix(r_vir_x, cc.mf.nvir)
-        r_occ_y = subbasis_definition_to_matrix(r_occ_y, cc.mf.nocc)
-        r_vir_y = subbasis_definition_to_matrix(r_vir_y, cc.mf.nvir)
-        print(mo.metric)
-        print(mo.metric.to_numpy())
-        print(mo_occ.metric)
-        print(mo_occ.metric.to_numpy())
-        print(mo_occ_x.metric.to_numpy())
-        s_occ = np.dot(r_occ_x.T, r_occ_y)
-        s_vir = np.dot(r_vir_x.T, r_vir_y)
-        expected = np.einsum('ijab,KJAB,jJ,aA,bB->iK', t2x, l2y, s_occ, s_vir, s_vir)
-        result = btensor.einsum('ijab,kjab->ik', tensor_t2x, tensor_l2y)
-        print(result.basis)
-        assert result.shape == expected.shape
+    #@pytest.fixture(params=list(itertools.product([1, 10], repeat=4)), ids=str)
+    @pytest.fixture(params=[[4, 10, 4, 10], [1, 4, 3, 7]], ids=str)
+    def sizes(self, request):
+        return request.param
+
+    @pytest.fixture
+    def get_cluster(self, cc, mo_occ, mo_vir, subbasis_type, mo_orthonormal_keyword):
+        def make_cluster(size_occ, size_vir):
+            d_occ = get_random_subbasis_definition(len(mo_occ), size_occ, subbasis_type)
+            d_vir = get_random_subbasis_definition(len(mo_vir), size_vir, subbasis_type)
+            b_occ = mo_occ.make_subbasis(d_occ, orthonormal=mo_orthonormal_keyword)
+            b_vir = mo_vir.make_subbasis(d_vir, orthonormal=mo_orthonormal_keyword)
+            r_occ = subbasis_definition_to_matrix(d_occ, cc.mf.nocc)
+            r_vir = subbasis_definition_to_matrix(d_vir, cc.mf.nvir)
+            t1 = np.einsum('ia,iI,aA->IA', cc.t1, r_occ, r_vir)
+            t2 = np.einsum('ijab,iI,jJ,aA,bB->IJAB', cc.t2, r_occ, r_occ, r_vir, r_vir)
+            tensor_t1 = Tensor(t1, basis=(b_occ, b_vir))
+            tensor_t2 = Tensor(t2, basis=(b_occ, b_occ, b_vir, b_vir))
+            cluster = namedtuple('cluster', ('r_occ', 'r_vir', 't1', 't2', 'tensor_t1', 'tensor_t2'))
+            return cluster(r_occ, r_vir, t1, t2, tensor_t1, tensor_t2)
+        return make_cluster
+
+    def test_contraction_t1_occ(self, cc, sizes, get_cluster):
+        size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
+        cx = get_cluster(size_occ_x, size_vir_x)
+        cy = get_cluster(size_occ_y, size_vir_y)
+        s_vir = np.dot(cx.r_vir.T, cy.r_vir)
+        expected = np.einsum('ia,JB,aB->iJ', cx.t1, cy.t1, s_vir)
+        result = btensor.einsum('ia,ja->ij', cx.tensor_t1, cy.tensor_t1)
+        self.assert_allclose(result.to_numpy(), expected)
+
+    def test_contraction_t1_vir(self, cc, sizes, get_cluster):
+        size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
+        cx = get_cluster(size_occ_x, size_vir_x)
+        cy = get_cluster(size_occ_y, size_vir_y)
+        s_occ = np.dot(cx.r_occ.T, cy.r_occ)
+        expected = np.einsum('ia,JB,iJ->aB', cx.t1, cy.t1, s_occ)
+        result = btensor.einsum('ia,ib->ab', cx.tensor_t1, cy.tensor_t1)
+        self.assert_allclose(result.to_numpy(), expected)
+
+    def test_contraction_t2_occ(self, cc, sizes, get_cluster):
+        size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
+        cx = get_cluster(size_occ_x, size_vir_x)
+        cy = get_cluster(size_occ_y, size_vir_y)
+        s_occ = np.dot(cx.r_occ.T, cy.r_occ)
+        s_vir = np.dot(cx.r_vir.T, cy.r_vir)
+        expected = np.einsum('ijab,KJAB,jJ,aA,bB->iK', cx.t2, cy.t2, s_occ, s_vir, s_vir)
+        result = btensor.einsum('ijab,kjab->ik', cx.tensor_t2, cy.tensor_t2)
+        self.assert_allclose(result.to_numpy(), expected)
+
+    def test_contraction_t2_vir(self, cc, sizes, get_cluster):
+        size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
+        cx = get_cluster(size_occ_x, size_vir_x)
+        cy = get_cluster(size_occ_y, size_vir_y)
+        s_occ = np.dot(cx.r_occ.T, cy.r_occ)
+        s_vir = np.dot(cx.r_vir.T, cy.r_vir)
+        expected = np.einsum('ijab,IJCB,iI,jJ,bB->aC', cx.t2, cy.t2, s_occ, s_occ, s_vir)
+        result = btensor.einsum('ijab,ijcb->ac', cx.tensor_t2, cy.tensor_t2)
         self.assert_allclose(result.to_numpy(), expected)

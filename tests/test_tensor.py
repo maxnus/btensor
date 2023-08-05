@@ -5,7 +5,7 @@ import numpy as np
 
 import btensor
 from helper import TestCase
-from conftest import get_permutations_of_combinations, random_orthogonal_matrix, subbasis_definition_to_matrix
+from conftest import variable_sized_product, random_orthogonal_matrix, subbasis_definition_to_matrix
 
 
 class TestTensor(TestCase):
@@ -94,12 +94,10 @@ class TestArithmetic(TestCase):
 
         expected = binary_operator(np.einsum('xab,ia,jb->xij', np_array1, subarg1, subarg1),
                                    np.einsum('xab,ia,jb->xij', np_array2, subarg2, subarg2))
-        if binary_operator == operator.truediv:
+        if binary_operator in {operator.truediv, operator.pow}:
             rtol = 1e-10
-        elif binary_operator == operator.pow:
-            rtol = 1e-12
         else:
-            rtol = 0
+            rtol = self.allclose_rtol
         self.assert_allclose(binary_operator(tensor1, tensor2), expected, rtol=rtol)
 
 

@@ -191,13 +191,13 @@ class Basis(BasisInterface):
     def is_orthonormal(self) -> bool:
         return isinstance(self.metric, IdentityMatrix)
 
-    # --- Tree related
+    # --- Make new basis
 
-    def make_basis(self, *args, name: str | None = None, orthonormal: bool = False, **kwargs) -> Basis:
+    def make_subbasis(self, *args, name: str | None = None, orthonormal: bool = False, **kwargs) -> Basis:
         """Make a new basis with coefficients or indices in reference to the current basis."""
         return type(self)(*args, parent=self, name=name, orthonormal=orthonormal, **kwargs)
 
-    def make_union(self, other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
+    def make_union_basis(self, other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
         """Make smallest possible orthonormal basis, which spans both self and other."""
         base = self.get_common_parent(other)
         for x in [self, other]:
@@ -209,13 +209,13 @@ class Basis(BasisInterface):
         # metric should not be here?
         e, v = np.linalg.eigh(m)
         v = v[:, e >= tol]
-        return base.make_basis(v, name=name, orthonormal=base.is_orthonormal)
+        return base.make_subbasis(v, name=name, orthonormal=base.is_orthonormal)
 
-    def make_intersect(self,
-                       other: Basis,
-                       parent: str = 'smaller',
-                       tol: float = 1e-12,
-                       name: str | None = None) -> Basis:
+    def make_intersect_basis(self,
+                             other: Basis,
+                             parent: str = 'smaller',
+                             tol: float = 1e-12,
+                             name: str | None = None) -> Basis:
         basis_p, basis_q = (self, other)
         if parent == 'other' or (parent == 'smaller' and len(other) < len(self)):
             basis_p, basis_q = basis_q, basis_p
@@ -235,7 +235,7 @@ class Basis(BasisInterface):
             p = np.linalg.multi_dot([s, basis_q.metric.inverse.to_numpy(), s.T])
         e, v = scipy.linalg.eigh(p, b=basis_p.metric.to_numpy())
         v = v[:, e >= 1-tol]
-        return basis_p.make_basis(v, name=name, orthonormal=basis_p.is_orthonormal)
+        return basis_p.make_subbasis(v, name=name, orthonormal=basis_p.is_orthonormal)
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
         """Projector onto self in basis."""

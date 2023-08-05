@@ -24,6 +24,6 @@ def hosvd(tensor: Tensor, svtol: float | None = None):
         u, s, _ = scipy.linalg.svd(a, check_finite=False)
         if svtol is not None:
             u = u[:, s >= svtol]
-        basis.append(bas.make_basis(u))
+        basis.append(bas.make_subbasis(u))
         core = np.tensordot(core, u.T.conj(), axes=(0, 1))
     return type(tensor)(core, basis=tuple(basis))
