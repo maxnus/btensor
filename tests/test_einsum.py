@@ -18,6 +18,7 @@ import string
 import numpy as np
 
 import btensor as bt
+from btensor.tensorsum import TensorSum
 from helper import TestCase
 
 
@@ -138,3 +139,23 @@ class TestEinsum(TestCase):
         ab = tensor_cls_2x[1](b, basis=(bk, bl))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
+
+    def test_tensorsum_2x1(self, get_tensor):
+        tensors, arrays = zip(*get_tensor(ndim=2, number=3))
+        ts1 = TensorSum(tensors[:2])
+        t2 = tensors[2]
+        subscripts = 'ij,jk->ik'
+        expected = np.einsum(subscripts, ts1.evaluate().to_numpy(), t2.to_numpy())
+        result = bt.einsum('ij,jk->ik', ts1, t2).to_numpy()
+        self.assert_allclose(result, expected)
+
+    def test_tensorsum_2x2(self, get_tensor):
+        tensors, arrays = zip(*get_tensor(ndim=2, number=4))
+        for i, t in enumerate(tensors):
+            t.name = f'Tensor{i}'
+        ts1 = TensorSum(tensors[:2])
+        ts2 = TensorSum(tensors[2:])
+        subscripts = 'ij,jk->ik'
+        expected = np.einsum(subscripts, ts1.to_numpy(), ts2.to_numpy())
+        result = bt.einsum('ij,jk->ik', ts1, ts2).to_numpy()
+        self.assert_allclose(result, expected)

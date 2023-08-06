@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 class Einsum:
 
     def __init__(self, subscripts: str, einsumfunc: Callable = np.einsum) -> None:
-        self.subscripts = subscripts
+        self.subscripts = subscripts.replace(' ', '')
         self.einsumfunc = einsumfunc
         # Setup
         self.labels, self.result = self._get_labels_and_result()
@@ -41,14 +41,13 @@ class Einsum:
 
     def _get_labels_and_result(self) -> Tuple[List[List[str]], str]:
         if '...' in self.subscripts:
-            raise NotImplementedError
-        subscripts = self.subscripts.replace(' ', '')  # remove spaces
-        if '->' in subscripts:
-            labels, result = subscripts.split('->')
+            raise NotImplementedError("... not currently supported")
+        if '->' in self.subscripts:
+            labels, result = self.subscripts.split('->')
         else:
-            labels = subscripts
+            labels = self.subscripts
             # Generate result subscripts automatically: all non-repeated subcripts in alphabetical order
-            result = ''.join([s for s in sorted(set(subscripts.replace(',', ''))) if labels.count(s) == 1])
+            result = ''.join([s for s in sorted(set(self.subscripts.replace(',', ''))) if labels.count(s) == 1])
         labels = [list(label) for label in labels.split(',')]
         return labels, result
 
