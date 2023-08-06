@@ -15,6 +15,7 @@ __all__ = [
         'array_like',
         'atleast_1d',
         'BasisError',
+        'BasisDependentOperationError',
         'ndot',
         'expand_axis',
         'replace_attr',
@@ -41,6 +42,12 @@ def atleast_1d(obj):
 
 class BasisError(Exception):
     pass
+
+
+class BasisDependentOperationError(BasisError):
+
+    def __init__(self, msg: str = "operation is basis dependent and therefore not allowed", *args) -> None:
+        super().__init__(msg, *args)
 
 
 def ndot(*args) -> np.ndarray | Number:

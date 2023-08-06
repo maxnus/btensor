@@ -1,21 +1,22 @@
 from __future__ import annotations
-import numbers
+from numbers import Number
 import string
+import operator
 from typing import *
 
 import numpy as np
-import scipy
 from numpy.typing import ArrayLike
 
 from btensor.util import *
 from .basis import Basis, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, TBasis
 from .basistuple import BasisTuple
-from .optemplate import OperatorTemplate
 from btensor import numpy_functions
 
 
-class Tensor(OperatorTemplate):
+class Tensor:
 
+    SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
+                       np.float16, np.float32, np.float64]
     DEFAULT_VARIANCE = -1
 
     def __init__(self,
@@ -24,6 +25,8 @@ class Tensor(OperatorTemplate):
                  variance: Sequence[int] | None = None,
                  copy_data: bool = True) -> None:
         data = np.array(data, copy=copy_data)
+        #if data.dtype not in self.SUPPORTED_DTYPE:
+        #    raise ValueError(f'dtype {data.dtype} not supported.')
         data.flags.writeable = False
         self._data = data
         if basis is None:
@@ -221,34 +224,6 @@ class Tensor(OperatorTemplate):
     def common_basis(self, other: Tensor) -> BasisTuple:
         return self.basis.get_common_basistuple(other.basis)
 
-    def _operator(self, operator, *other, swap=False) -> Tensor:
-        # Unary operator
-        if len(other) == 0:
-            return type(self)(operator(self._data), basis=self.basis)
-        # Ternary+ operator
-        if len(other) > 1:
-            raise NotImplementedError
-        # Binary operator
-        other = other[0]
-
-        basis = self.basis
-        v1 = self._data
-        if isinstance(other, numbers.Number):
-            v2 = other
-        elif isinstance(other, Tensor):
-            if self.basis == other.basis:
-                v2 = other._data
-            elif self.is_compatible(other):
-                basis = self.common_basis(other)
-                v1 = self.change_basis(basis)._data
-                v2 = other.change_basis(basis)._data
-            else:
-                raise ValueError(f"{self} and {other} are not compatible")
-        else:
-            return NotImplemented
-        if swap:
-            v1, v2 = v2, v1
-        return type(self)(operator(v1, v2), basis=basis)
 
     # --- NumPy compatibility
 
@@ -279,7 +254,7 @@ class Tensor(OperatorTemplate):
             return nparray.copy()
         return nparray
 
-    def transpose(self, axes: tuple[int] | None = None) -> Tensor:
+    def transpose(self, axes: tuple[int, ...] | None = None) -> Tensor:
         value = self._data.transpose(axes)
         if axes is None:
             basis = self.basis[::-1]
@@ -291,11 +266,119 @@ class Tensor(OperatorTemplate):
     def T(self) -> Tensor:
         return self.transpose()
 
-    def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor:
+    def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
     def dot(self, other: Tensor | np.ndarray) -> Tensor:
         return numpy_functions.dot(self, other)
+
+    def _operator(self, operator, *other: Number | Tensor, swap: bool = False) -> Tensor:
+        # Unary operator
+        if len(other) == 0:
+            return type(self)(operator(self._data), basis=self.basis)
+        # Ternary+ operator
+        if len(other) > 1:
+            raise NotImplementedError
+        # Binary operator
+        other = other[0]
+
+        basis = self.basis
+        v1 = self._data
+        if isinstance(other, Number):
+            v2 = other
+        elif isinstance(other, Tensor):
+            if self.basis == other.basis:
+                v2 = other._data
+            elif self.is_compatible(other):
+                basis = self.common_basis(other)
+                v1 = self.change_basis(basis)._data
+                v2 = other.change_basis(basis)._data
+            else:
+                raise ValueError(f"{self} and {other} are not compatible")
+        else:
+            return NotImplemented
+        if swap:
+            v1, v2 = v2, v1
+        return type(self)(operator(v1, v2), basis=basis)
+
+    # Fully supported:
+
+    def __add__(self, other: Number | Tensor) -> Tensor:
+        return self._operator(operator.add, other)
+
+    def __sub__(self, other: Number | Tensor) -> Tensor:
+        return self._operator(operator.sub, other)
+
+    def __radd__(self, other: Number | Tensor) -> Tensor:
+        return self._operator(operator.add, other, swap=True)
+
+    def __rsub__(self, other: Number | Tensor) -> Tensor:
+        return self._operator(operator.sub, other, swap=True)
+
+    def __rmul__(self, other: Number | Tensor) -> Tensor:
+        return self._operator(operator.mul, other, swap=True)
+
+    def __pos__(self) -> Tensor:
+        return self._operator(operator.pos)
+
+    def __neg__(self) -> Tensor:
+        return self._operator(operator.neg)
+
+    def __eq__(self, other):
+        return self._operator(operator.eq, other)
+
+    def __ne__(self, other):
+        return self._operator(operator.ne, other)
+
+    # Only supported for numbers:
+
+    def __mul__(self, other: Number) -> Tensor:
+        if isinstance(other, Number):
+            return self._operator(operator.mul, other)
+        raise BasisDependentOperationError
+
+    def __truediv__(self, other: Number) -> Tensor:
+        if isinstance(other, Number):
+            return self._operator(operator.truediv, other)
+        raise BasisDependentOperationError
+
+    # Not allowed due to basis dependence:
+
+    def sum(self, *args: Never, **kwargs: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __floordiv__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __mod__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __pow__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __rtruediv__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __rfloordiv__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __rpow__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __gt__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __ge__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __lt__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __le__(self, other: Never) -> NoReturn:
+        raise BasisDependentOperationError
+
+    def __abs__(self) -> NoReturn:
+        raise BasisDependentOperationError
 
 
 class Cotensor(Tensor):

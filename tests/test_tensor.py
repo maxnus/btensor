@@ -3,9 +3,10 @@ import operator
 import pytest
 import numpy as np
 
-import btensor
 from helper import TestCase
-from conftest import variable_sized_product, random_orthogonal_matrix, subbasis_definition_to_matrix
+from conftest import subbasis_definition_to_matrix
+
+from btensor.util import BasisDependentOperationError
 
 
 class TestTensor(TestCase):
@@ -54,22 +55,30 @@ class TestTensor(TestCase):
 
 class TestArithmetic(TestCase):
 
-    @pytest.mark.parametrize('unary_operator', [operator.neg, operator.abs])
+    @pytest.mark.parametrize('unary_operator', [operator.pos, operator.neg])
     def test_unary_operator(self, unary_operator, tensor_or_array):
         tensor, np_array = tensor_or_array
         self.assert_allclose(unary_operator(tensor), unary_operator(np_array))
 
+    def test_unary_operator_exception(self, tensor_or_array):
+        tensor, np_array = tensor_or_array
+        with pytest.raises(BasisDependentOperationError):
+            self.assert_allclose(abs(tensor), abs(np_array))
+
+    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
     def test_binary_operator(self, ndim, tensor_cls, binary_operator, get_tensor_or_array):
         (tensor1, np_array1), (tensor2, np_array2) = get_tensor_or_array(ndim, tensor_cls, number=2)
         self.assert_allclose(binary_operator(tensor1, tensor2), binary_operator(np_array1, np_array2))
 
     @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
+    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub, operator.mul, operator.truediv])
     def test_scalar_operator(self, scalar, ndim, tensor_cls, binary_operator, tensor_or_array):
         tensor, np_array = tensor_or_array
         expected = binary_operator(np_array, scalar)
         self.assert_allclose(binary_operator(tensor, scalar), expected)
 
     @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
+    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
     def test_scalar_operator_reverse(self, scalar, ndim, tensor_cls, binary_operator, tensor_or_array):
         tensor, np_array = tensor_or_array
         expected = binary_operator(scalar, np_array)
@@ -77,6 +86,7 @@ class TestArithmetic(TestCase):
 
     @pytest.mark.parametrize('subsize1', [1, 5, 10])
     @pytest.mark.parametrize('subsize2', [1, 5, 10])
+    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
     def test_binary_operator_different_basis(self, binary_operator, subsize1, subsize2, subbasis_type_2x, tensor_cls_2x,
                                              get_rootbasis_subbasis):
         subtype1, subtype2 = subbasis_type_2x

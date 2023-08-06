@@ -99,6 +99,8 @@ class Basis(BasisInterface):
         super().__init__()
         self._parent = parent
         self._id = self._get_next_id()
+        if name is None:
+            name = f'Basis{self._id}'
         self.name = name
         self._matrix = self.definition_to_matrix(definition)
         if self.size == 0:
@@ -151,9 +153,7 @@ class Basis(BasisInterface):
         return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
 
     def __str__(self) -> str:
-        if self.name:
-            return self.name
-        return f'Basis{self.id}'
+        return self.name
 
     @property
     def size(self) -> int:

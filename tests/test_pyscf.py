@@ -1,4 +1,3 @@
-import itertools
 from collections import namedtuple
 
 import pytest
@@ -8,7 +7,7 @@ import btensor
 import btensor as basis
 from btensor import Tensor, Cotensor
 from helper import TestCase, rand_orth_mat
-from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix, variable_sized_product
+from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix
 
 scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'nvir', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock',
                                    'dm'))
@@ -105,13 +104,8 @@ def ao2(request, mf, ao, mo):
     return basis.Basis(r, parent=mo)
 
 
-@pytest.fixture(params=[np.dot, basis.dot], ids=['dot-numpy', 'dot-basis'], scope='module')
-def dot_function(request):
-    return request.param
-
-
 @pytest.fixture(params=['left', 'right'], scope='module')
-def or_association(request):
+def double_or(request):
     def op(x, y, z):
         if request.param == 'left':
             return (x | y) | z
@@ -159,37 +153,37 @@ class TestSCF(TestCase):
         self.assert_allclose(ao2.get_overlap(mo, variance=(-1, -1)), c)
         self.assert_allclose(mo.get_overlap(ao2, variance=(-1, -1)), c.T)
 
-    def test_ao_mo_projector(self, mf, ao, mo, dot_function):
+    def test_ao_mo_projector(self, mf, ao, mo):
         i = np.identity(mf.nao)
-        self.assert_allclose(dot_function(ao.get_transformation_to(mo), mo.get_transformation_to(ao)), i)
+        self.assert_allclose(basis.dot(ao.get_transformation_to(mo), mo.get_transformation_to(ao)), i)
 
-    def test_mo_ao_projector(self, mf, ao, mo, dot_function):
+    def test_mo_ao_projector(self, mf, ao, mo):
         i = np.identity(mf.nao)
-        self.assert_allclose(dot_function(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
+        self.assert_allclose(basis.dot(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
 
-    def test_ao2mo_ovlp(self, mf, ao, mo, or_association):
+    def test_ao2mo_ovlp(self, mf, ao, mo, double_or):
         s = Cotensor(mf.ovlp, basis=(ao, ao))
-        self.assert_allclose(or_association(mo, s, mo), np.identity(mf.nao))
+        self.assert_allclose(double_or(mo, s, mo), np.identity(mf.nao))
 
-    def test_mo2ao_ovlp(self, mf, ao, mo, or_association):
+    def test_mo2ao_ovlp(self, mf, ao, mo, double_or):
         s = Cotensor(np.identity(mf.nao), basis=(mo, mo))
-        self.assert_allclose(or_association(ao, s, ao), mf.ovlp)
+        self.assert_allclose(double_or(ao, s, ao), mf.ovlp)
 
-    def test_ao2mo_fock(self, mf, ao, mo, or_association):
+    def test_ao2mo_fock(self, mf, ao, mo, double_or):
         f = Cotensor(mf.fock, basis=(ao, ao))
-        self.assert_allclose(or_association(mo, f, mo), np.diag(mf.mo_energy), atol=1e-9)
+        self.assert_allclose(double_or(mo, f, mo), np.diag(mf.mo_energy), atol=1e-9)
 
-    def test_mo2ao_fock(self, mf, ao, mo, or_association):
+    def test_mo2ao_fock(self, mf, ao, mo, double_or):
         f = Cotensor(np.diag(mf.mo_energy), basis=(mo, mo))
-        self.assert_allclose(or_association(ao, f, ao), mf.fock, atol=1e-9)
+        self.assert_allclose(double_or(ao, f, ao), mf.fock, atol=1e-9)
 
-    def test_ao2mo_dm(self, mf, ao, mo, or_association):
+    def test_ao2mo_dm(self, mf, ao, mo, double_or):
         d = Tensor(mf.dm, basis=(ao, ao))
-        self.assert_allclose(or_association(mo, d, mo), np.diag(mf.mo_occ))
+        self.assert_allclose(double_or(mo, d, mo), np.diag(mf.mo_occ))
 
-    def test_mo2ao_dm(self, mf, ao, mo, or_association):
+    def test_mo2ao_dm(self, mf, ao, mo, double_or):
         d = basis.Tensor(np.diag(mf.mo_occ), basis=(mo, mo))
-        self.assert_allclose(or_association(ao, d, ao), mf.dm)
+        self.assert_allclose(double_or(ao, d, ao), mf.dm)
 
 
 class TestCC(TestCase):
@@ -223,18 +217,10 @@ class TestCC(TestCase):
         self.assert_allclose(t2s - t2b, 0)
         self.assert_allclose(t2b - t2s, 0)
         # Multiply
-        self.assert_allclose(t2s * t2b, t2b * t2b)
-        self.assert_allclose(t2b * t2s, t2b * t2b)
+        self.assert_allclose((t2s*2).cob[mo, mo, mo, mo], t2b*2)
+        self.assert_allclose((2*t2s).cob[mo, mo, mo, mo], 2*t2b)
         # Divide
-        self.assert_allclose(t2s / (abs(t2b) + 1), t2b / (abs(t2b) + 1))
-        # Floor Divide
-        self.assert_allclose(t2s // (abs(t2b) + 1), t2b // (abs(t2b) + 1))
-        # Modulus
-        self.assert_allclose(t2s % t2b, t2b % t2b)
-        self.assert_allclose(t2b % t2s, t2b % t2b)
-        # Power
-        self.assert_allclose(t2s ** t2b, t2b ** t2b)
-        self.assert_allclose(t2b ** t2s, t2b ** t2b)
+        self.assert_allclose((t2s/2).cob[mo, mo, mo, mo], t2b/2)
         # Preserved trace
         self.assert_allclose(t2s.trace().trace(), (t2s | (mo, mo)).trace().trace())
         self.assert_allclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())

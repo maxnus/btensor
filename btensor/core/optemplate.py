@@ -1,9 +1,10 @@
+from __future__ import annotations
 import operator
 
 
 class OperatorTemplate:
 
-    def _operator(self, operator, *other, swap=False):
+    def _operator(self, operator, *other, swap: bool = False) -> OperatorTemplate:
         raise NotImplementedError
 
     # --- Binary operators

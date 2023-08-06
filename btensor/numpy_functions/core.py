@@ -103,7 +103,7 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     basis1 = a.basis[axis1]
     basis2 = a.basis[axis2]
     if basis1.root != basis2.root:
-        raise BasisError("Cannot take trace over axis with incompatible bases!")
+        raise BasisError("cannot take trace over axis with incompatible bases!")
     if basis1 == basis2:
         a = a
     else:
