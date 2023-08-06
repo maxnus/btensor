@@ -88,6 +88,21 @@ class Space:
         logger.debug("returns {}", rv)
         return rv
 
+    def trivially_less_or_equal_than(self, other: Space) -> bool | None:
+        """Check if space is trivially a subspace (without performing SVD)"""
+        if not isinstance(other, Space):
+            raise TypeError(type(other))
+        if len(self) > len(other):
+            rv = False
+        elif not self.basis.same_root(other.basis):
+            rv = False
+        elif self.basis.is_derived_from(other.basis, inclusive=True):
+            rv = True
+        else:
+            rv = None
+        logger.debug("returns {}", rv)
+        return rv
+
     def trivially_orthogonal(self, other: Space) -> bool | None:
         """Check if spaces are trivially orthogonal (without performing SVD)"""
         if not isinstance(other, Space):

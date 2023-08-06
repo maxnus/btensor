@@ -6,7 +6,6 @@ authors = [
 ]
 description = "A library for basis transformation of tensors"
 readme = "README.md"
-license = "Apache-2.0"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -32,7 +31,11 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tools.setuptools]
+#packages = ["btensor"]
 license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+where = ["btensor"]
 
 [tools.setuptools.dynamic]
 version = {attr = "btensor.__version__"}

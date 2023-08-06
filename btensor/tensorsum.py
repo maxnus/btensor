@@ -13,51 +13,57 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import Union
+from typing import *
 
-from btensor import Tensor
+import numpy as np
+
+if TYPE_CHECKING:
+    from btensor import Tensor
 
 
 class TensorSum:
 
-    def __init__(self, tensors: list[Tensor]):
+    def __init__(self, tensors: list[Tensor]) -> None:
         self._tensors = []
         for tensor in tensors:
             self.add_tensor(tensor)
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(size= {len(self)})"
+
     @property
-    def tensors(self):
+    def tensors(self) -> List[Tensor]:
         return self._tensors
 
-    def add_tensor(self, tensor: Tensor):
+    def add_tensor(self, tensor: Tensor, allow_combine: bool = False) -> None:
         if len(self):
             if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
                 raise ValueError
+        if allow_combine:
+            for idx, tensor_super in enumerate(self.tensors):
+                if tensor_super.basis.is_spanning(tensor.basis):
+                    self.tensors[idx] = (tensor_super + tensor)
+                    return
         self.tensors.append(tensor)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.tensors)
 
-    def evaluate(self):
+    def __getitem__(self, item: int | slice) -> Tensor | TensorSum:
+        return self.tensors[item]
+
+    def evaluate(self) -> Tensor:
         return sum(self.tensors)
 
-    def dot(self, other: Union[Tensor, 'TensorSum']) -> 'TensorSum':
+    def to_numpy(self) -> np.ndarray:
+        return self.evaluate().to_numpy()
+
+    def dot(self, other: Tensor | TensorSum) -> TensorSum:
         out = TensorSum([])
         for tensor in self.tensors:
-            if isinstance(other, Tensor):
-                out.add_tensor(tensor.dot(other))
-            else:
+            if isinstance(other, TensorSum):
                 for tensor2 in other.tensors:
                     out.add_tensor(tensor.dot(tensor2))
+            else:
+                out.add_tensor(tensor.dot(other))
         return out
-
-
-#def test:
-#
-#    ts1 = TensorSum()
-#    ts2 = TensorSum()
-#    bt.einsum('ijab,kjab->ij', ts1, ts2)
-#    # equivalent to:
-#    for tensor1 in ts1:
-#        for tensor2 in ts2:
-#            result += bt.einsum('ijab,kjab->ij', tensor1, tensor2)

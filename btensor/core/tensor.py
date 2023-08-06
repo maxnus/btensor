@@ -37,12 +37,14 @@ class Tensor:
                  data: ArrayLike,
                  basis: TBasis | None= None,
                  variance: Sequence[int] | None = None,
+                 name: str | None = None,
                  copy_data: bool = True) -> None:
         data = np.array(data, copy=copy_data)
         #if data.dtype not in self.SUPPORTED_DTYPE:
         #    raise ValueError(f'dtype {data.dtype} not supported.')
         data.flags.writeable = False
         self._data = data
+        self.name = name
         if basis is None:
             basis = data.ndim * (nobasis,)
         if variance is None:
@@ -55,7 +57,13 @@ class Tensor:
         self.check_basis(basis)
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}(shape= {self.shape}, variance= {self.variance})'
+        attrs = dict(shape=self.shape, dtype=self.dtype)
+        if any(np.asarray(self.variance) != self.DEFAULT_VARIANCE):
+            attrs['variance'] = self.variance
+        if self.name is not None:
+            attrs['name'] = self.name
+        attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
+        return f'{type(self).__name__}({attrs})'
 
     def copy(self) -> Tensor:
         return type(self)(self._data, basis=self.basis, copy_data=True)

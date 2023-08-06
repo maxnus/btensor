@@ -343,15 +343,15 @@ def get_tensor_or_array(rootbasis):
 
 @pytest.fixture(scope='module')
 def get_tensor(get_tensor_or_array):
-    def get_tensor(ndim, hermitian=False):
-        return get_tensor_or_array(ndim, Tensor, hermitian=hermitian)
+    def get_tensor(ndim, number=1, hermitian=False):
+        return get_tensor_or_array(ndim, Tensor, number=number, hermitian=hermitian)
     return get_tensor
 
 
 @pytest.fixture(scope='module')
 def get_array(get_tensor_or_array):
-    def get_array(ndim, hermitian=False):
-        return get_tensor_or_array(ndim, Array, hermitian=hermitian)
+    def get_array(ndim, number=1, hermitian=False):
+        return get_tensor_or_array(ndim, Array, number=number, hermitian=hermitian)
     return get_array
 
 
