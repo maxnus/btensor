@@ -1,0 +1,38 @@
+[project]
+name = "btensor"
+version = "0.0.1"
+authors = [
+  { name="Max Nusspickel", email="max.nusspickel@gmail.com" },
+]
+description = "A library for basis transformation of tensors"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.19.0",
+    "scipy>=1.1.0",
+    "pytest",
+    "loguru",
+]
+
+[project.urls]
+source = "https://github.com/maxnus/btensor"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tools.setuptools]
+license-files = ["LICENSE"]
+
+[tools.setuptools.dynamic]
+version = {attr = "btensor.__version__"}
