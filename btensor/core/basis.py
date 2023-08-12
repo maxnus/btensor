@@ -134,6 +134,8 @@ class Basis(BasisInterface):
         elif isinstance(metric, np.ndarray):
             metric = SymmetricMatrix(metric)
         self._metric = metric
+        if self.is_root:
+            self._intersect_cache = {}
 
     def definition_to_matrix(self, definition: TBasisDefinition) -> Matrix:
         # Root basis:
@@ -228,11 +230,18 @@ class Basis(BasisInterface):
                              *other: Basis,
                              parent: str = 'smaller',
                              tol: float = 1e-12,
-                             name: str | None = None) -> Basis:
+                             name: str | None = None,
+                             cache: bool = True) -> Basis:
         if len(other) > 1:
             # TODO
             raise NotImplementedError
         other = other[0]
+
+        # Caching
+        cache_key = (frozenset({self.id, other.id}), tol)
+        if (cached := self.root._intersect_cache.get(cache_key, None)) is not None:
+            return cached
+
         basis_p, basis_q = (self, other)
         if parent == 'other' or (parent == 'smaller' and len(other) < len(self)):
             basis_p, basis_q = basis_q, basis_p
@@ -255,6 +264,8 @@ class Basis(BasisInterface):
         v = v[:, e >= tol]
         basis_out = basis_p.make_subbasis(v, name=name, orthonormal=basis_p.is_orthonormal)
         logger.debug("basis sizes: Basis1= {}, Basis2= {}, Output= {}", len(self), len(other), len(basis_out))
+        if cache:
+            self.root._intersect_cache[cache_key] = basis_out
         return basis_out
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
