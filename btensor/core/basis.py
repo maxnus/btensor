@@ -25,6 +25,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import *
 
+from loguru import logger
 import numpy as np
 import scipy
 
@@ -210,25 +211,30 @@ class Basis(BasisInterface):
         """Make a new basis with coefficients or indices in reference to the current basis."""
         return type(self)(*args, parent=self, name=name, orthonormal=orthonormal, **kwargs)
 
-    def make_union_basis(self, other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
+    def make_union_basis(self, *other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
         """Make smallest possible orthonormal basis, which spans both self and other."""
-        base = self.get_common_parent(other)
-        for x in [self, other]:
-            if base == x:
-                return x
-        m = self._projector_in_basis(base) + other._projector_in_basis(base)
-        #metric = base.metric.to_numpy() if not base.is_orthonormal else None
+        common_parent = self.get_common_parent(*other)
+        if common_parent in [self, *other]:
+            return common_parent
+        m = self._projector_in_basis(common_parent)
+        for other_basis in other:
+            m += other_basis._projector_in_basis(common_parent)
+        #metric = common_parent.metric.to_numpy() if not common_parent.is_orthonormal else None
         #e, v = scipy.linalg.eigh(m, b=metric)
         # metric should not be here?
         e, v = np.linalg.eigh(m)
         v = v[:, e >= tol]
-        return base.make_subbasis(v, name=name, orthonormal=base.is_orthonormal)
+        return common_parent.make_subbasis(v, name=name, orthonormal=common_parent.is_orthonormal)
 
     def make_intersect_basis(self,
-                             other: Basis,
+                             *other: Basis,
                              parent: str = 'smaller',
                              tol: float = 1e-12,
                              name: str | None = None) -> Basis:
+        if len(other) > 1:
+            # TODO
+            raise NotImplementedError
+        other = other[0]
         basis_p, basis_q = (self, other)
         if parent == 'other' or (parent == 'smaller' and len(other) < len(self)):
             basis_p, basis_q = basis_q, basis_p
@@ -247,8 +253,11 @@ class Basis(BasisInterface):
         else:
             p = np.linalg.multi_dot([s, basis_q.metric.inverse.to_numpy(), s.T])
         e, v = scipy.linalg.eigh(p, b=basis_p.metric.to_numpy())
-        v = v[:, e >= 1-tol]
-        return basis_p.make_subbasis(v, name=name, orthonormal=basis_p.is_orthonormal)
+        logger.debug("eigenvalues: {}", e)
+        v = v[:, e >= tol]
+        basis_out = basis_p.make_subbasis(v, name=name, orthonormal=basis_p.is_orthonormal)
+        logger.debug("basis sizes: Basis1= {}, Basis2= {}, Output= {}", len(self), len(other), len(basis_out))
+        return basis_out
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
         """Projector onto self in basis."""
@@ -285,18 +294,26 @@ class Basis(BasisInterface):
     def is_compatible_with(self, other: BasisInterface) -> bool:
         return is_nobasis(other) or self.same_root(other)
 
-    def same_root(self, other: Basis) -> bool:
-        root1 = self.root or self
-        root2 = other.root or other
-        return root1 == root2
+    def same_root(self, *other: Basis) -> bool:
+        roots = np.asarray([basis.root or basis for basis in [self, *other]])
+        return np.all(roots == roots[0])
 
-    def check_same_root(self, other: Basis) -> None:
-        if self.same_root(other):
+    def check_same_root(self, *other: Basis) -> None:
+        if self.same_root(*other):
             return
         raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
-    def get_common_parent(self, other: Basis) -> Basis:
-        """Find first common ancestor between two bases."""
+    def get_common_parent(self, *other: Basis) -> Basis:
+        """Find first common ancestor between multiple bases."""
+        # support multiple bases via recursion
+        if len(other) > 1:
+            parent = self.get_common_parent(other[0])
+            return parent.get_common_parent(*other[1:])
+            #common_parent = other[-2].get_common_parent(other[-1])
+            #return self.get_common_parent(*(other[:-2] + (common_parent,)))
+        if len(other) != 1:
+            raise ValueError
+        other = other[0]
         self.check_same_root(other)
         parents_self = self.get_parents(include_self=True)[::-1]
         parents_other = other.get_parents(include_self=True)[::-1]

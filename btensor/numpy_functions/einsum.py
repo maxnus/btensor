@@ -37,10 +37,9 @@ class Einsum:
         # Setup
         self._labels_per_operand, self._result = self._get_labels_per_operand_and_result()
         # List of ordered, unique labels
-        # Remove duplicates while keeping order (sets do not keep order):
         labels = [x for idx in self._labels_per_operand for x in idx]
+        # Remove duplicates while keeping order (sets do not keep order):
         self._unique_labels = list(dict.fromkeys(labels).keys())
-        #print(self.subscripts, self._labels_per_operand, self._unique_labels)
 
     def _get_labels_per_operand_and_result(self) -> Tuple[List[List[str]], str]:
         if '...' in self.subscripts:
@@ -57,7 +56,8 @@ class Einsum:
     def _get_free_labels(self) -> List[str]:
         return sorted(set(string.ascii_letters).difference(set(self._unique_labels)))
 
-    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...]) -> Dict[str, BasisInterface]:
+    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
+                             intersect_tol: Number = 0) -> Dict[str, BasisInterface]:
         basis_per_label = {}
         for unique_label in self._unique_labels:
             basis: BasisInterface | None = None
@@ -72,9 +72,14 @@ class Einsum:
                     elif is_output:
                         # Label is in output: find spanning basis
                         basis = basis.get_common_parent(current_basis)
-                    elif current_basis.size < basis.size:
-                        # Label is contracted: find smallest basis
-                        basis = current_basis
+                    else:
+                        # Label is contracted
+                        if intersect_tol:
+                            # Use intersect basis
+                            basis = current_basis.make_intersect_basis(basis, tol=intersect_tol)
+                        elif current_basis.size < basis.size:
+                            # Use smallest basis
+                            basis = current_basis
             assert (basis is not None)
             basis_per_label[unique_label] = basis
         return basis_per_label
@@ -84,7 +89,8 @@ class Einsum:
 
     def __call__(self, *operands: EinsumOperandT, intersect_tol: Number = 0, **kwargs: Any) -> EinsumOperandT:
         if len(self._labels_per_operand) != len(operands):
-            raise ValueError(f"{len(operands)} operands provided, but {len(self._labels_per_operand)} specified in subscript string")
+            raise ValueError(f"{len(operands)} operands provided, but {len(self._labels_per_operand)} "
+                             f"specified in subscript string")
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
@@ -98,14 +104,14 @@ class Einsum:
                 for tensorsum_idx, pos in enumerate(tensorsums_positions):
                     ops[pos] = tensors[tensorsum_idx]
                 logger.debug(f"recursive einsum({self.subscripts}) with operands {ops}")
-                result.append(Einsum(self.subscripts, self.einsumfunc)(*ops, **kwargs))
+                result.append(self(*ops, intersect_tol=intersect_tol, **kwargs))
             return TensorSum(result)
 
         free_labels = self._get_free_labels()
         labels_out = copy.deepcopy(self._labels_per_operand)
         # Loop over all indices
         overlaps = []
-        basis_per_label = self._get_basis_per_label(operands)
+        basis_per_label = self._get_basis_per_label(operands, intersect_tol=intersect_tol)
         for unique_label, basis_target in basis_per_label.items():
             # Replace all other bases corresponding to the same index:
             for i, label in enumerate(self._labels_per_operand):
@@ -133,13 +139,20 @@ class Einsum:
 
 
 @overload
-def einsum(subscripts: str, *operands: Tensor, einsumfunc: Callable = np.einsum, **kwargs: Any) -> Tensor: ...
+def einsum(subscripts: str,
+           *operands: Tensor,
+           einsumfunc: Callable = np.einsum,
+           intersect_tol: Number | None = 0,
+           **kwargs: Any) -> Tensor: ...
 
 
-def einsum(subscripts: str, *operands: EinsumOperandT, einsumfunc: Callable = np.einsum,
+def einsum(subscripts: str,
+           *operands: EinsumOperandT,
+           einsumfunc: Callable = np.einsum,
+           intersect_tol: Number | None = 0,
            **kwargs: Any) -> EinsumOperandT:
     """Allows contraction of Array objects using Einstein notation.
 
     The overlap matrices between non-matching dimensions are automatically added.
     """
-    return Einsum(subscripts, einsumfunc)(*operands, **kwargs)
+    return Einsum(subscripts, einsumfunc)(*operands, intersect_tol=intersect_tol, **kwargs)

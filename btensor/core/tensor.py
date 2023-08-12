@@ -27,6 +27,18 @@ from .basistuple import BasisTuple
 from btensor import numpy_functions
 
 
+class ChangeBasisInterface:
+
+    def __init__(self, tensor: Tensor) -> None:
+        self.tensor = tensor
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.tensor})"
+
+    def __getitem__(self, key: TBasis) -> Tensor:
+        return self.tensor.change_basis(key)
+
+
 class Tensor:
 
     SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
@@ -54,6 +66,7 @@ class Tensor:
         self._basis = basis
         self._variance = variance
         self.check_basis(basis)
+        self._cob = ChangeBasisInterface(self)
 
     def __repr__(self) -> str:
         attrs = dict(shape=self.shape, dtype=self.dtype)
@@ -191,17 +204,6 @@ class Tensor:
 
     # --- Change of basis
 
-    class ChangeBasisInterface:
-
-        def __init__(self, tensor: Tensor) -> None:
-            self.tensor = tensor
-
-        def __repr__(self) -> str:
-            return f"{type(self).__name__}({self.tensor})"
-
-        def __getitem__(self, key: TBasis) -> Tensor:
-            return self.tensor.change_basis(key)
-
     def change_basis(self, basis: TBasis) -> Tensor:
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
@@ -209,14 +211,14 @@ class Tensor:
         return self.project(basis)
 
     @property
-    def cob(self):
-        return self.ChangeBasisInterface(self)
+    def cob(self) -> ChangeBasisInterface:
+        return self._cob
 
     def change_basis_at(self, index: int, basis: BasisInterface) -> Tensor:
         if index < 0:
             index += self.ndim
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
-        return self.change_basis[basis_new]
+        return self.change_basis(basis_new)
 
     def __or__(self, basis: TBasis) -> Tensor:
         """To allow basis transformation as (array | basis)"""
@@ -244,7 +246,6 @@ class Tensor:
 
     def common_basis(self, other: Tensor) -> BasisTuple:
         return self.basis.get_common_basistuple(other.basis)
-
 
     # --- NumPy compatibility
 
@@ -302,7 +303,6 @@ class Tensor:
             raise NotImplementedError
         # Binary operator
         other = other[0]
-
         basis = self.basis
         v1 = self._data
         if isinstance(other, Number):

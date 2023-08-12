@@ -209,7 +209,7 @@ class TestBasisNew(TestCase):
         bi = basis_a2
         d = get_random_subbasis_definition(len(basis_a0), len(basis_a2), subbasis_type, rng=rng)
         bj = basis_a0.make_subbasis(d)
-        bij = bi.make_intersect_basis(bj)
+        bij = bi.make_intersect_basis(bj, tol=1 - 1e-12)
         assert len(bij) <= min(len(bi), len(bj))
         assert bi.space >= bij.space
         assert bj.space >= bij.space

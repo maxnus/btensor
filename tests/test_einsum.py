@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from __future__ import annotations
 import pytest
 import itertools
 import string
@@ -70,19 +71,25 @@ def einsum_contraction(request):
 
 class TestEinsum(TestCase):
 
-    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls):
+    @pytest.mark.parametrize('optimize', [False])
+    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls, optimize, timings):
         ndim = len(einsum_summation.split('->')[0])
         array, data = get_tensor_or_array(ndim, tensor_cls=tensor_cls)
-        expected = np.einsum(einsum_summation, data)
-        result = bt.einsum(einsum_summation, array)
+        with timings('NumPy'):
+            expected = np.einsum(einsum_summation, data, optimize=optimize)
+        with timings('BTensor'):
+            result = bt.einsum(einsum_summation, array, optimize=optimize).to_numpy()
         self.assert_allclose(result, expected)
 
-    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls):
+    @pytest.mark.parametrize('optimize', [False])
+    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls, optimize, timings):
         ndim1, ndim2 = [len(x) for x in einsum_contraction.split('->')[0].split(',')]
         array1, data1 = get_tensor_or_array(ndim1, tensor_cls=tensor_cls)
         array2, data2 = get_tensor_or_array(ndim2, tensor_cls=tensor_cls)
-        expected = np.einsum(einsum_contraction, data1, data2)
-        result = bt.einsum(einsum_contraction, array1, array2)
+        with timings('NumPy'):
+            expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
+        with timings('BTensor'):
+            result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_matmul(self, tensor_cls_2x):
@@ -144,22 +151,26 @@ class TestEinsum(TestCase):
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 
-    def test_tensorsum_2x1(self, get_tensor):
+    def test_tensorsum_2x1(self, get_tensor, timings):
         tensors, arrays = zip(*get_tensor(ndim=2, number=3))
         ts1 = TensorSum(tensors[:2])
         t2 = tensors[2]
         subscripts = 'ij,jk->ik'
-        expected = np.einsum(subscripts, ts1.evaluate().to_numpy(), t2.to_numpy())
-        result = bt.einsum('ij,jk->ik', ts1, t2).to_numpy()
+        with timings('NumPy'):
+            expected = np.einsum(subscripts, ts1.evaluate().to_numpy(), t2.to_numpy())
+        with timings('BTensor'):
+            result = bt.einsum('ij,jk->ik', ts1, t2).to_numpy()
         self.assert_allclose(result, expected)
 
-    def test_tensorsum_2x2(self, get_tensor):
+    def test_tensorsum_2x2(self, get_tensor, timings):
         tensors, arrays = zip(*get_tensor(ndim=2, number=4))
         for i, t in enumerate(tensors):
             t.name = f'Tensor{i}'
         ts1 = TensorSum(tensors[:2])
         ts2 = TensorSum(tensors[2:])
         subscripts = 'ij,jk->ik'
-        expected = np.einsum(subscripts, ts1.to_numpy(), ts2.to_numpy())
-        result = bt.einsum('ij,jk->ik', ts1, ts2).to_numpy()
+        with timings('NumPy'):
+            expected = np.einsum(subscripts, ts1.to_numpy(), ts2.to_numpy())
+        with timings('BTensor'):
+            result = bt.einsum('ij,jk->ik', ts1, ts2).to_numpy()
         self.assert_allclose(result, expected)

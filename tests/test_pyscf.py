@@ -270,7 +270,7 @@ class TestCluster(TestCase):
     np_einsum = functools.partial(np.einsum, optimize=True)
     bt_einsum = functools.partial(btensor.einsum, optimize=True)
 
-    @pytest.fixture(params=[[5, 10, 8, 15]], ids=str)
+    @pytest.fixture(params=[[5, 10, 6, 9]], ids=str)
     def sizes(self, request):
         """Size of x_occ, x_vir, y_occ, y_vir"""
         return request.param
