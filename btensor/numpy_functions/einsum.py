@@ -25,6 +25,7 @@ from btensor.tensorsum import TensorSum
 
 if TYPE_CHECKING:
     from btensor import Tensor, BasisInterface
+    EinsumOperandT: TypeAlias = Union[Tensor, TensorSum]
 
 
 class Einsum:
@@ -68,11 +69,15 @@ class Einsum:
         assert (basis_target is not None)
         return basis_target
 
-    def __call__(self, *operands: Tensor | TensorSum, **kwargs) -> Tensor | TensorSum:
-        if len(self.labels) != len(operands):
-            raise ValueError("invalid number of operands")
+    @overload
+    def __call__(self, *operands: Tensor, **kwargs) -> Tensor: ...
 
-        # Support for TensorSum via recursion
+    def __call__(self, *operands: EinsumOperandT, **kwargs: Any) -> EinsumOperandT:
+        if len(self.labels) != len(operands):
+            raise ValueError(f"{len(operands)} operands provided, but {len(self.labels)} specified in subscript string")
+
+        # Support for TensorSums in operands via recursion.
+        # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
         tensorsums = [(idx, list(op)) for idx, op in enumerate(operands) if isinstance(op, TensorSum)]
         if tensorsums:
             tensorsums_positions, tensorsums = zip(*tensorsums)
@@ -121,7 +126,12 @@ class Einsum:
         return cls(values, basis_out)
 
 
-def einsum(subscripts: str, *operands: Tensor | TensorSum, einsumfunc: Callable = np.einsum, **kwargs) -> Tensor:
+@overload
+def einsum(subscripts: str, *operands: Tensor, einsumfunc: Callable = np.einsum, **kwargs: Any) -> Tensor: ...
+
+
+def einsum(subscripts: str, *operands: EinsumOperandT, einsumfunc: Callable = np.einsum,
+           **kwargs: Any) -> EinsumOperandT:
     """Allows contraction of Array objects using Einstein notation.
 
     The overlap matrices between non-matching dimensions are automatically added.

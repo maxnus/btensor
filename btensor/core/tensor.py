@@ -35,13 +35,13 @@ class Tensor:
 
     def __init__(self,
                  data: ArrayLike,
-                 basis: TBasis | None= None,
+                 basis: TBasis | None = None,
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
                  copy_data: bool = True) -> None:
         data = np.array(data, copy=copy_data)
-        #if data.dtype not in self.SUPPORTED_DTYPE:
-        #    raise ValueError(f'dtype {data.dtype} not supported.')
+        if data.dtype not in self.SUPPORTED_DTYPE:
+            raise ValueError(f"dtype {data.dtype} is not supported")
         data.flags.writeable = False
         self._data = data
         self.name = name
@@ -50,7 +50,6 @@ class Tensor:
         if variance is None:
             variance = data.ndim * [self.DEFAULT_VARIANCE]
         variance = tuple(variance)
-
         basis = BasisTuple.create(basis)
         self._basis = basis
         self._variance = variance
@@ -65,8 +64,8 @@ class Tensor:
         attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
         return f'{type(self).__name__}({attrs})'
 
-    def copy(self) -> Tensor:
-        return type(self)(self._data, basis=self.basis, copy_data=True)
+    def copy(self, name: str | None = None, copy_data: bool = True) -> Tensor:
+        return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
 
     # --- Basis
 
@@ -119,8 +118,6 @@ class Tensor:
         """String representation of variance tuple."""
         symbols = {1: '+', -1: '-', 0: '*'}
         return ''.join(symbols[x] for x in self.variance)
-
-    # ---
 
     @staticmethod
     def _get_basis_transform(basis1: TBasis, basis2: TBasis, variance: tuple[int, int]):

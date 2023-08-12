@@ -14,7 +14,7 @@
 
 import numpy as np
 
-from btensor import TensorSum, einsum
+from btensor import TensorSum
 from helper import TestCase
 
 

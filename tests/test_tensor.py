@@ -27,28 +27,28 @@ class TestTensor(TestCase):
 
     def test_repr(self, tensor_or_array):
         tensor = tensor_or_array[0]
-        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, variance= {tensor.variance})'
+        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, dtype= {tensor.dtype})'
         assert repr(tensor) == expected
 
     def test_data_copy(self, tensor_cls, np_array):
         data = np_array.copy()
         tensor = tensor_cls(data)
         data[:] = 0
-        assert np.all(tensor == np_array)
+        assert np.all(tensor.to_numpy() == np_array)
 
     def test_tensor_copy(self, tensor_cls, np_array):
         tensor = tensor_cls(np_array)
         tensor_copy = tensor.copy()
         tensor_copy._data.flags.writeable = True
         tensor_copy._data[:] = 0
-        assert np.all(tensor == np_array)
+        assert np.all(tensor.to_numpy() == np_array)
 
     def test_data_copy_nocopy(self, tensor_cls, np_array):
         data = np_array.copy()
         tensor = tensor_cls(data, copy_data=False)
         data.flags.writeable = True
         data[:] = 0
-        assert np.all(tensor == 0)
+        assert np.all(tensor.to_numpy() == 0)
 
     def test_data_copy_nocopy_raises(self, tensor_cls, np_array):
         data = np_array.copy()
