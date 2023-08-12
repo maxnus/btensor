@@ -124,8 +124,6 @@ class Basis(BasisInterface):
             name = f'Basis{self._id}'
         self.name = name
         self._matrix = self.definition_to_matrix(definition)
-        if self.size == 0:
-            raise ValueError("Cannot construct empty basis")
         if metric is None:
             if orthonormal or self.is_root():
                 metric = IdentityMatrix(self.size)

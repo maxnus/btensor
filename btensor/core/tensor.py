@@ -149,7 +149,7 @@ class Tensor:
         if not isinstance(key, tuple):
             raise index_error
         for bas in key:
-            if not isinstance(bas, Basis) or bas in (slice(None), Ellipsis):
+            if not (isinstance(bas, Basis) or bas in (slice(None), Ellipsis)):
                 raise index_error
 
         return self.project(key)
