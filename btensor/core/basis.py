@@ -187,11 +187,6 @@ class Basis(BasisInterface):
     @property
     def root(self) -> Basis | None:
         return self._root
-        #if self.parent is None:
-        #    return None
-        #if self.parent.root is None:
-        #    return self.parent
-        #return self.parent.root
 
     @property
     def matrix(self) -> Matrix:

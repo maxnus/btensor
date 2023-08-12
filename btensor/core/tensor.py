@@ -136,7 +136,7 @@ class Tensor:
         if not isinstance(key, tuple):
             raise index_error
         for bas in key:
-            if not isinstance(bas, Basis) or key in (slice(None), Ellipsis):
+            if not isinstance(bas, Basis) or bas in (slice(None), Ellipsis):
                 raise index_error
 
         return self.project(key)
@@ -150,6 +150,8 @@ class Tensor:
         a purely occupied quantitiy in a purely virtual basis.
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
+        if basis == self.basis:
+            return self
 
         subscripts = string.ascii_lowercase[:self.ndim]
         operands = [self._data]
