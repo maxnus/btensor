@@ -34,7 +34,7 @@ class BasisTuple(tuple):
                                 f"(not {arg})")
 
     @classmethod
-    def create(cls, basis: TBasis) -> Self:
+    def create(cls, basis: TBasis) -> BasisTuple:
         if isinstance(basis, cls):
             return basis
         if not isinstance(basis, tuple):
@@ -44,8 +44,8 @@ class BasisTuple(tuple):
     @classmethod
     def create_from_default(cls,
                             basis: KeyLike | tuple[KeyLike, ...],
-                            default: Self,
-                            leftpad: bool = False) -> Self:
+                            default: BasisTuple,
+                            leftpad: bool = False) -> BasisTuple:
         if basis == slice(None) or basis == Ellipsis:
             return default
         if isinstance(basis, slice):
@@ -81,15 +81,15 @@ class BasisTuple(tuple):
     def __getitem__(self, key: int) -> BasisInterface: ...
 
     @overload
-    def __getitem__(self, key: slice) -> Self: ...
+    def __getitem__(self, key: slice) -> BasisTuple: ...
 
-    def __getitem__(self, key: int | slice) -> BasisInterface | Self:
+    def __getitem__(self, key: int | slice) -> BasisInterface | BasisTuple:
         result = super().__getitem__(key)
         if isinstance(result, tuple):
             return type(self)(result)
         return result
 
-    def is_compatible_with(self, other: Self) -> bool:
+    def is_compatible_with(self, other: BasisTuple) -> bool:
         if len(self) != len(other):
             return False
         for bas_self, bas_other in zip(self, other):
@@ -97,17 +97,17 @@ class BasisTuple(tuple):
                 return False
         return True
 
-    def get_root_basistuple(self) -> Self:
+    def get_root_basistuple(self) -> BasisTuple:
         return type(self)(basis.root for basis in self)
 
-    def get_common_basistuple(self, other: Self) -> Self:
+    def get_common_basistuple(self, other: BasisTuple) -> BasisTuple:
         if not self.is_compatible_with(other):
             raise ValueError
         common_parents = tuple(get_common_parent(basis_self, basis_other)
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 
-    def update_with(self, update: tuple[Optional[BasisInterface]], check_size: bool = True) -> Self:
+    def update_with(self, update: tuple[Optional[BasisInterface]], check_size: bool = True) -> BasisTuple:
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError
@@ -119,9 +119,7 @@ class BasisTuple(tuple):
             new_basis[axis] = b1
         return BasisTuple.create(tuple(new_basis))
 
-    # ---
-
-    def is_spanning(self, other: Self) -> bool:
+    def is_spanning(self, other: BasisTuple) -> bool:
         for basis_self, basis_other in zip(self, other):
             if is_nobasis(basis_other):
                 continue

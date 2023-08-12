@@ -22,9 +22,11 @@ if TYPE_CHECKING:
 
 
 class TensorSum:
+    """Class for delayed tensor addition."""
 
-    def __init__(self, tensors: list[Tensor]) -> None:
+    def __init__(self, tensors: list[Tensor], allow_combine: bool = False) -> None:
         self._tensors = []
+        self._allow_combine = allow_combine
         for tensor in tensors:
             self.add_tensor(tensor)
 
@@ -35,7 +37,9 @@ class TensorSum:
     def tensors(self) -> List[Tensor]:
         return self._tensors
 
-    def add_tensor(self, tensor: Tensor, allow_combine: bool = False) -> None:
+    def add_tensor(self, tensor: Tensor, allow_combine: bool | None = None) -> None:
+        if allow_combine is None:
+            allow_combine = self._allow_combine
         if len(self):
             if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
                 raise ValueError
@@ -48,6 +52,12 @@ class TensorSum:
 
     def __len__(self) -> int:
         return len(self.tensors)
+
+    @overload
+    def __getitem__(self, item: int) -> Tensor: ...
+
+    @overload
+    def __getitem__(self, item: slice) -> TensorSum: ...
 
     def __getitem__(self, item: int | slice) -> Tensor | TensorSum:
         return self.tensors[item]

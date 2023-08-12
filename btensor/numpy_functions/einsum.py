@@ -16,6 +16,7 @@ from __future__ import annotations
 import copy
 import string
 import itertools
+from numbers import Number
 from typing import *
 
 from loguru import logger
@@ -34,15 +35,16 @@ class Einsum:
         self.subscripts = subscripts.replace(' ', '')
         self.einsumfunc = einsumfunc
         # Setup
-        self.labels, self.result = self._get_labels_and_result()
-        # Sorted set of all indices
-        indices = [x for idx in self.labels for x in idx]
+        self._labels_per_operand, self._result = self._get_labels_per_operand_and_result()
+        # List of ordered, unique labels
         # Remove duplicates while keeping order (sets do not keep order):
-        self.indices = list(dict.fromkeys(indices).keys())
+        labels = [x for idx in self._labels_per_operand for x in idx]
+        self._unique_labels = list(dict.fromkeys(labels).keys())
+        #print(self.subscripts, self._labels_per_operand, self._unique_labels)
 
-    def _get_labels_and_result(self) -> Tuple[List[List[str]], str]:
+    def _get_labels_per_operand_and_result(self) -> Tuple[List[List[str]], str]:
         if '...' in self.subscripts:
-            raise NotImplementedError("... not currently supported")
+            raise NotImplementedError("... in subscripts not currently supported")
         if '->' in self.subscripts:
             labels, result = self.subscripts.split('->')
         else:
@@ -52,29 +54,37 @@ class Einsum:
         labels = [list(label) for label in labels.split(',')]
         return labels, result
 
-    def _get_free_indices(self) -> List[str]:
-        return sorted(set(string.ascii_letters).difference(set(self.indices)))
+    def _get_free_labels(self) -> List[str]:
+        return sorted(set(string.ascii_letters).difference(set(self._unique_labels)))
 
-    @staticmethod
-    def _get_basis_target(index: str, operands: Tuple[Tensor, ...], labels: List[List[str]]) -> BasisInterface:
-        # Find smallest basis for given idx:
-        basis_target = None
-        for i, label in enumerate(labels):
-            # The index might appear multiple times per label -> loop over positions
-            positions = np.asarray(np.asarray(label) == index).nonzero()[0]
-            for pos in positions:
-                basis_current = operands[i].basis[pos]
-                if basis_target is None or (basis_current.size < basis_target.size):
-                    basis_target = basis_current
-        assert (basis_target is not None)
-        return basis_target
+    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...]) -> Dict[str, BasisInterface]:
+        basis_per_label = {}
+        for unique_label in self._unique_labels:
+            basis: BasisInterface | None = None
+            is_output = unique_label in self._result
+            for operand, operand_labels in zip(operands, self._labels_per_operand):
+                # The index might appear multiple times per label -> loop over positions
+                positions: List[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
+                for position in positions:
+                    current_basis = operand.basis[position]
+                    if basis is None:
+                        basis = current_basis
+                    elif is_output:
+                        # Label is in output: find spanning basis
+                        basis = basis.get_common_parent(current_basis)
+                    elif current_basis.size < basis.size:
+                        # Label is contracted: find smallest basis
+                        basis = current_basis
+            assert (basis is not None)
+            basis_per_label[unique_label] = basis
+        return basis_per_label
 
     @overload
-    def __call__(self, *operands: Tensor, **kwargs) -> Tensor: ...
+    def __call__(self, *operands: Tensor, **kwargs: Any) -> Tensor: ...
 
-    def __call__(self, *operands: EinsumOperandT, **kwargs: Any) -> EinsumOperandT:
-        if len(self.labels) != len(operands):
-            raise ValueError(f"{len(operands)} operands provided, but {len(self.labels)} specified in subscript string")
+    def __call__(self, *operands: EinsumOperandT, intersect_tol: Number = 0, **kwargs: Any) -> EinsumOperandT:
+        if len(self._labels_per_operand) != len(operands):
+            raise ValueError(f"{len(operands)} operands provided, but {len(self._labels_per_operand)} specified in subscript string")
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
@@ -91,37 +101,33 @@ class Einsum:
                 result.append(Einsum(self.subscripts, self.einsumfunc)(*ops, **kwargs))
             return TensorSum(result)
 
-        free_indices = self._get_free_indices()
-        labels_out = copy.deepcopy(self.labels)
+        free_labels = self._get_free_labels()
+        labels_out = copy.deepcopy(self._labels_per_operand)
         # Loop over all indices
         overlaps = []
-        basis_per_index = {}
-        for index in self.indices:
-            # Find smallest basis for given idx:
-            basis_target = self._get_basis_target(index, operands, self.labels)
-            basis_per_index[index] = basis_target
-
+        basis_per_label = self._get_basis_per_label(operands)
+        for unique_label, basis_target in basis_per_label.items():
             # Replace all other bases corresponding to the same index:
-            for i, label in enumerate(self.labels):
-                positions = np.asarray(np.asarray(label) == index).nonzero()[0]
+            for i, label in enumerate(self._labels_per_operand):
+                positions = np.asarray(np.asarray(label) == unique_label).nonzero()[0]
                 for pos in positions:
                     basis_current = operands[i].basis[pos]
                     # If the bases are the same, continue, to avoid inserting an unnecessary identity matrix:
                     if basis_current == basis_target:
                         continue
                     # Add transformation from basis_current to basis_target:
-                    index_new = free_indices.pop(0)
-                    labels_out[i][pos] = index_new
-                    labels_out.append([index_new, index])
+                    label_new = free_labels.pop(0)
+                    labels_out[i][pos] = label_new
+                    labels_out.append([label_new, unique_label])
                     overlaps.append(basis_current.get_overlap(basis_target).to_numpy(copy=False))
 
         # Return
         subscripts_out = ','.join([''.join(label) for label in labels_out])
-        subscripts_out = '->'.join((subscripts_out, self.result))
+        subscripts_out = '->'.join((subscripts_out, self._result))
         operands_out = [op.to_numpy(copy=False) for op in operands]
         operands_out.extend(overlaps)
         values = self.einsumfunc(subscripts_out, *operands_out, **kwargs)
-        basis_out = tuple([basis_per_index[idx] for idx in self.result])
+        basis_out = tuple([basis_per_label[idx] for idx in self._result])
         cls = type(operands[0])
         return cls(values, basis_out)
 

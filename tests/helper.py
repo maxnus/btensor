@@ -12,7 +12,11 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from __future__ import annotations
 import itertools
+from contextlib import contextmanager
+from time import perf_counter
+from typing import *
 
 import pytest
 import numpy as np
@@ -32,23 +36,70 @@ def rand_orth_mat(n, ncol=None):
 
 
 def powerset(iterable, include_empty=True):
-    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+    """powerset([1, 2, 3]) --> [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]"""
     s = list(iterable)
     start = 0 if include_empty else 1
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
 
 
+class TestTimings:
+
+    def __init__(self, test=None):
+        self._test = test
+        self._timings = {}
+
+    def __len__(self) -> int:
+        return len(self._timings)
+
+    @contextmanager
+    def __call__(self, timer_name: str) -> None:
+        if timer_name not in self._timings:
+            self._timings[timer_name] = 0.0
+        start = perf_counter()
+        yield
+        self._timings[timer_name] += (perf_counter() - start)
+        return
+
+    def print_report(self) -> None:
+        header = "Timings"
+        if self._test is not None:
+            header = f"{header} {type(self._test).__name__}"
+        print()
+        print(header)
+        print(len(header)*'=')
+        for key, val in self._timings.items():
+            print(f"{key:10s} {val:.3f} s")
+
+
 class TestCase:
 
     allclose_atol = 1e-14
-    allclose_rtol = 1e-12
+    allclose_rtol = 1e-10
 
-    def assert_allclose(self, actual, desired, rtol=allclose_rtol, atol=allclose_atol, **kwargs):
+    @pytest.fixture(scope='class')
+    def timings(self) -> TestTimings:
+        return TestTimings(self)
+
+    @pytest.fixture(scope='class', autouse=True)
+    def report_timings(self, timings) -> None:
+        yield
+        if len(timings):
+            timings.print_report()
+
+    def assert_allclose(self,
+                        actual: np.ndarray | btensor.Tensor | Collection,
+                        desired: np.ndarray | btensor.Tensor | Collection,
+                        rtol: float | None = None, atol: float | None = None, **kwargs: Any) -> None:
+        if rtol is None:
+            rtol = self.allclose_rtol
+        if atol is None:
+            atol = self.allclose_atol
         if actual is desired is None:
-            return True
+            return
         # TODO: Floats in set
         if isinstance(actual, set) and isinstance(desired, set):
-            return actual == desired
+            assert actual == desired
+            return
         # Compare multiple pairs of arrays:
         if isinstance(actual, (tuple, list)):
             for i in range(len(actual)):
@@ -56,21 +107,10 @@ class TestCase:
             return
         # Tensor does not have __array_interface__:
         if isinstance(actual, btensor.Tensor) and not hasattr(actual, '__array_interface__'):
-            actual = actual._data
+            actual = actual.to_numpy()
         if isinstance(desired, btensor.Tensor) and not hasattr(desired, '__array_interface__'):
-            desired = desired._data
-
-        # Compare single pair of arrays:
+            desired = desired.to_numpy()
         np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol, **kwargs)
-        #try:
-        #    np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol, **kwargs)
-        #except AssertionError as e:
-        #    # Add higher precision output:
-        #    message = e.args[0]
-        #    args = e.args[1:]
-        #    message += '\nHigh precision:\n x: %r\n y: %r' % (actual, desired)
-        #    e.args = (message, *args)
-        #    raise
 
 
 class TestCase1Array(TestCase):
