@@ -14,10 +14,8 @@
 
 __version__ = '0.0.0'
 
-import sys
-
 from loguru import logger
-#logger.disable('btensor')
+logger.disable('btensor')
 #logger.configure(
 #    handlers=[
 #        dict(sink=sys.stderr, format="[{time}] {message}", colors=True),

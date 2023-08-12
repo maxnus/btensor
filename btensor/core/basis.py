@@ -166,9 +166,6 @@ class Basis(BasisInterface):
     def __repr__(self) -> str:
         return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
 
-    def __str__(self) -> str:
-        return self.name
-
     @property
     def size(self) -> int:
         """Number of basis functions."""
