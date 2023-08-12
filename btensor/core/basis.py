@@ -112,6 +112,12 @@ class Basis(BasisInterface):
                  orthonormal: bool = False) -> None:
         super().__init__()
         self._parent = parent
+        if parent is None:
+            self._root = None
+        elif parent.root is None:
+            self._root = parent
+        else:
+            self._root = parent.root
         self._id = self._get_next_id()
         if name is None:
             name = f'Basis{self._id}'
@@ -180,11 +186,12 @@ class Basis(BasisInterface):
 
     @property
     def root(self) -> Basis | None:
-        if self.parent is None:
-            return None
-        if self.parent.root is None:
-            return self.parent
-        return self.parent.root
+        return self._root
+        #if self.parent is None:
+        #    return None
+        #if self.parent.root is None:
+        #    return self.parent
+        #return self.parent.root
 
     @property
     def matrix(self) -> Matrix:

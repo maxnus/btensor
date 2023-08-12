@@ -183,7 +183,7 @@ class Tensor:
             result[i] = subnew
 
         basis_out = tuple(basis_out)
-        subscripts += '->%s' % (''.join(result))
+        subscripts += '->' + (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
         return type(self)(value, basis=basis_out)
 
