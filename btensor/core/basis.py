@@ -237,7 +237,7 @@ class Basis(BasisInterface):
 
         # Caching
         cache_key = (other.id, tol)
-        if (cached := self.root._intersect_cache.get(cache_key, None)) is not None:
+        if (cached := self._intersect_cache.get(cache_key, None)) is not None:
             logger.debug("returning cached result")
             return cached
 
