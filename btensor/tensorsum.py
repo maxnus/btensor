@@ -33,6 +33,15 @@ class TensorSum:
     def __repr__(self) -> str:
         return f"{type(self).__name__}(size= {len(self)})"
 
+    def info(self) -> str:
+        info = f"{repr(self)} ["
+        if len(self.tensors):
+            info += "\n"
+        for tensor in self.tensors:
+            info += f"    {repr(tensor)},\n"
+        info += "]\n"
+        return info
+
     @property
     def tensors(self) -> List[Tensor]:
         return self._tensors
