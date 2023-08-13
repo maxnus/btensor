@@ -134,8 +134,7 @@ class Basis(BasisInterface):
         elif isinstance(metric, np.ndarray):
             metric = SymmetricMatrix(metric)
         self._metric = metric
-        if self.is_root:
-            self._intersect_cache = {}
+        self._intersect_cache = {}
 
     def definition_to_matrix(self, definition: BasisDefinitionT) -> Matrix:
         # Root basis:
@@ -228,7 +227,6 @@ class Basis(BasisInterface):
 
     def make_intersect_basis(self,
                              *other: Basis,
-                             parent: str = 'smaller',
                              tol: float = 1e-12,
                              name: str | None = None,
                              cache: bool = True) -> Basis:
@@ -238,15 +236,10 @@ class Basis(BasisInterface):
         other = other[0]
 
         # Caching
-        cache_key = (frozenset({self.id, other.id}), tol)
+        cache_key = (other.id, tol)
         if (cached := self.root._intersect_cache.get(cache_key, None)) is not None:
+            logger.debug("returning cached result")
             return cached
-
-        basis_p, basis_q = (self, other)
-        if parent == 'other' or (parent == 'smaller' and len(other) < len(self)):
-            basis_p, basis_q = basis_q, basis_p
-        elif parent not in {'self', 'smaller'}:
-            raise ValueError(f"invalid value for 'parent': {parent}")
 
         # Alternative method (works only for orthonormal basis?)
         #m = parent.get_transformation_to(non_parent).to_numpy()
@@ -254,19 +247,20 @@ class Basis(BasisInterface):
         #u = u[:, s >= 1-tol]
         #return parent.make_basis(u, name=name, orthonormal=parent.is_orthonormal)
 
-        s = basis_p.get_overlap(basis_q).to_numpy()
-        if basis_q.is_orthonormal:
+        s = self.get_overlap(other).to_numpy()
+        if other.is_orthonormal:
             p = np.dot(s, s.T)
         else:
-            p = np.linalg.multi_dot([s, basis_q.metric.inverse.to_numpy(), s.T])
-        e, v = scipy.linalg.eigh(p, b=basis_p.metric.to_numpy())
-        logger.debug("eigenvalues: {}", e)
+            p = np.linalg.multi_dot([s, other.metric.inverse.to_numpy(), s.T])
+        e, v = scipy.linalg.eigh(p, b=self.metric.to_numpy())
+        logger.debug("tolerance= {}, eigenvalues= {}", tol, e)
         v = v[:, e >= tol]
-        basis_out = basis_p.make_subbasis(v, name=name, orthonormal=basis_p.is_orthonormal)
-        logger.debug("basis sizes: Basis1= {}, Basis2= {}, Output= {}", len(self), len(other), len(basis_out))
+        intersect = self.make_subbasis(v, name=name, orthonormal=self.is_orthonormal)
+        logger.debug("basis sizes: self= {}, other= {}, intersect= {}", len(self), len(other), len(intersect))
         if cache:
-            self.root._intersect_cache[cache_key] = basis_out
-        return basis_out
+            logger.debug("storing result in cache")
+            self._intersect_cache[cache_key] = intersect
+        return intersect
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
         """Projector onto self in basis."""
