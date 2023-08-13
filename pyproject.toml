@@ -23,7 +23,6 @@ classifiers = [
 dependencies = [
     "numpy>=1.19.0",
     "scipy>=1.1.0",
-    "pytest",
     "loguru",
 ]
 
@@ -39,3 +38,7 @@ where = ["src"]
 
 [tools.setuptools.dynamic]
 version = {attr = "btensor.__version__"}
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+pythonpath = "tests"
