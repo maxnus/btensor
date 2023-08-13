@@ -12,6 +12,8 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import os
+
 import pytest
 import numpy as np
 from mpi4py import MPI
@@ -19,7 +21,8 @@ from mpi4py import MPI
 from helper import TestCase
 
 
-MPI_SIZE = 4
+# As set in tox.ini
+MPI_SIZE = int(os.getenv('MPI_TEST_SIZE', 1))
 
 
 @pytest.mark.mpi
@@ -35,6 +38,9 @@ class TestMPI(TestCase):
 
     def test_size(self, comm):
         assert comm.size == MPI_SIZE
+
+    def test_rank(self, comm):
+        assert 0 <= comm.rank < MPI_SIZE
 
     def test_bcast(self, comm, root):
         rng = np.random.default_rng(0)
