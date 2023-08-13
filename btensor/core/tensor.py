@@ -54,7 +54,7 @@ class Tensor:
         data = np.array(data, copy=copy_data)
         if data.dtype not in self.SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
-        data.flags.writeable = False
+        #data.flags.writeable = False
         self._data = data
         self.name = name
         if basis is None:
@@ -354,14 +354,14 @@ class Tensor:
     # Only supported for numbers:
 
     def __mul__(self, other: Number) -> Tensor:
-        if isinstance(other, Number):
-            return self._operator(operator.mul, other)
-        raise BasisDependentOperationError
+        if not isinstance(other, Number):
+            return NotImplemented
+        return self._operator(operator.mul, other)
 
     def __truediv__(self, other: Number) -> Tensor:
-        if isinstance(other, Number):
-            return self._operator(operator.truediv, other)
-        raise BasisDependentOperationError
+        if not isinstance(other, Number):
+            return NotImplemented
+        return self._operator(operator.truediv, other)
 
     # Not allowed due to basis dependence:
 

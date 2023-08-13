@@ -13,6 +13,8 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
+from numbers import Number
 from typing import *
 
 import numpy as np
@@ -96,3 +98,23 @@ class TensorSum:
             else:
                 out.append(tensor.dot(other))
         return out
+
+    def __add__(self, other: Tensor) -> TensorSum:
+        if not isinstance(other, Tensor):
+            return NotImplemented
+        return TensorSum(self.tensors + [other])
+
+    def __sub__(self, other: Tensor) -> TensorSum:
+        if not isinstance(other, Tensor):
+            return NotImplemented
+        return self + (-other)
+
+    def __mul__(self, other: Number) -> TensorSum:
+        if not isinstance(other, Number):
+            return NotImplemented
+        return TensorSum([t*other for t in self.tensors])
+
+    def __truediv__(self, other: Number) -> TensorSum:
+        if not isinstance(other, Number):
+            return NotImplemented
+        return TensorSum([t/other for t in self.tensors])
