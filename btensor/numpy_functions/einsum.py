@@ -94,12 +94,12 @@ class Einsum:
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
-        tensorsums = [(idx, list(op)) for idx, op in enumerate(operands) if isinstance(op, TensorSum)]
+        tensorsums = [(idx, op.to_list()) for idx, op in enumerate(operands) if isinstance(op, TensorSum)]
         if tensorsums:
-            tensorsums_positions, tensorsums = zip(*tensorsums)
+            tensorsums_positions, tensor_lists = zip(*tensorsums)
             result = []
             # Loop over all combinations of tensors from the various TensorSums:
-            for tensors in itertools.product(*tensorsums):
+            for tensors in itertools.product(*tensor_lists):
                 ops = list(operands)
                 for tensorsum_idx, pos in enumerate(tensorsums_positions):
                     ops[pos] = tensors[tensorsum_idx]

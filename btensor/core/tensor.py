@@ -22,7 +22,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from .basis import Basis, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, TBasis
+from .basis import Basis, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, BasisT
 from .basistuple import BasisTuple
 from btensor import numpy_functions
 
@@ -35,7 +35,7 @@ class ChangeBasisInterface:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.tensor})"
 
-    def __getitem__(self, key: TBasis) -> Tensor:
+    def __getitem__(self, key: BasisT) -> Tensor:
         return self.tensor.change_basis(key)
 
 
@@ -47,7 +47,7 @@ class Tensor:
 
     def __init__(self,
                  data: ArrayLike,
-                 basis: TBasis | None = None,
+                 basis: BasisT | None = None,
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
                  copy_data: bool = True) -> None:
@@ -133,28 +133,28 @@ class Tensor:
         return ''.join(symbols[x] for x in self.variance)
 
     @staticmethod
-    def _get_basis_transform(basis1: TBasis, basis2: TBasis, variance: tuple[int, int]):
+    def _get_basis_transform(basis1: BasisT, basis2: BasisT, variance: tuple[int, int]):
         return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
 
-    def __getitem__(self, key: slice | Ellipsis | TBasis) -> Tensor:
+    def __getitem__(self, key: slice | Ellipsis | BasisT) -> Tensor:
         if (isinstance(key, slice) and key == slice(None)) or key is Ellipsis:
             return self
         if isinstance(key, Basis):
             key = (key,)
 
-        index_error = IndexError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
-                                 f'{type(self).__name__} class. '
-                                 f'Use Array class to index using integers, slices, and integer or boolean arrays')
+        type_error = TypeError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
+                               f'{type(self).__name__} class. '
+                               f'Use Array class to index using integers, slices, and integer or boolean arrays')
 
         if not isinstance(key, tuple):
-            raise index_error
+            raise type_error
         for bas in key:
             if not (isinstance(bas, Basis) or bas in (slice(None), Ellipsis)):
-                raise index_error
+                raise type_error
 
         return self.project(key)
 
-    def project(self, basis: TBasis) -> Tensor:
+    def project(self, basis: BasisT) -> Tensor:
         """Transform to different set of basis.
 
         Slice(None) can be used to indicate no transformation.
@@ -204,7 +204,7 @@ class Tensor:
 
     # --- Change of basis
 
-    def change_basis(self, basis: TBasis) -> Tensor:
+    def change_basis(self, basis: BasisT) -> Tensor:
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
             raise BasisError(f"{basis} does not span {self.basis}")
@@ -220,13 +220,13 @@ class Tensor:
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.change_basis(basis_new)
 
-    def __or__(self, basis: TBasis) -> Tensor:
+    def __or__(self, basis: BasisT) -> Tensor:
         """To allow basis transformation as (array | basis)"""
         # Left-pad with slice(None), such that the basis transformation applies to the last n axes
         basis = BasisTuple.create_from_default(basis, default=self.basis, leftpad=True)
         return self.change_basis(basis)
 
-    def __ror__(self, basis: TBasis) -> Tensor:
+    def __ror__(self, basis: BasisT) -> Tensor:
         """To allow basis transformation as (basis | array)"""
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         return self.change_basis(basis)
@@ -262,7 +262,7 @@ class Tensor:
         return self._data.shape
 
     def to_numpy(self,
-                 basis: TBasis | None = None,
+                 basis: BasisT | None = None,
                  project: bool = False,
                  copy: bool = True) -> np.ndarray:
         """Convert to NumPy ndarray"""

@@ -66,8 +66,8 @@ class BasisInterface:
         return self.id
 
 
-TBasis: TypeAlias = Union[BasisInterface, Sequence[BasisInterface]]
-TBasisDefinition: int | Sequence[int] | Sequence[bool] | slice | np.ndarray
+BasisT: TypeAlias = Union[BasisInterface, Sequence[BasisInterface]]
+BasisDefinitionT: TypeAlias = Union[int, Sequence[int], Sequence[bool], slice, np.ndarray]
 
 
 def compatible_basis(basis1: BasisInterface, basis2: BasisInterface):
@@ -106,7 +106,7 @@ class Basis(BasisInterface):
     __next_id = 1
 
     def __init__(self,
-                 definition: TBasisDefinition,
+                 definition: BasisDefinitionT,
                  parent: Basis | None = None,
                  metric: np.darray | None = None,
                  name: str | None = None,
@@ -137,7 +137,7 @@ class Basis(BasisInterface):
         if self.is_root:
             self._intersect_cache = {}
 
-    def definition_to_matrix(self, definition: TBasisDefinition) -> Matrix:
+    def definition_to_matrix(self, definition: BasisDefinitionT) -> Matrix:
         # Root basis:
         if is_int(definition):
             matrix = IdentityMatrix(definition)

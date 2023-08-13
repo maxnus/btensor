@@ -20,6 +20,7 @@ import numpy as np
 from helper import TestCase
 from conftest import subbasis_definition_to_matrix
 
+from btensor import Tensor
 from btensor.util import BasisDependentOperationError
 
 
@@ -55,6 +56,12 @@ class TestTensor(TestCase):
         tensor_cls(data, copy_data=False)
         with pytest.raises(ValueError):
             data[:] = 0
+
+    def test_tensor_for_loop_raises(self, np_array):
+        tensor = Tensor(np_array)
+        with pytest.raises(TypeError):
+            for element in tensor:
+                pass
 
     @pytest.mark.parametrize('inplace', [True, False])
     def test_replace_basis_inplace(self, tensor_or_array, inplace):
@@ -177,6 +184,6 @@ class TestGetitem(TestCase):
     @pytest.mark.parametrize('key', [0, slice(0, 100), [0], [True]], ids=lambda x: str(x))
     def test_getitem_raises(self, key, tensor):
         tensor = tensor[0]
-        with pytest.raises(IndexError):
+        with pytest.raises(TypeError):
             assert tensor[key]
 

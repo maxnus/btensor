@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import numpy as np
+import pytest
 
 from btensor import TensorSum
 from helper import TestCase
@@ -32,3 +33,11 @@ class TestTensorsum(TestCase):
         tensor_sum = TensorSum([tensor, tensor2])
         lhs = tensor_sum.dot(tensor_sum).evaluate()
         self.assert_allclose(lhs, 4*np.dot(np_array, np_array))
+
+    def test_to_list(self, get_tensor):
+        tensor, np_array = get_tensor(ndim=2)
+        tensor2 = tensor.copy()
+        tensor_sum = TensorSum([tensor, tensor2])
+        expected = tensor_sum.tensors
+        result = tensor_sum.to_list()
+        assert result == expected

@@ -19,7 +19,7 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from .basis import BasisInterface, compatible_basis, is_nobasis, get_common_parent, TBasis
+from .basis import BasisInterface, compatible_basis, is_nobasis, get_common_parent, BasisT
 
 
 KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
@@ -27,14 +27,14 @@ KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
 
 class BasisTuple(tuple):
 
-    def __init__(self, args: TBasis) -> None:
+    def __init__(self, args: BasisT) -> None:
         for arg in args:
             if not isinstance(arg, BasisInterface):
                 raise TypeError(f"{type(self).__name__} can only contain elements of type {BasisInterface.__name__} "
                                 f"(not {arg})")
 
     @classmethod
-    def create(cls, basis: TBasis) -> BasisTuple:
+    def create(cls, basis: BasisT) -> BasisTuple:
         if isinstance(basis, cls):
             return basis
         if not isinstance(basis, tuple):

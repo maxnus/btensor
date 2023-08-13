@@ -19,6 +19,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from btensor import Tensor
+    from btensor.core.basis import BasisT
 
 
 class TensorSum:
@@ -28,10 +29,10 @@ class TensorSum:
         self._tensors = []
         self._allow_combine = allow_combine
         for tensor in tensors:
-            self.add_tensor(tensor)
+            self.append(tensor)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(size= {len(self)})"
+        return f"{type(self).__name__}(size= {self.size})"
 
     def info(self) -> str:
         info = f"{repr(self)} ["
@@ -46,10 +47,14 @@ class TensorSum:
     def tensors(self) -> List[Tensor]:
         return self._tensors
 
-    def add_tensor(self, tensor: Tensor, allow_combine: bool | None = None) -> None:
+    @property
+    def size(self) -> int:
+        return len(self.tensors)
+
+    def append(self, tensor: Tensor, allow_combine: bool | None = None) -> None:
         if allow_combine is None:
             allow_combine = self._allow_combine
-        if len(self):
+        if self.size:
             if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
                 raise ValueError
         if allow_combine:
@@ -59,30 +64,35 @@ class TensorSum:
                     return
         self.tensors.append(tensor)
 
-    def __len__(self) -> int:
-        return len(self.tensors)
+    def __getitem__(self, key: slice | Ellipsis | BasisT) -> TensorSum:
+        """Call __getitem__ on each tensor individually."""
+        return TensorSum([t[key] for t in self.tensors])
 
-    @overload
-    def __getitem__(self, item: int) -> Tensor: ...
-
-    @overload
-    def __getitem__(self, item: slice) -> TensorSum: ...
-
-    def __getitem__(self, item: int | slice) -> Tensor | TensorSum:
-        return self.tensors[item]
+    def project(self, basis: BasisT, inplace: bool = False) -> TensorSum:
+        """Call project on each tensor individually."""
+        if inplace:
+            for idx, tensor in enumerate(self.tensors):
+                self.tensors[idx] = tensor.project(basis)
+            return self
+        return TensorSum([t.project(basis) for t in self.tensors])
 
     def evaluate(self) -> Tensor:
         return sum(self.tensors)
 
     def to_numpy(self) -> np.ndarray:
+        if self.size == 0:
+            raise RuntimeError(f"{type(self).__name__} is empty")
         return self.evaluate().to_numpy()
+
+    def to_list(self) -> List[Tensor]:
+        return self.tensors.copy()
 
     def dot(self, other: Tensor | TensorSum) -> TensorSum:
         out = TensorSum([])
         for tensor in self.tensors:
             if isinstance(other, TensorSum):
                 for tensor2 in other.tensors:
-                    out.add_tensor(tensor.dot(tensor2))
+                    out.append(tensor.dot(tensor2))
             else:
-                out.add_tensor(tensor.dot(other))
+                out.append(tensor.dot(other))
         return out
