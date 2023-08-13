@@ -19,7 +19,7 @@ import string
 import numpy as np
 
 import btensor as bt
-from btensor.tensorsum import TensorSum
+from btensor import TensorSum
 from helper import TestCase
 
 

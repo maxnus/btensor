@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "btensor"
 version = "0.0.1"
@@ -26,16 +30,12 @@ dependencies = [
 [project.urls]
 source = "https://github.com/maxnus/btensor"
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [tools.setuptools]
-#packages = ["btensor"]
+package-dir = {"" = "src"}
 license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
-where = ["btensor"]
+where = ["src"]
 
 [tools.setuptools.dynamic]
 version = {attr = "btensor.__version__"}

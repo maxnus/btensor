@@ -19,7 +19,6 @@ import pytest
 import numpy as np
 
 import btensor
-import btensor as basis
 from btensor import Tensor, Cotensor
 from helper import TestCase, rand_orth_mat
 from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix
@@ -73,7 +72,7 @@ def cc(mf):
 
 @pytest.fixture(scope='module')
 def ao(mf):
-    return basis.Basis(mf.nao, metric=mf.ovlp, name='AO')
+    return btensor.Basis(mf.nao, metric=mf.ovlp, name='AO')
 
 
 @pytest.fixture(params=[True, False], ids=['OrthKw', ''], scope='module')
@@ -83,7 +82,7 @@ def mo_orthonormal_keyword(request):
 
 @pytest.fixture(scope='module')
 def mo(mf, ao, mo_orthonormal_keyword):
-    return basis.Basis(mf.mo_coeff, parent=ao, name='MO', orthonormal=mo_orthonormal_keyword)
+    return btensor.Basis(mf.mo_coeff, parent=ao, name='MO', orthonormal=mo_orthonormal_keyword)
 
 
 def get_subbasis_definition(subtype, start, stop, size):
@@ -116,7 +115,7 @@ def ao2(request, mf, ao, mo):
     if request.param == 'ao':
         return ao
     r = np.dot(mf.mo_coeff.T, mf.ovlp)
-    return basis.Basis(r, parent=mo)
+    return btensor.Basis(r, parent=mo)
 
 
 @pytest.fixture(params=['left', 'right'], scope='module')
@@ -170,11 +169,11 @@ class TestSCF(TestCase):
 
     def test_ao_mo_projector(self, mf, ao, mo):
         i = np.identity(mf.nao)
-        self.assert_allclose(basis.dot(ao.get_transformation_to(mo), mo.get_transformation_to(ao)), i)
+        self.assert_allclose(btensor.dot(ao.get_transformation_to(mo), mo.get_transformation_to(ao)), i)
 
     def test_mo_ao_projector(self, mf, ao, mo):
         i = np.identity(mf.nao)
-        self.assert_allclose(basis.dot(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
+        self.assert_allclose(btensor.dot(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
 
     def test_ao2mo_ovlp(self, mf, ao, mo, double_or):
         s = Cotensor(mf.ovlp, basis=(ao, ao))
@@ -197,7 +196,7 @@ class TestSCF(TestCase):
         self.assert_allclose(double_or(mo, d, mo), np.diag(mf.mo_occ))
 
     def test_mo2ao_dm(self, mf, ao, mo, double_or):
-        d = basis.Tensor(np.diag(mf.mo_occ), basis=(mo, mo))
+        d = Tensor(np.diag(mf.mo_occ), basis=(mo, mo))
         self.assert_allclose(double_or(ao, d, ao), mf.dm)
 
 
@@ -212,19 +211,19 @@ class TestCC(TestCase):
         dm_ov = dm[occ, vir]
         dm_vo = dm[vir, occ]
         dm_vv = dm[vir, vir]
-        mo = basis.Basis(len(mf.mo_occ))
-        bo = basis.Basis(occ, parent=mo)
-        bv = basis.Basis(vir, parent=mo)
-        bdm_oo = basis.Tensor(dm_oo, basis=(bo, bo))
-        bdm_ov = basis.Tensor(dm_ov, basis=(bo, bv))
-        bdm_vo = basis.Tensor(dm_vo, basis=(bv, bo))
-        bdm_vv = basis.Tensor(dm_vv, basis=(bv, bv))
+        mo = btensor.Basis(len(mf.mo_occ))
+        bo = btensor.Basis(occ, parent=mo)
+        bv = btensor.Basis(vir, parent=mo)
+        bdm_oo = btensor.Tensor(dm_oo, basis=(bo, bo))
+        bdm_ov = btensor.Tensor(dm_ov, basis=(bo, bv))
+        bdm_vo = btensor.Tensor(dm_vo, basis=(bv, bo))
+        bdm_vv = btensor.Tensor(dm_vv, basis=(bv, bv))
         bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
         self.assert_allclose(bdm._data, dm)
 
     @pytest.fixture(scope='class')
     def t2s(self, cc, mo_occ, mo_vir):
-        return basis.Tensor(cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
+        return btensor.Tensor(cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
 
     @pytest.fixture(scope='class')
     def t2b(self, t2s, mo):
