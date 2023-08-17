@@ -25,7 +25,7 @@ import btensor
 from btensor import Basis, Array, Tensor, TensorSum
 
 
-logger.enable('btensor')
+#logger.enable('btensor')
 
 
 class UserSlice:

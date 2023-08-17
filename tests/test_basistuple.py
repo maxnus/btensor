@@ -56,7 +56,6 @@ class TestBasistuple:
     def test_create_from_default_2(self, basis):
         default = BasisTuple((Basis(1), Basis(2), nobasis, Basis(3)))
         result = BasisTuple.create_from_default(basis, default)
-        print(result)
         assert result == default[:1] + BasisTuple(basis[1:]) + default[2:]
 
     @pytest.mark.parametrize('basis', [(slice(None), slice(None), Basis(5)), (slice(None), slice(None), nobasis)],
@@ -64,5 +63,4 @@ class TestBasistuple:
     def test_create_from_default_3(self, basis):
         default = BasisTuple((Basis(1), Basis(2), nobasis, Basis(3)))
         result = BasisTuple.create_from_default(basis, default)
-        print(result)
         assert result == default[:2] + BasisTuple(basis[2:]) + default[3:]
