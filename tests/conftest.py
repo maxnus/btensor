@@ -22,7 +22,7 @@ import numpy as np
 import scipy
 
 import btensor
-from btensor import Basis, Array, Tensor
+from btensor import Basis, Array, Tensor, TensorSum
 
 
 logger.enable('btensor')
@@ -315,17 +315,6 @@ def array_large_atleast2d(shape_large_atleast2d, basis_for_shape_large_atleast2d
     return array, np_array, basis
 
 
-#def tensor_fixture_factory(sizes: list[int]):
-
-#@pytest.fixture(params=sizes, scope='module')
-#def basis_size(request):
-#    return request.param
-#
-#@pytest.fixture(scope='module')
-#def rootbasis(basis_size):
-#    return Basis(basis_size)
-
-
 @pytest.fixture(scope='module')
 def get_tensor_or_array(rootbasis):
     def get_tensor_or_array(ndim: int, tensor_cls: type, number: int = 1, hermitian: bool = False) \
@@ -385,3 +374,10 @@ def tensor_2x(tensor_cls_2x, ndim, rootbasis):
     tensor2 = tensor_cls1(data2, basis=basis)
     return (tensor1, data1), (tensor2, data2)
 
+
+@pytest.fixture(scope='module')
+def get_tensorsum(get_tensor):
+    def get_tensorsum(ndim: int, size: int):
+        tensors = [t[0] for t in get_tensor(ndim, number=size)]
+        return TensorSum(tensors)
+    return get_tensorsum

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 class TensorSum:
     """Class for delayed tensor addition."""
 
-    def __init__(self, tensors: list[Tensor], allow_combine: bool = False) -> None:
+    def __init__(self, tensors: Sequence[Tensor], allow_combine: bool = False) -> None:
         self._tensors = []
         self._allow_combine = allow_combine
         for tensor in tensors:
