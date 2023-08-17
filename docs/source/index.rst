@@ -21,6 +21,7 @@ When performing tensor operations, such as additions or contractions, BTensor wi
 
    motivation
    quickstart
+   api/index
 
 
 Indices and tables

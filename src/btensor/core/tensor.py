@@ -40,10 +40,11 @@ class ChangeBasisInterface:
 
 
 class Tensor:
+    """A numerical container class with support for automatic basis transformation."""
 
-    SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
-                       np.float16, np.float32, np.float64]
-    DEFAULT_VARIANCE = -1
+    _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
+                        np.float16, np.float32, np.float64]
+    _DEFAULT_VARIANCE = -1
 
     def __init__(self,
                  data: ArrayLike,
@@ -52,7 +53,7 @@ class Tensor:
                  name: str | None = None,
                  copy_data: bool = True) -> None:
         data = np.array(data, copy=copy_data)
-        if data.dtype not in self.SUPPORTED_DTYPE:
+        if data.dtype not in self._SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
         #data.flags.writeable = False
         self._data = data
@@ -60,7 +61,7 @@ class Tensor:
         if basis is None:
             basis = data.ndim * (nobasis,)
         if variance is None:
-            variance = data.ndim * [self.DEFAULT_VARIANCE]
+            variance = data.ndim * [self._DEFAULT_VARIANCE]
         variance = tuple(variance)
         basis = BasisTuple.create(basis)
         self._basis = basis
@@ -70,7 +71,7 @@ class Tensor:
 
     def __repr__(self) -> str:
         attrs = dict(shape=self.shape, dtype=self.dtype)
-        if any(np.asarray(self.variance) != self.DEFAULT_VARIANCE):
+        if any(np.asarray(self.variance) != self._DEFAULT_VARIANCE):
             attrs['variance'] = self.variance
         if self.name is not None:
             attrs['name'] = self.name
@@ -78,6 +79,16 @@ class Tensor:
         return f'{type(self).__name__}({attrs})'
 
     def copy(self, name: str | None = None, copy_data: bool = True) -> Tensor:
+        """Create a copy of the tensor.
+
+        Parameters
+        ----------
+        name: Name of the copy
+
+        Returns
+        -------
+        tensor: Copy of tensor
+        """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
 
     # --- Basis
@@ -404,4 +415,4 @@ class Tensor:
 
 class Cotensor(Tensor):
 
-    DEFAULT_VARIANCE = 1
+    _DEFAULT_VARIANCE = 1
