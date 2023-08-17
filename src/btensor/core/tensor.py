@@ -39,6 +39,23 @@ class ChangeBasisInterface:
         return self.tensor.change_basis(key)
 
 
+class RemoteTensor:
+
+    def __init__(self, mpi_rank: int, shape: Tuple[int], dtype: np.dtype, basis: BasisT, variance: Sequence[int]):
+        self._mpi_rank = mpi_rank
+        self._shape = shape
+        self._dtype = dtype
+        self._basis = basis
+        self._variance = variance
+
+    def get(self) -> Tensor:
+        buffer = np.empty(self._shape, self._dtype)
+        # Communicate via RMA
+        ...
+        tensor = Tensor(buffer, basis=self._basis, variance=self._variance)
+        return tensor
+
+
 class Tensor:
 
     SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
@@ -401,6 +418,11 @@ class Tensor:
     def __abs__(self) -> NoReturn:
         raise BasisDependentOperationError
 
+    # --- MPI
+
+    def get_remote_tensor(self) -> RemoteTensor:
+        from mpi4py import MPI
+        remote = RemoteTensor()
 
 class Cotensor(Tensor):
 

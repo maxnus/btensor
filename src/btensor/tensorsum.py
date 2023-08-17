@@ -22,6 +22,7 @@ import numpy as np
 if TYPE_CHECKING:
     from btensor import Tensor
     from btensor.core.basis import BasisT
+    from mpi4py import MPI
 
 
 class TensorSum:
@@ -118,3 +119,21 @@ class TensorSum:
         if not isinstance(other, Number):
             return NotImplemented
         return TensorSum([t/other for t in self.tensors])
+
+    def mpi_syncronize(self, comm: MPI.Intracomm | None = None):
+        from mpi4py import MPI
+        if comm is None:
+            comm = MPI.COMM_WORLD
+
+        import time
+
+        # Collect metadata
+        metadata_local = [(t.shape, t.dtype, t.variance, t.name, *[b.id for b in t.basis]) for t in self.tensors]
+        metadata = comm.allgather(metadata_local)
+        time.sleep(comm.rank)
+        print(f"metadata on rank {comm.rank}:")
+        print(type(metadata))
+        for data in metadata:
+            print(type(data), data)
+
+

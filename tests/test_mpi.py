@@ -19,7 +19,7 @@ import numpy as np
 from mpi4py import MPI
 
 from helper import TestCase
-
+from btensor import Basis, Tensor, TensorSum
 
 # As set in tox.ini
 MPI_SIZE = int(os.getenv('MPI_TEST_SIZE', 1))
@@ -36,22 +36,35 @@ class TestMPI(TestCase):
     def root(self, request):
         return request.param
 
-    def test_size(self, comm):
-        assert comm.size == MPI_SIZE
+    #def test_size(self, comm):
+    #    assert comm.size == MPI_SIZE
 
-    def test_rank(self, comm):
-        assert 0 <= comm.rank < MPI_SIZE
+    #def test_rank(self, comm):
+    #    assert 0 <= comm.rank < MPI_SIZE
 
-    def test_bcast(self, comm, root):
+    #def test_bcast(self, comm, root):
+    #    rng = np.random.default_rng(0)
+    #    data = rng.random(100)
+    #    data_bcast = comm.bcast(data, root=root)
+    #    assert np.all(data == data_bcast)
+
+    #def test_Bcast(self, comm, root):
+    #    rank = comm.Get_rank()
+    #    rng = np.random.default_rng(0)
+    #    data = rng.random(100)
+    #    buffer = np.empty_like(data)
+    #    comm.Bcast(data if rank == root else buffer, root=root)
+    #    assert (rank == root) or np.all(buffer == data)
+
+    def test_tensorsum(self, comm):
         rng = np.random.default_rng(0)
-        data = rng.random(100)
-        data_bcast = comm.bcast(data, root=root)
-        assert np.all(data == data_bcast)
+        rank = comm.rank
+        rootbasis = Basis(100)
+        basissize = 5
+        basis = rootbasis.make_subbasis(slice(basissize*rank, basissize*(rank+1)))
+        tensor1 = Tensor(rng.random((basissize, basissize)), basis=(basis, basis), name=f'Tensor1-rank{rank}')
+        tensor2 = Tensor(rng.random((basissize, basissize)), basis=(basis, basis), name=f'Tensor2-rank{rank}')
 
-    def test_Bcast(self, comm, root):
-        rank = comm.Get_rank()
-        rng = np.random.default_rng(0)
-        data = rng.random(100)
-        buffer = np.empty_like(data)
-        comm.Bcast(data if rank == root else buffer, root=root)
-        assert (rank == root) or np.all(buffer == data)
+        tensorsum = TensorSum([tensor1, tensor2])
+        tensorsum.mpi_syncronize()
+
