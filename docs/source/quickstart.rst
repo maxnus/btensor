@@ -20,11 +20,11 @@ In BTensor_, these bases can be defined according to
     from btensor import Basis
 
     basis1 = Basis(2)
-    tfm = np.asarray([[1, 1/np.sqrt(2)],
-                      [0, 1/np.sqrt(2)]])
-    basis2 = Basis(tfm, parent=basis1)
+    tm = np.asarray([[1, 1/np.sqrt(2)],
+                     [0, 1/np.sqrt(2)]])
+    basis2 = basis1.make_subbasis(tm)
 
-where ``basis1`` represents the euclidian 2D basis, ``tfm`` the transformation matrix, and ``basis2`` the second, non-orthogonal basis.
+where ``basis1`` represents the euclidian 2D basis, ``tm`` the transformation matrix, and ``basis2`` the second, non-orthogonal basis.
 Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the basis is required.
 In contrast, ``basis2`` is defined in terms of a transformation matrix and a parent basis, namely ``basis1``.
 
@@ -65,8 +65,8 @@ can be carried out. For example
 .. code-block:: python
 
     point3 = point1 + point2
-    print(f"Point 3 in basis 1: {point3.to_array(basis=basis1)}")
-    print(f"Point 3 in basis 2: {point3.to_array(basis=basis2)}")
+    print(f"Point 3 in basis 1: {point3.to_numpy(basis=basis1)}")
+    print(f"Point 3 in basis 2: {point3.to_numpy(basis=basis2)}")
 
 returns
 
@@ -120,8 +120,9 @@ Multidimensional Tensors
 In the examples above, we only considered a 1D tensor, with a single associated basis.
 How can we work with higherdimensional tensors? We simply have to work with tuples of ``Basis`` instances, i.e.
 
-.. literalinclude:: ../examples/03-matrix.py
+.. literalinclude:: ../../examples/03-matrix.py
     :linenos:
+    :lines: 15-
 
 Note that ``basis2[1]`` with size 2 only spans a subspace of ``basis1[1]`` with size 3.
 As a result, ``tensor1`` and ``tensor2`` are created using NumPy arrays of different shapes,
