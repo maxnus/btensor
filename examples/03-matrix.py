@@ -17,8 +17,8 @@ from btensor import Basis, Tensor
 
 
 basis1 = (Basis(2), Basis(3))
-basis2 = (Basis([1, 0], parent=basis1[0]),
-          Basis([0, 2], parent=basis1[1]))
+basis2 = (basis1[0].make_subbasis([1, 0]),
+          basis1[1].make_subbasis([0, 2]))
 
 data1 = np.arange(6).reshape(2, 3)
 data2 = np.arange(4).reshape(2, 2)
