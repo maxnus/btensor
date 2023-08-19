@@ -22,7 +22,7 @@ import scipy
 
 from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermutationMatrix, GeneralMatrix,
                           MatrixProductList, is_int, array_like, BasisError)
-from .space import Space
+from btensor.space import Space
 
 
 def _is_nobasis(obj):
@@ -370,4 +370,4 @@ class Basis(BasisInterface):
         return other.get_overlap(self, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
 
-from .tensor import Tensor
+from btensor.core.tensor import Tensor

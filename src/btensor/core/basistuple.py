@@ -19,7 +19,7 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from .basis import BasisInterface, compatible_basis, _is_nobasis, get_common_parent, BasisT
+from btensor.basis import BasisInterface, compatible_basis, _is_nobasis, get_common_parent, BasisT
 
 
 KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]

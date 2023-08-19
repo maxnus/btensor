@@ -21,7 +21,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from btensor import Tensor
-    from btensor.core.basis import BasisT
+    from btensor.basis import BasisT
 
 
 class TensorSum:

@@ -15,7 +15,7 @@
 import numpy as np
 
 from btensor.util import *
-from .basis import Basis
+from btensor.basis import Basis
 from .tensor import Tensor, Cotensor
 from btensor import numpy_functions
 

@@ -20,7 +20,7 @@ from numpy.typing import ArrayLike
 
 import btensor
 from btensor.util import ndot, BasisError, IdentityMatrix
-from btensor.core.basis import _is_nobasis
+from btensor.basis import _is_nobasis
 
 if TYPE_CHECKING:
     from numbers import Number

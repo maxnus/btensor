@@ -12,8 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from .basis import BasisInterface, Basis
-from .basis import nobasis, _is_nobasis, _is_basis
 from .basistuple import BasisTuple
 from .tensor import Tensor, Cotensor
 from .array import Array, Coarray
