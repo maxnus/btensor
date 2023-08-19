@@ -1,12 +1,13 @@
 
 .. _api:
 
-===
-API
-===
+=============
+API Reference
+=============
 
 
 .. autosummary::
-    :toctree: SOMETHING
+    :toctree: generated
 
     btensor.Tensor
+    btensor.Basis

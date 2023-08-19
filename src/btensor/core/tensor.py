@@ -83,11 +83,16 @@ class Tensor:
 
         Parameters
         ----------
-        name: Name of the copy
+        name :
+            Name of the copy.
+        copy_data :
+            If True, a copy of the underlying NumPy data will be performed, otherwise the copied tensor will refer
+            to the same data.
 
         Returns
         -------
-        tensor: Copy of tensor
+        tensor :
+            Copy of tensor
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
 
@@ -297,6 +302,7 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
+        """Transpose tensor."""
         return self.transpose()
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:

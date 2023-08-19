@@ -34,6 +34,7 @@ author = 'Max Nusspickel'
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.napoleon',
+              #'numpydoc',
               'sphinx.ext.autosummary']
 
 templates_path = ['_templates']
