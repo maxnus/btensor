@@ -20,7 +20,7 @@ from numpy.typing import ArrayLike
 
 import btensor
 from btensor.util import ndot, BasisError, IdentityMatrix
-from btensor.core.basis import is_nobasis
+from btensor.core.basis import _is_nobasis
 
 if TYPE_CHECKING:
     from numbers import Number
@@ -37,7 +37,7 @@ def _to_tensor(*args):
 def _empty_factory(numpy_func):
     def func(basis, *args, shape=None, **kwargs):
         if shape is None:
-            if any(is_nobasis(b) for b in basis):
+            if any(_is_nobasis(b) for b in basis):
                 raise ValueError("cannot deduce size of nobasis. Specify shape explicitly")
             shape = tuple(b.size for b in basis)
         return btensor.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)

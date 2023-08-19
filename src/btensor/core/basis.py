@@ -1,12 +1,3 @@
-"""
-Class hierarchy:
-
- BasisInterface
-    ____|____
-   |         |
-NoBasis    Basis
-"""
-
 #     Copyright 2023 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,12 +25,12 @@ from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermuta
 from .space import Space
 
 
-def is_nobasis(obj):
+def _is_nobasis(obj):
     return obj is nobasis
 
 
-def is_basis(obj, allow_nobasis=True):
-    nb = is_nobasis(obj) if allow_nobasis else False
+def _is_basis(obj, allow_nobasis=True):
+    nb = _is_nobasis(obj) if allow_nobasis else False
     return isinstance(obj, Basis) or nb
 
 
@@ -73,15 +64,15 @@ BasisDefinitionT: TypeAlias = Union[int, Sequence[int], Sequence[bool], slice, n
 def compatible_basis(basis1: BasisInterface, basis2: BasisInterface):
     if not (isinstance(basis1, BasisInterface) and isinstance(basis2, BasisInterface)):
         raise TypeError(f"{BasisInterface} required")
-    if is_nobasis(basis1) or is_nobasis(basis2):
+    if _is_nobasis(basis1) or _is_nobasis(basis2):
         return True
     return basis1.is_compatible_with(basis2)
 
 
 def get_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisInterface:
-    if is_nobasis(basis2):
+    if _is_nobasis(basis2):
         return basis1
-    if is_nobasis(basis1):
+    if _is_nobasis(basis1):
         return basis2
     return basis1.get_common_parent(basis2)
 
@@ -295,7 +286,7 @@ class Basis(BasisInterface):
     # --- Methods taking another basis instance
 
     def is_compatible_with(self, other: BasisInterface) -> bool:
-        return is_nobasis(other) or self.same_root(other)
+        return _is_nobasis(other) or self.same_root(other)
 
     def same_root(self, *other: Basis) -> bool:
         roots = np.asarray([basis.root or basis for basis in [self, *other]])

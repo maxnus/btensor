@@ -19,7 +19,7 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from .basis import BasisInterface, compatible_basis, is_nobasis, get_common_parent, BasisT
+from .basis import BasisInterface, compatible_basis, _is_nobasis, get_common_parent, BasisT
 
 
 KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
@@ -114,16 +114,16 @@ class BasisTuple(tuple):
         for axis, (size, b0, b1) in enumerate(zip(self.shape, self, update)):
             if b1 is None:
                 continue
-            if check_size and not is_nobasis(b1) and b1.size != size:
+            if check_size and not _is_nobasis(b1) and b1.size != size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {b1.size}")
             new_basis[axis] = b1
         return BasisTuple.create(tuple(new_basis))
 
     def is_spanning(self, other: BasisTuple) -> bool:
         for basis_self, basis_other in zip(self, other):
-            if is_nobasis(basis_other):
+            if _is_nobasis(basis_other):
                 continue
-            if is_nobasis(basis_self):
+            if _is_nobasis(basis_self):
                 return False
             if basis_other.space > basis_self.space:
                 return False

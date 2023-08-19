@@ -22,12 +22,12 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from .basis import Basis, is_basis, is_nobasis, compatible_basis, nobasis, BasisInterface, BasisT
+from .basis import Basis, _is_basis, _is_nobasis, compatible_basis, nobasis, BasisInterface, BasisT
 from .basistuple import BasisTuple
 from btensor import numpy_functions
 
 
-class ChangeBasisInterface:
+class _ChangeBasisInterface:
 
     def __init__(self, tensor: Tensor) -> None:
         self.tensor = tensor
@@ -67,7 +67,7 @@ class Tensor:
         self._basis = basis
         self._variance = variance
         self.check_basis(basis)
-        self._cob = ChangeBasisInterface(self)
+        self._cob = _ChangeBasisInterface(self)
 
     def __repr__(self) -> str:
         attrs = dict(shape=self.shape, dtype=self.dtype)
@@ -106,9 +106,9 @@ class Tensor:
         if len(basis) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
         for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
-            if not is_basis(baselem):
+            if not _is_basis(baselem):
                 raise ValueError(f"Basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
-            if is_nobasis(baselem):
+            if _is_nobasis(baselem):
                 continue
             if size != baselem.size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
@@ -191,7 +191,7 @@ class Tensor:
                 continue
             basis_out[i] = bas_out
             # Remove or add basis:
-            if is_nobasis(bas_curr) or is_nobasis(bas_out):
+            if _is_nobasis(bas_curr) or _is_nobasis(bas_out):
                 continue
 
             # Avoid evaluating the overlap, if not necessary (e.g. for a permutation matrix)
@@ -227,7 +227,7 @@ class Tensor:
         return self.project(basis)
 
     @property
-    def cob(self) -> ChangeBasisInterface:
+    def cob(self) -> _ChangeBasisInterface:
         return self._cob
 
     def change_basis_at(self, index: int, basis: BasisInterface) -> Tensor:
