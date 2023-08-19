@@ -15,7 +15,7 @@
 import pytest
 
 from btensor import Basis, nobasis
-from btensor.core.basistuple import BasisTuple
+from btensor.basistuple import BasisTuple
 
 
 @pytest.fixture

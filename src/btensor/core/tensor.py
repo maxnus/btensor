@@ -23,7 +23,7 @@ from numpy.typing import ArrayLike
 
 from btensor.util import *
 from btensor.basis import Basis, _is_basis, _is_nobasis, compatible_basis, nobasis, BasisInterface, BasisT
-from .basistuple import BasisTuple
+from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
 
