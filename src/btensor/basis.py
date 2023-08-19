@@ -88,11 +88,20 @@ nobasis = NoBasis()
 
 
 class Basis(BasisInterface):
-    """Basis class.
+    """Class to represent a vector space basis, which can be used to define a Tensor object.
 
     Parameters
     ----------
-    definition: Array, List, Int
+    definition:
+        Integer to create a rootbasis or array to create a derived basis.
+    parent:
+        Parent basis object for the derived basis.
+    metric:
+        Metric array, representing the inner product of the basis with itself.
+    name:
+        Name of the basis.
+    orthonormal:
+        Set True, if the basis is orthonormal.
     """
     __next_id = 1
 

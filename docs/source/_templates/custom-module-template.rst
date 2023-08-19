@@ -22,6 +22,7 @@
 
    .. autosummary::
       :toctree:
+      :template: custom-function-template.rst
    {% for item in functions %}
       {{ item }}
    {%- endfor %}

@@ -12,4 +12,5 @@ API Reference
     :nosignatures:
 
     btensor.basis
+    btensor.space
     btensor.tensor

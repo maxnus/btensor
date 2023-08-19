@@ -39,12 +39,30 @@ class _ChangeBasisInterface:
         return self.tensor.change_basis(key)
 
 
-class Tensor:
-    """A numerical container class with support for automatic basis transformation."""
+DOCSTRING_TEMPLATE = \
+    """A numerical container class with support for automatic basis transformation.
 
+    Parameters
+    ----------
+    data:
+        NumPy array containing the representation of the {name}.
+    basis:
+        Basis object or tuple of Basis objects, representing the Basis along each dimension of the input data.
+    variance:
+        Variance along each dimension. Default: {default_variance}
+    name:
+        Name of the {name}.
+    copy_data:
+        If False, no copy of the NumPy data will be created.
+    """
+
+
+class Tensor:
+
+    _DEFAULT_VARIANCE = -1
+    __doc__ = DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_DEFAULT_VARIANCE)
     _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
                         np.float16, np.float32, np.float64]
-    _DEFAULT_VARIANCE = -1
 
     def __init__(self,
                  data: ArrayLike,
@@ -306,6 +324,21 @@ class Tensor:
         return self.transpose()
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
+        """Returns the sum along diagonals of the tensor.
+
+        Parameters
+        ----------
+        axis1, axis2:
+            Axes to be used as the first and second axis of the 2-D sub-tensors from which the
+            diagonals should be taken. Defaults are the first two axes of the tensor.
+
+        Returns
+        -------
+        traced_tensor:
+            If the tensor is 2-D, the sum along along the diagonal is returned. If the tensor is `N`-D,
+            with `N > 2`, then a `(N-2)-D` tensor of sums along diagonals is returned.
+        """
+
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
     def dot(self, other: Tensor | np.ndarray) -> Tensor:
@@ -422,3 +455,5 @@ class Tensor:
 class Cotensor(Tensor):
 
     _DEFAULT_VARIANCE = 1
+    __doc__ = DOCSTRING_TEMPLATE.format(name="Cotensor", default_variance=_DEFAULT_VARIANCE)
+

@@ -1,4 +1,4 @@
-{{ fullname | escape | underline}}
+{{ name | escape | underline }}
 
 .. currentmodule:: {{ module }}
 
@@ -11,6 +11,8 @@
 
    .. autosummary::
       :toctree:
+      :template: custom-method-template.rst
+      :nosignatures:
    {% for item in methods %}
       ~{{ name }}.{{ item }}
    {%- endfor %}

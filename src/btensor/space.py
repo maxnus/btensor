@@ -26,7 +26,19 @@ if TYPE_CHECKING:
 
 class Space:
 
+    #: Default tolerance applied to eigendecompositions
     DEFAULT_TOL = 1e-12
+
+    __doc__ = f"""A class describing the space spanned by some basis.
+    
+    Parameters
+    ----------
+    basis:
+        Basis which spans the space.
+    tol:
+        Tolerance applied to eigenvalues of an eigendecomposition, in order to determine if a corresponding eigenvector
+        is part of the space or not. Default: {DEFAULT_TOL}.
+    """
 
     def __init__(self, basis: Basis, tol: float = DEFAULT_TOL) -> None:
         self._basis = basis
@@ -34,6 +46,7 @@ class Space:
 
     @property
     def basis(self) -> Basis:
+        """Basis spanning the space."""
         return self._basis
 
     def __repr__(self) -> str:
