@@ -24,7 +24,8 @@ logger.disable('btensor')
 #)
 
 from .basis import BasisInterface, Basis, nobasis
-from .core import Tensor, Cotensor, Array, Coarray
+from .tensor import Tensor, Cotensor
+from .array import Array, Coarray
 
 from .numpy_functions import *
 

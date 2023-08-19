@@ -12,4 +12,4 @@ API Reference
     :nosignatures:
 
     btensor.basis
-    btensor.core.tensor
+    btensor.tensor

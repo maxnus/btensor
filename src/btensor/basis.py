@@ -370,4 +370,4 @@ class Basis(BasisInterface):
         return other.get_overlap(self, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
 
-from btensor.core.tensor import Tensor
+from btensor.tensor import Tensor
