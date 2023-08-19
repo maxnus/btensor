@@ -19,18 +19,18 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from btensor.basis import BasisInterface, compatible_basis, _is_nobasis, get_common_parent, BasisT
+from btensor.basis import IBasis, compatible_basis, _is_nobasis, get_common_parent, BasisT
 
 
-KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
+KeyLike: TypeAlias = Union[IBasis, slice, EllipsisType]
 
 
 class BasisTuple(tuple):
 
     def __init__(self, args: BasisT) -> None:
         for arg in args:
-            if not isinstance(arg, BasisInterface):
-                raise TypeError(f"{type(self).__name__} can only contain elements of type {BasisInterface.__name__} "
+            if not isinstance(arg, IBasis):
+                raise TypeError(f"{type(self).__name__} can only contain elements of type {IBasis.__name__} "
                                 f"(not {arg})")
 
     @classmethod
@@ -78,12 +78,12 @@ class BasisTuple(tuple):
         return tuple(getattr(basis, 'size', None) for basis in self)
 
     @overload
-    def __getitem__(self, key: int) -> BasisInterface: ...
+    def __getitem__(self, key: int) -> IBasis: ...
 
     @overload
     def __getitem__(self, key: slice) -> BasisTuple: ...
 
-    def __getitem__(self, key: int | slice) -> BasisInterface | BasisTuple:
+    def __getitem__(self, key: int | slice) -> IBasis | BasisTuple:
         result = super().__getitem__(key)
         if isinstance(result, tuple):
             return type(self)(result)
@@ -107,7 +107,7 @@ class BasisTuple(tuple):
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 
-    def update_with(self, update: tuple[Optional[BasisInterface]], check_size: bool = True) -> BasisTuple:
+    def update_with(self, update: tuple[Optional[IBasis]], check_size: bool = True) -> BasisTuple:
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError

@@ -162,10 +162,10 @@ class TestSCF(TestCase):
         c = mf.mo_coeff
         s = mf.ovlp
         i = np.identity(mf.nao)
-        self.assert_allclose(ao2.get_overlap(ao2, variance=(-1, -1)), np.linalg.inv(s))
-        self.assert_allclose(mo.get_overlap(mo, variance=(-1, -1)), i)
-        self.assert_allclose(ao2.get_overlap(mo, variance=(-1, -1)), c)
-        self.assert_allclose(mo.get_overlap(ao2, variance=(-1, -1)), c.T)
+        self.assert_allclose(ao2.get_transformation(ao2, variance=(-1, -1)), np.linalg.inv(s))
+        self.assert_allclose(mo.get_transformation(mo, variance=(-1, -1)), i)
+        self.assert_allclose(ao2.get_transformation(mo, variance=(-1, -1)), c)
+        self.assert_allclose(mo.get_transformation(ao2, variance=(-1, -1)), c.T)
 
     def test_ao_mo_projector(self, mf, ao, mo):
         i = np.identity(mf.nao)

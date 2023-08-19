@@ -40,10 +40,12 @@ class Variance:
     CONTRAVARIANT = -1
 
 
-class BasisInterface:
+class IBasis:
+    """Basis interface. Base class of both Basis and NoBasis"""
 
     @property
     def id(self) -> int:
+        """Unique basis ID."""
         raise NotImplementedError
 
     def __repr__(self):
@@ -51,25 +53,36 @@ class BasisInterface:
 
     def __eq__(self, other):
         """Compare if to bases are the same based on their ID."""
-        return isinstance(other, BasisInterface) and hash(self) == hash(other)
+        return isinstance(other, IBasis) and hash(self) == hash(other)
 
     def __hash__(self) -> int:
         return self.id
 
 
-BasisT: TypeAlias = Union[BasisInterface, Sequence[BasisInterface]]
-BasisDefinitionT: TypeAlias = Union[int, Sequence[int], Sequence[bool], slice, np.ndarray]
-
-
-def compatible_basis(basis1: BasisInterface, basis2: BasisInterface):
-    if not (isinstance(basis1, BasisInterface) and isinstance(basis2, BasisInterface)):
-        raise TypeError(f"{BasisInterface} required")
+def compatible_basis(basis1: IBasis, basis2: IBasis):
+    if not (isinstance(basis1, IBasis) and isinstance(basis2, IBasis)):
+        raise TypeError(f"{IBasis} required")
     if _is_nobasis(basis1) or _is_nobasis(basis2):
         return True
     return basis1.is_compatible_with(basis2)
 
 
-def get_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisInterface:
+def get_common_parent(basis1: IBasis, basis2: IBasis) -> IBasis:
+    """Get common parent of two bases.
+
+    Parameters
+    ----------
+    basis1 :
+        Basis 1.
+    basis2 :
+        Basis 2.
+
+    Returns
+    -------
+    IBasis :
+        Common parent of `basis1` and `basis2`. Returns `nobasis` if both bases are equal `nobasis`.
+
+    """
     if _is_nobasis(basis2):
         return basis1
     if _is_nobasis(basis1):
@@ -77,7 +90,7 @@ def get_common_parent(basis1: BasisInterface, basis2: BasisInterface) -> BasisIn
     return basis1.get_common_parent(basis2)
 
 
-class NoBasis(BasisInterface):
+class NoBasis(IBasis):
 
     @property
     def id(self) -> int:
@@ -87,13 +100,17 @@ class NoBasis(BasisInterface):
 nobasis = NoBasis()
 
 
-class Basis(BasisInterface):
+BasisT: TypeAlias = Union[IBasis, Sequence[IBasis]]
+BasisArgument: TypeAlias = Union[Sequence[int], Sequence[bool], slice, np.ndarray]
+
+
+class Basis(IBasis):
     """Class to represent a vector space basis, which can be used to define a Tensor object.
 
     Parameters
     ----------
-    definition:
-        Integer to create a rootbasis or array to create a derived basis.
+    argument:
+        Integer to create a rootbasis or sequence, slice, or array to create a derived basis.
     parent:
         Parent basis object for the derived basis.
     metric:
@@ -102,13 +119,15 @@ class Basis(BasisInterface):
         Name of the basis.
     orthonormal:
         Set True, if the basis is orthonormal.
+
     """
     __next_id = 1
 
     def __init__(self,
-                 definition: BasisDefinitionT,
+                 argument: int | BasisArgument,
+                 *,
                  parent: Basis | None = None,
-                 metric: np.darray | None = None,
+                 metric: np.ndarray | None = None,
                  name: str | None = None,
                  orthonormal: bool = False) -> None:
         super().__init__()
@@ -123,7 +142,7 @@ class Basis(BasisInterface):
         if name is None:
             name = f'Basis{self._id}'
         self.name = name
-        self._matrix = self.definition_to_matrix(definition)
+        self._matrix = self._argument_to_matrix(argument)
         if metric is None:
             if orthonormal or self.is_root():
                 metric = IdentityMatrix(self.size)
@@ -136,25 +155,25 @@ class Basis(BasisInterface):
         self._metric = metric
         self._intersect_cache = {}
 
-    def definition_to_matrix(self, definition: BasisDefinitionT) -> Matrix:
+    def _argument_to_matrix(self, argument: int | BasisArgument) -> Matrix:
         # Root basis:
-        if is_int(definition):
-            matrix = IdentityMatrix(definition)
+        if is_int(argument):
+            matrix = IdentityMatrix(argument)
         # Permutation + selection
-        elif isinstance(definition, (tuple, list, slice)) or (array_like(definition) and definition.ndim == 1):
+        elif isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
             # Convert boolean iterable to indices:
-            if ((isinstance(definition, (tuple, list)) or array_like(definition)) and
-                    any([isinstance(x, (bool, np.bool_)) for x in definition])):
-                definition = np.arange(len(definition))[definition]
-            matrix = ColumnPermutationMatrix(self.parent.size, definition)
-        elif array_like(definition) and definition.ndim == 2:
-            matrix = GeneralMatrix(definition)
-        elif isinstance(definition, Matrix):
-            matrix = definition
+            if ((isinstance(argument, (tuple, list)) or array_like(argument)) and
+                    any([isinstance(x, (bool, np.bool_)) for x in argument])):
+                argument = np.arange(len(argument))[argument]
+            matrix = ColumnPermutationMatrix(self.parent.size, argument)
+        elif array_like(argument) and argument.ndim == 2:
+            matrix = GeneralMatrix(argument)
+        elif isinstance(argument, Matrix):
+            matrix = argument
         else:
-            raise ValueError(f"invalid basis definition: {definition} of type {type(definition)}")
+            raise ValueError(f"invalid basis argument: {argument} of type {type(argument)}")
         if not self.is_root() and (matrix.shape[0] != self.parent.size):
-            raise ValueError(f"invalid basis definition size: {matrix.shape[0]} (expected {self.parent.size})")
+            raise ValueError(f"invalid basis argument size: {matrix.shape[0]} (expected {self.parent.size})")
         return matrix
 
     # --- Basis properties and methods
@@ -174,18 +193,20 @@ class Basis(BasisInterface):
 
     @property
     def size(self) -> int:
-        """Number of basis functions."""
+        """Size of basis."""
         return self.matrix.shape[1]
 
     def __len__(self) -> int:
         return self.size
 
     @property
-    def parent(self):
+    def parent(self) -> Basis | None:
+        """Parent of basis or None, if the basis is a root-basis."""
         return self._parent
 
     @property
     def root(self) -> Basis | None:
+        """Root-basis of the basis or None, if the basis itself is the root-basis."""
         return self._root
 
     @property
@@ -194,21 +215,47 @@ class Basis(BasisInterface):
 
     @property
     def metric(self) -> Matrix:
+        """Metric matrix, used to raise and lower tensor indices."""
         return self._metric
 
     @property
     def space(self) -> Space:
+        """Space spanned by basis."""
         return Space(self)
 
     @property
     def is_orthonormal(self) -> bool:
+        """True if the basis is orthonormal."""
         return isinstance(self.metric, IdentityMatrix)
 
     # --- Make new basis
 
-    def make_subbasis(self, *args, name: str | None = None, orthonormal: bool = False, **kwargs) -> Basis:
-        """Make a new basis with coefficients or indices in reference to the current basis."""
-        return type(self)(*args, parent=self, name=name, orthonormal=orthonormal, **kwargs)
+    def make_subbasis(self,
+                      argument: BasisArgument,
+                      *,
+                      metric: np.ndarray | None = None,
+                      name: str | None = None,
+                      orthonormal: bool = False) -> Basis:
+        """Make a new basis with coefficients or indices in reference to the current basis.
+
+        Parameters
+        ----------
+        argument :
+            Sequence, slice, or array defining the sub-basis with respect to the parent basis.
+        metric :
+            Metric of the sub-basis.
+        name :
+            Name of sub-basis.
+        orthonormal :
+            True if the sub-basis is orthonormal.
+
+        Returns
+        -------
+        Basis
+            Sub-basis of parent.
+
+        """
+        return type(self)(argument, parent=self, metric=metric, name=name, orthonormal=orthonormal)
 
     def make_union_basis(self, *other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
         """Make smallest possible orthonormal basis, which spans both self and other."""
@@ -264,15 +311,30 @@ class Basis(BasisInterface):
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
         """Projector onto self in basis."""
-        c = self.coeff_in_basis(basis)
+        c = self._coeff_in_basis(basis)
         p = c + c.T if self.is_orthonormal else c + [self.metric] + c.T
         return p.evaluate()
 
     def is_root(self) -> bool:
+        """True if basis is a root-basis, False otherwise."""
         return self.parent is None
 
-    def get_parents(self, include_root: bool = True, include_self: bool = False) -> list[Basis]:
-        """Get list of parent bases ordered from direct parent to root basis."""
+    def get_parents(self, *, include_root: bool = True, include_self: bool = False) -> list[Basis]:
+        """Get list of parent bases ordered from direct parent to root basis.
+
+        Parameters
+        ----------
+        include_root :
+            Include the root-basis in the list of parents. Default: True.
+        include_self :
+            Include the current basis itself in the list of parents: Default: False.
+
+        Returns
+        -------
+        List[Basis]
+            List of parent bases.
+
+        """
         parents = [self] if include_self else []
         current = self
         while current.parent is not None:
@@ -283,31 +345,85 @@ class Basis(BasisInterface):
         return parents
 
     def is_derived_from(self, other: Basis, inclusive: bool = False) -> bool:
-        """True if self is derived from other, else False"""
+        """Check if the basis is derived from a second basis.
+
+        Parameters
+        ----------
+        other :
+            Second basis.
+        inclusive :
+            If True, the function will return True, even if the current basis and `other` are the same. Default: False.
+
+        Returns
+        -------
+        bool
+            True if `other` is derived from the basis, False otherwise.
+
+        """
         if not self.same_root(other):
             return False
         return other in self.get_parents(include_self=inclusive)
 
     def is_parent_of(self, other: Basis, inclusive: bool = False) -> bool:
-        """True if self is parent of other, else False"""
+        """Check if the basis is parent of a second basis.
+
+        Parameters
+        ----------
+        other :
+            Second basis.
+        inclusive :
+            If True, the function will return True, even if the current basis and `other` are the same. Default: False.
+
+        Returns
+        -------
+        bool
+            True if `other` is a parent of the basis, False otherwise.
+
+        """
         return other.is_derived_from(self, inclusive=inclusive)
 
     # --- Methods taking another basis instance
 
-    def is_compatible_with(self, other: BasisInterface) -> bool:
+    def is_compatible_with(self, other: IBasis) -> bool:
         return _is_nobasis(other) or self.same_root(other)
 
     def same_root(self, *other: Basis) -> bool:
+        """Check if all bases have the same root.
+
+        Parameters
+        ----------
+        *others :
+            One or multiple other bases.
+
+        Returns
+        -------
+        bool
+            True if all bases have the same root-basis, False otherwise.
+
+        """
         roots = np.asarray([basis.root or basis for basis in [self, *other]])
         return np.all(roots == roots[0])
 
-    def check_same_root(self, *other: Basis) -> None:
+    def _check_same_root(self, *other: Basis) -> None:
+        """Check if all bases have the same root and raise a BasisError if not."""
         if self.same_root(*other):
             return
         raise BasisError(f"Bases {self} and {other} do not derive from the same root basis.")
 
     def get_common_parent(self, *other: Basis) -> Basis:
-        """Find first common ancestor between multiple bases."""
+        """Find first common ancestor basis between multiple bases.
+
+        Parameters
+        ----------
+        *other :
+            One or multiple other bases.
+
+        Returns
+        -------
+        Basis
+            Basis which is the first common parent between all bases.
+
+        """
         # support multiple bases via recursion
         if len(other) > 1:
             parent = self.get_common_parent(other[0])
@@ -317,7 +433,7 @@ class Basis(BasisInterface):
         if len(other) != 1:
             raise ValueError
         other = other[0]
-        self.check_same_root(other)
+        self._check_same_root(other)
         parents_self = self.get_parents(include_self=True)[::-1]
         parents_other = other.get_parents(include_self=True)[::-1]
         assert (parents_self[0] is parents_other[0])
@@ -329,12 +445,12 @@ class Basis(BasisInterface):
         assert common_parent is not None
         return common_parent
 
-    def coeff_in_basis(self, basis: Basis) -> MatrixProductList:
+    def _coeff_in_basis(self, basis: Basis) -> MatrixProductList:
         """Express coeffients in different (parent) basis (rather than the direct parent)."""
         if basis == self:
             return MatrixProductList([IdentityMatrix(self.size)])
 
-        self.check_same_root(basis)
+        self._check_same_root(basis)
         parents = self.get_parents()
         if basis not in parents:
             raise ValueError(f"{basis} is not superbasis of {self}")
@@ -348,8 +464,8 @@ class Basis(BasisInterface):
         return MatrixProductList(matrices)
 
     def _get_overlap_mpl(self, other: Basis, variance: tuple[int, int] | None = None) -> MatrixProductList:
-        """Return MatrixProduct required for as_basis method"""
-        self.check_same_root(other)
+        """Return MatrixProduct required for as_basis method."""
+        self._check_same_root(other)
         if variance is None:
             variance = (Variance.COVARIANT, Variance.COVARIANT)
         # Find first common ancestor and express coefficients in corresponding basis
@@ -359,24 +475,56 @@ class Basis(BasisInterface):
         else:
             mpl = []
         mpl = MatrixProductList(mpl)
-        mpl += self.coeff_in_basis(parent).T + [parent.metric] + other.coeff_in_basis(parent)
+        mpl += self._coeff_in_basis(parent).T + [parent.metric] + other._coeff_in_basis(parent)
         if variance[1] == Variance.CONTRAVARIANT:
             mpl += [other.metric.inverse]
         return mpl
 
-    cache_size = 100
+    _transformation_cache_size = 100
 
-    @lru_cache(cache_size)
-    def get_overlap(self, other: Basis, variance: tuple[int, int] = (Variance.COVARIANT, Variance.COVARIANT)) -> Tensor:
-        """Get overlap matrix as an Array with another basis."""
+    @lru_cache(_transformation_cache_size)
+    def get_transformation(self,
+                           other: Basis,
+                           variance: tuple[int, int] = (Variance.COVARIANT, Variance.COVARIANT)) -> Tensor:
+        """Get transformation matrix to another basis as a Tensor.
+
+        Parameters
+        ----------
+        other :
+            Second basis.
+        variance :
+            Variance of transformation matrix.
+
+        Returns
+        -------
+        Tensor
+            Transformation matrix.
+
+        """
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
         return Tensor(values, basis=(self, other), variance=variance)
 
+    def get_overlap(self, other: Basis) -> Tensor:
+        """Get overlap matrix with another basis as a Tensor.
+
+        Parameters
+        ----------
+        other :
+            Second basis.
+
+        Returns
+        -------
+        Tensor
+            Overlap matrix.
+
+        """
+        return self.get_transformation(other)
+
     def get_transformation_to(self, other: Basis) -> Tensor:
-        return self.get_overlap(other, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
+        return self.get_transformation(other, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
     def get_transformation_from(self, other: Basis) -> Tensor:
-        return other.get_overlap(self, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
+        return other.get_transformation(self, variance=(Variance.CONTRAVARIANT, Variance.COVARIANT))
 
 
 from btensor.tensor import Tensor

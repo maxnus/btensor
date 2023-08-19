@@ -97,7 +97,7 @@ def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
     basis_right = b.basis[rightaxis]
     if basis_left is not btensor.nobasis and basis_right is not btensor.nobasis:
         variance_ovlp = (-a.variance[leftaxis], -b.variance[rightaxis])
-        ovlp = basis_left.get_overlap(basis_right, variance=variance_ovlp)
+        ovlp = basis_left.get_transformation(basis_right, variance=variance_ovlp)
     elif basis_left is btensor.nobasis and basis_right is btensor.nobasis:
         size = a.shape[leftaxis]
         if b.shape[rightaxis] != size:

@@ -25,7 +25,7 @@ import numpy as np
 from btensor.tensorsum import TensorSum
 
 if TYPE_CHECKING:
-    from btensor import Tensor, BasisInterface
+    from btensor import Tensor, IBasis
     EinsumOperandT: TypeAlias = Union[Tensor, TensorSum]
 
 
@@ -57,10 +57,10 @@ class Einsum:
         return sorted(set(string.ascii_letters).difference(set(self._unique_labels)))
 
     def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
-                             intersect_tol: Number = 0) -> Dict[str, BasisInterface]:
+                             intersect_tol: Number = 0) -> Dict[str, IBasis]:
         basis_per_label = {}
         for unique_label in self._unique_labels:
-            basis: BasisInterface | None = None
+            basis: IBasis | None = None
             is_output = unique_label in self._result
             for operand, operand_labels in zip(operands, self._labels_per_operand):
                 # The index might appear multiple times per label -> loop over positions

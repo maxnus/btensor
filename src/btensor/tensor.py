@@ -22,7 +22,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from btensor.basis import Basis, _is_basis, _is_nobasis, compatible_basis, nobasis, BasisInterface, BasisT
+from btensor.basis import Basis, _is_basis, _is_nobasis, compatible_basis, nobasis, IBasis, BasisT
 from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
@@ -44,16 +44,17 @@ DOCSTRING_TEMPLATE = \
 
     Parameters
     ----------
-    data:
+    data :
         NumPy array containing the representation of the {name}.
-    basis:
+    basis :
         Basis object or tuple of Basis objects, representing the Basis along each dimension of the input data.
-    variance:
+    variance :
         Variance along each dimension. Default: {default_variance}
-    name:
+    name :
         Name of the {name}.
-    copy_data:
+    copy_data :
         If False, no copy of the NumPy data will be created.
+
     """
 
 
@@ -84,7 +85,7 @@ class Tensor:
         basis = BasisTuple.create(basis)
         self._basis = basis
         self._variance = variance
-        self.check_basis(basis)
+        self._check_basis(basis)
         self._cob = _ChangeBasisInterface(self)
 
     def __repr__(self) -> str:
@@ -109,18 +110,20 @@ class Tensor:
 
         Returns
         -------
-        tensor :
-            Copy of tensor
+        Tensor
+            Copy of tensor.
+
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
 
     # --- Basis
 
     @property
-    def basis(self) -> BasisTuple[BasisInterface, ...]:
+    def basis(self) -> BasisTuple[IBasis, ...]:
+        """Basis of the tensor."""
         return self._basis
 
-    def check_basis(self, basis: BasisTuple) -> None:
+    def _check_basis(self, basis: BasisTuple) -> None:
         if len(basis) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
         for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
@@ -131,11 +134,26 @@ class Tensor:
             if size != baselem.size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
-    def replace_basis(self, basis: tuple[BasisInterface | None, ...], inplace: bool = False) -> Tensor:
-        """Replace basis with new basis."""
+    def replace_basis(self, basis: tuple[IBasis | None, ...], inplace: bool = False) -> Tensor:
+        """Replace basis of tensor with new basis.
+
+        Parameters
+        ----------
+        basis :
+            New basis.
+        inplace :
+            If True, the tensor will be modified in-place, otherwise a new Tensor instance will be created.
+            Default: False.
+
+        Returns
+        -------
+        Tensor
+            Tensor with replaced basis.
+
+        """
         tensor = self if inplace else self.copy()
         new_basis = self.basis.update_with(basis)
-        tensor.check_basis(new_basis)
+        tensor._check_basis(new_basis)
         tensor._basis = new_basis
         return tensor
 
@@ -195,6 +213,7 @@ class Tensor:
 
         Note that this can reduce the rank of the array, for example when trying to express
         a purely occupied quantitiy in a purely virtual basis.
+
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if basis == self.basis:
@@ -248,7 +267,7 @@ class Tensor:
     def cob(self) -> _ChangeBasisInterface:
         return self._cob
 
-    def change_basis_at(self, index: int, basis: BasisInterface) -> Tensor:
+    def change_basis_at(self, index: int, basis: IBasis) -> Tensor:
         if index < 0:
             index += self.ndim
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
@@ -285,30 +304,42 @@ class Tensor:
 
     @property
     def dtype(self) -> np.dtype:
+        """NumPy's dtype of the underlying ndarray."""
         return self._data.dtype
 
     @property
     def ndim(self) -> int:
+        """Number of dimensions of the tensor."""
         return self._data.ndim
 
     @property
     def shape(self) -> tuple[int, ...]:
+        """Shape of the tensor."""
         return self._data.shape
 
     def to_numpy(self,
                  basis: BasisT | None = None,
-                 project: bool = False,
                  copy: bool = True) -> np.ndarray:
-        """Convert to NumPy ndarray"""
-        if basis is not None:
-            transform = self.project if project else self.change_basis
-            tensor = transform(basis=basis)
-        else:
-            tensor = self
-        nparray = tensor._data
-        if copy:
-            return nparray.copy()
-        return nparray
+        """Get representation of tensor as a NumPy ndarray.
+
+        Parameters
+        ----------
+        basis :
+            Basis used for the representation. Default: None, which uses the current basis.
+        copy :
+            If True, a copy is created of the NumPy data. Default: True.
+
+        Returns
+        -------
+        ndarray
+            Representation of the tensor.
+
+        """
+        if basis is None:
+            if copy:
+                return self._data.copy()
+            return self._data
+        return self.change_basis(basis=basis)._data
 
     def transpose(self, axes: tuple[int, ...] | None = None) -> Tensor:
         value = self._data.transpose(axes)
@@ -320,7 +351,7 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Transpose tensor."""
+        """Transposed tensor."""
         return self.transpose()
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
@@ -328,15 +359,16 @@ class Tensor:
 
         Parameters
         ----------
-        axis1, axis2:
+        axis1, axis2 :
             Axes to be used as the first and second axis of the 2-D sub-tensors from which the
             diagonals should be taken. Defaults are the first two axes of the tensor.
 
         Returns
         -------
-        traced_tensor:
+        Tensor | Number
             If the tensor is 2-D, the sum along along the diagonal is returned. If the tensor is `N`-D,
             with `N > 2`, then a `(N-2)-D` tensor of sums along diagonals is returned.
+
         """
 
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
