@@ -5,9 +5,11 @@
 API Reference
 =============
 
-
 .. autosummary::
-    :toctree: generated
+    :toctree: _autosummary
+    :template: custom-module-template.rst
+    :recursive:
+    :nosignatures:
 
-    btensor.Tensor
-    btensor.Basis
+    btensor.core.basis
+    btensor.core.tensor
