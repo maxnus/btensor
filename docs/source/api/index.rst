@@ -11,5 +11,5 @@ API Reference
     :recursive:
     :nosignatures:
 
-    btensor.core.basis
+    btensor.basis
     btensor.core.tensor
