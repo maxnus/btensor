@@ -21,7 +21,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from btensor import Tensor
-    from btensor.basis import BasisT
+    from btensor.basis import NBasis
 
 
 class TensorSum:
@@ -66,11 +66,11 @@ class TensorSum:
                     return
         self.tensors.append(tensor)
 
-    def __getitem__(self, key: slice | Ellipsis | BasisT) -> TensorSum:
+    def __getitem__(self, key: slice | Ellipsis | NBasis) -> TensorSum:
         """Call __getitem__ on each tensor individually."""
         return TensorSum([t[key] for t in self.tensors])
 
-    def project(self, basis: BasisT, inplace: bool = False) -> TensorSum:
+    def project(self, basis: NBasis, inplace: bool = False) -> TensorSum:
         """Call project on each tensor individually."""
         if inplace:
             for idx, tensor in enumerate(self.tensors):

@@ -19,7 +19,8 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from btensor.basis import IBasis, compatible_basis, _is_nobasis, get_common_parent, BasisT
+from btensor.basis import (IBasis, compatible_basis, _is_nobasis, get_common_parent, NBasis, Basis, nobasis,
+                           _is_basis_or_nobasis)
 
 
 KeyLike: TypeAlias = Union[IBasis, slice, EllipsisType]
@@ -27,14 +28,14 @@ KeyLike: TypeAlias = Union[IBasis, slice, EllipsisType]
 
 class BasisTuple(tuple):
 
-    def __init__(self, args: BasisT) -> None:
+    def __init__(self, args: NBasis) -> None:
         for arg in args:
-            if not isinstance(arg, IBasis):
-                raise TypeError(f"{type(self).__name__} can only contain elements of type {IBasis.__name__} "
+            if not _is_basis_or_nobasis(arg):
+                raise TypeError(f"{type(self).__name__} can only contain elements of type {Basis.__name__} or {nobasis}"
                                 f"(not {arg})")
 
     @classmethod
-    def create(cls, basis: BasisT) -> BasisTuple:
+    def create(cls, basis: NBasis) -> BasisTuple:
         if isinstance(basis, cls):
             return basis
         if not isinstance(basis, tuple):

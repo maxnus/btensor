@@ -22,7 +22,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from btensor.basis import Basis, _is_basis, _is_nobasis, compatible_basis, nobasis, IBasis, BasisT
+from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis
 from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
@@ -35,7 +35,7 @@ class _ChangeBasisInterface:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.tensor})"
 
-    def __getitem__(self, key: BasisT) -> Tensor:
+    def __getitem__(self, key: NBasis) -> Tensor:
         return self.tensor.change_basis(key)
 
 
@@ -67,7 +67,7 @@ class Tensor:
 
     def __init__(self,
                  data: ArrayLike,
-                 basis: BasisT | None = None,
+                 basis: NBasis | None = None,
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
                  copy_data: bool = True) -> None:
@@ -127,7 +127,7 @@ class Tensor:
         if len(basis) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
         for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
-            if not _is_basis(baselem):
+            if not _is_basis_or_nobasis(baselem):
                 raise ValueError(f"Basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
             if _is_nobasis(baselem):
                 continue
@@ -185,10 +185,10 @@ class Tensor:
         return ''.join(symbols[x] for x in self.variance)
 
     @staticmethod
-    def _get_basis_transform(basis1: BasisT, basis2: BasisT, variance: tuple[int, int]):
+    def _get_basis_transform(basis1: NBasis, basis2: NBasis, variance: tuple[int, int]):
         return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
 
-    def __getitem__(self, key: slice | Ellipsis | BasisT) -> Tensor:
+    def __getitem__(self, key: slice | Ellipsis | NBasis) -> Tensor:
         if (isinstance(key, slice) and key == slice(None)) or key is Ellipsis:
             return self
         if isinstance(key, Basis):
@@ -206,7 +206,7 @@ class Tensor:
 
         return self.project(key)
 
-    def project(self, basis: BasisT) -> Tensor:
+    def project(self, basis: NBasis) -> Tensor:
         """Transform to different set of basis.
 
         Slice(None) can be used to indicate no transformation.
@@ -257,7 +257,7 @@ class Tensor:
 
     # --- Change of basis
 
-    def change_basis(self, basis: BasisT) -> Tensor:
+    def change_basis(self, basis: NBasis) -> Tensor:
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
             raise BasisError(f"{basis} does not span {self.basis}")
@@ -273,13 +273,13 @@ class Tensor:
         basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
         return self.change_basis(basis_new)
 
-    def __or__(self, basis: BasisT) -> Tensor:
+    def __or__(self, basis: NBasis) -> Tensor:
         """To allow basis transformation as (array | basis)"""
         # Left-pad with slice(None), such that the basis transformation applies to the last n axes
         basis = BasisTuple.create_from_default(basis, default=self.basis, leftpad=True)
         return self.change_basis(basis)
 
-    def __ror__(self, basis: BasisT) -> Tensor:
+    def __ror__(self, basis: NBasis) -> Tensor:
         """To allow basis transformation as (basis | array)"""
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         return self.change_basis(basis)
@@ -318,7 +318,7 @@ class Tensor:
         return self._data.shape
 
     def to_numpy(self,
-                 basis: BasisT | None = None,
+                 basis: NBasis | None = None,
                  copy: bool = True) -> np.ndarray:
         """Get representation of tensor as a NumPy ndarray.
 
