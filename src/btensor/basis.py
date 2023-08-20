@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from functools import lru_cache
+import weakref
 from typing import *
 
 from loguru import logger
@@ -102,6 +103,8 @@ class Basis:
 
     """
     __next_id = 1
+    # Keep a weak reference of all created bases:
+    __basis_by_name = weakref.WeakValueDictionary()
 
     def __init__(self,
                  argument: int | BasisArgument,
@@ -122,7 +125,8 @@ class Basis:
         self._id = self._get_next_id()
         if name is None:
             name = f'Basis{self._id}'
-        self.name = name
+        self._check_valid_name(name)
+        self._name = name
         self._matrix = self._argument_to_matrix(argument)
         if metric is None:
             if orthonormal or self.is_root():
@@ -135,6 +139,7 @@ class Basis:
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._intersect_cache = {}
+        self.__basis_by_name[self.name] = self
 
     def _argument_to_matrix(self, argument: int | BasisArgument) -> Matrix:
         # Root basis:
@@ -159,8 +164,22 @@ class Basis:
 
     # --- Basis properties and methods
 
+    def _check_valid_name(self, name: str) -> None:
+        """Check that name does not exist and is not reserved for another basis."""
+        if name.startswith('Basis'):
+            try:
+                id = int(name[5:])
+            except ValueError:
+                pass
+            else:
+                if id != self.id:
+                    raise ValueError(f"Cannot use reserved name {name}")
+        if name in self.__basis_by_name.keys():
+            raise ValueError(f"Basis with name {name} already exist")
+
     @property
     def id(self) -> int:
+        """Unique ID of basis."""
         return self._id
 
     def __hash__(self) -> int:
@@ -178,6 +197,11 @@ class Basis:
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
+
+    @property
+    def name(self) -> str:
+        """Name of basis."""
+        return self._name
 
     @property
     def size(self) -> int:

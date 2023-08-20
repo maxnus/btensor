@@ -72,7 +72,7 @@ def cc(mf):
 
 @pytest.fixture(scope='module')
 def ao(mf):
-    return btensor.Basis(mf.nao, metric=mf.ovlp, name='AO')
+    return btensor.Basis(mf.nao, metric=mf.ovlp)
 
 
 @pytest.fixture(params=[True, False], ids=['OrthKw', ''], scope='module')
@@ -82,7 +82,7 @@ def mo_orthonormal_keyword(request):
 
 @pytest.fixture(scope='module')
 def mo(mf, ao, mo_orthonormal_keyword):
-    return btensor.Basis(mf.mo_coeff, parent=ao, name='MO', orthonormal=mo_orthonormal_keyword)
+    return btensor.Basis(mf.mo_coeff, parent=ao, orthonormal=mo_orthonormal_keyword)
 
 
 def get_subbasis_definition(subtype, start, stop, size):
@@ -101,13 +101,13 @@ def get_subbasis_definition(subtype, start, stop, size):
 @pytest.fixture(scope='module')
 def mo_occ(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, 0, mf.nocc, mf.nmo)
-    return mo.make_subbasis(definition, name='mo-occ', orthonormal=mo_orthonormal_keyword)
+    return mo.make_subbasis(definition, orthonormal=mo_orthonormal_keyword)
 
 
 @pytest.fixture(scope='module')
 def mo_vir(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, mf.nocc, mf.nmo, mf.nmo)
-    return mo.make_subbasis(definition, name='mo-vir', orthonormal=mo_orthonormal_keyword)
+    return mo.make_subbasis(definition, orthonormal=mo_orthonormal_keyword)
 
 
 @pytest.fixture(params=['ao', 'ao_from_mo'], scope='module')
