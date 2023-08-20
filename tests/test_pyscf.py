@@ -175,29 +175,29 @@ class TestSCF(TestCase):
         i = np.identity(mf.nao)
         self.assert_allclose(btensor.dot(mo.get_transformation_to(ao), ao.get_transformation_to(mo)), i)
 
-    def test_ao2mo_ovlp(self, mf, ao, mo, double_or):
+    def test_ao2mo_ovlp(self, mf, ao, mo):
         s = Cotensor(mf.ovlp, basis=(ao, ao))
-        self.assert_allclose(double_or(mo, s, mo), np.identity(mf.nao))
+        self.assert_allclose(s.cob[mo, mo], np.identity(mf.nao))
 
-    def test_mo2ao_ovlp(self, mf, ao, mo, double_or):
+    def test_mo2ao_ovlp(self, mf, ao, mo):
         s = Cotensor(np.identity(mf.nao), basis=(mo, mo))
-        self.assert_allclose(double_or(ao, s, ao), mf.ovlp)
+        self.assert_allclose(s.cob[ao, ao], mf.ovlp)
 
-    def test_ao2mo_fock(self, mf, ao, mo, double_or):
+    def test_ao2mo_fock(self, mf, ao, mo):
         f = Cotensor(mf.fock, basis=(ao, ao))
-        self.assert_allclose(double_or(mo, f, mo), np.diag(mf.mo_energy), atol=1e-9)
+        self.assert_allclose(f.cob[mo, mo], np.diag(mf.mo_energy), atol=1e-9)
 
-    def test_mo2ao_fock(self, mf, ao, mo, double_or):
+    def test_mo2ao_fock(self, mf, ao, mo):
         f = Cotensor(np.diag(mf.mo_energy), basis=(mo, mo))
-        self.assert_allclose(double_or(ao, f, ao), mf.fock, atol=1e-9)
+        self.assert_allclose(f.cob[ao, ao], mf.fock, atol=1e-9)
 
-    def test_ao2mo_dm(self, mf, ao, mo, double_or):
+    def test_ao2mo_dm(self, mf, ao, mo):
         d = Tensor(mf.dm, basis=(ao, ao))
-        self.assert_allclose(double_or(mo, d, mo), np.diag(mf.mo_occ))
+        self.assert_allclose(d.cob[mo, mo], np.diag(mf.mo_occ))
 
-    def test_mo2ao_dm(self, mf, ao, mo, double_or):
+    def test_mo2ao_dm(self, mf, ao, mo):
         d = Tensor(np.diag(mf.mo_occ), basis=(mo, mo))
-        self.assert_allclose(double_or(ao, d, ao), mf.dm)
+        self.assert_allclose(d.cob[ao, ao], mf.dm)
 
 
 class TestCC(TestCase):
@@ -245,8 +245,7 @@ class TestCC(TestCase):
         self.assert_allclose((t2s/2).cob[mo, mo, mo, mo], t2b/2)
 
     def test_trace(self, t2s, t2b, mo):
-        self.assert_allclose(t2s.trace().trace(), (t2s | (mo, mo)).trace().trace())
-        self.assert_allclose(t2s.trace().trace(), ((mo, mo) | t2s).trace().trace())
+        self.assert_allclose(t2s.trace().trace(), t2s[mo, mo].trace().trace())
         self.assert_allclose(t2s.trace().trace(), t2b.trace().trace())
 
     def test_project(self, t2s, t2b, mo_occ, mo_vir):

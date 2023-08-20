@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 __all__ = [
         'is_int',
+        'is_sequence',
         'array_like',
         'atleast_1d',
         'BasisError',
@@ -39,6 +40,14 @@ __all__ = [
 def is_int(obj):
     return isinstance(obj, (int, np.integer))
 
+
+def is_sequence(obj: Any) -> bool:
+    try:
+        len(obj)
+        obj[0:0]
+    except TypeError:
+        return False
+    return True
 
 def array_like(obj):
     try:

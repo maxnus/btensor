@@ -37,9 +37,8 @@ author = 'Max Nusspickel'
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.napoleon',
-              #'numpydoc',
               'sphinx.ext.autosummary',
-              'sphinx.ext.linkcode'
+              'sphinx.ext.linkcode',
               ]
 
 templates_path = ['_templates']
@@ -68,7 +67,6 @@ autosummary_generate = True
 
 
 # Linkcode
-
 
 def linkcode_resolve(domain, info):
     package = 'btensor'

@@ -42,18 +42,13 @@ class _ChangeBasisInterface:
 DOCSTRING_TEMPLATE = \
     """A numerical container class with support for automatic basis transformation.
 
-    Parameters
-    ----------
-    data :
-        NumPy array containing the representation of the {name}.
-    basis :
-        Basis object or tuple of Basis objects, representing the Basis along each dimension of the input data.
-    variance :
-        Variance along each dimension. Default: {default_variance}
-    name :
-        Name of the {name}.
-    copy_data :
-        If False, no copy of the NumPy data will be created.
+    Args:
+        data: NumPy array containing the representation of the {name}.
+        basis: Basis object or tuple of Basis objects, representing the Basis along each axis of the input data.
+            Default: nobasis along each axis..
+        variance: Variance along each dimension. Default: {default_variance}.
+        name: Name of the {name}. Default: 'BasisX' where X is the ID of the basis.
+        copy_data: If False, no copy of the NumPy data will be created. Default: True.
 
     """
 
@@ -100,17 +95,12 @@ class Tensor:
     def copy(self, name: str | None = None, copy_data: bool = True) -> Tensor:
         """Create a copy of the tensor.
 
-        Parameters
-        ----------
-        name :
-            Name of the copy.
-        copy_data :
-            If True, a copy of the underlying NumPy data will be performed, otherwise the copied tensor will refer
-            to the same data.
+        Args:
+            name: Name of the copied tensor.
+            copy_data: If True, a copy of the underlying NumPy data will be performed, otherwise the copied tensor will
+                refer to the same data. Default: True.
 
-        Returns
-        -------
-        Tensor
+        Returns:
             Copy of tensor.
 
         """
@@ -135,19 +125,14 @@ class Tensor:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
     def replace_basis(self, basis: tuple[IBasis | None, ...], inplace: bool = False) -> Tensor:
-        """Replace basis of tensor with new basis.
+        """Replace basis of tensor with a new basis.
 
-        Parameters
-        ----------
-        basis :
-            New basis.
-        inplace :
-            If True, the tensor will be modified in-place, otherwise a new Tensor instance will be created.
-            Default: False.
+        Args:
+            basis: New basis.
+            inplace: If True, the tensor will be modified in-place, otherwise a new Tensor instance will be created.
+                Default: False.
 
-        Returns
-        -------
-        Tensor
+        Returns:
             Tensor with replaced basis.
 
         """
@@ -161,6 +146,7 @@ class Tensor:
 
     @property
     def variance(self) -> tuple[int, ...]:
+        """Tuple with `ndim` elements with value 1 or -1, for covariance and contravariance, respectively."""
         return self._variance
 
     #def as_variance(self, variance):
@@ -178,12 +164,6 @@ class Tensor:
     #        new_basis.append(b)
     #    return self.as_basis(basis=new_basis)
 
-    @property
-    def variance_string(self) -> str:
-        """String representation of variance tuple."""
-        symbols = {1: '+', -1: '-', 0: '*'}
-        return ''.join(symbols[x] for x in self.variance)
-
     @staticmethod
     def _get_basis_transform(basis1: NBasis, basis2: NBasis, variance: tuple[int, int]):
         return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
@@ -194,25 +174,28 @@ class Tensor:
         if isinstance(key, Basis):
             key = (key,)
 
-        type_error = TypeError(f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
-                               f'{type(self).__name__} class. '
-                               f'Use Array class to index using integers, slices, and integer or boolean arrays')
-
+        type_error_msg = (f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
+                          f'{type(self).__name__} class. '
+                          f'Use Array class to index using integers, slices, and integer or boolean arrays')
         if not isinstance(key, tuple):
-            raise type_error
+            raise TypeError(type_error_msg)
         for bas in key:
             if not (isinstance(bas, Basis) or bas in (slice(None), Ellipsis)):
-                raise type_error
+                raise TypeError(type_error_msg)
 
         return self.project(key)
 
     def project(self, basis: NBasis) -> Tensor:
-        """Transform to different set of basis.
+        """Transforms tensor to a different set of basis.
 
         Slice(None) can be used to indicate no transformation.
+        Note that this can reduce the rank of the array, for example when projecting onto an orthogonal space.
 
-        Note that this can reduce the rank of the array, for example when trying to express
-        a purely occupied quantitiy in a purely virtual basis.
+        Args:
+            basis: New basis.
+
+        Returns:
+            Tensor projected onto `basis`.
 
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
@@ -258,6 +241,19 @@ class Tensor:
     # --- Change of basis
 
     def change_basis(self, basis: NBasis) -> Tensor:
+        """Change basis of tensor.
+
+        Slice(None) can be used to indicate no transformation.
+        In contrast to `project`, this function will first test if the tensor can be fully represented in the new basis
+        and raise a `BasisError` otherwise.
+
+        Args:
+            basis: New basis of tensor.
+
+        Returns:
+            Tensor in new basis.
+
+        """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
             raise BasisError(f"{basis} does not span {self.basis}")
@@ -265,24 +261,37 @@ class Tensor:
 
     @property
     def cob(self) -> _ChangeBasisInterface:
+        """Change of basis interface, similar to `change_basis`, but using []-syntax.
+
+        Slice(None) can be used to indicate no transformation.
+
+        """
         return self._cob
 
-    def change_basis_at(self, index: int, basis: IBasis) -> Tensor:
-        if index < 0:
-            index += self.ndim
-        basis_new = self.basis[:index] + (basis,) + self.basis[index+1:]
+    def change_basis_at(self, basis: IBasis | Sequence[IBasis], axis: int | Sequence[int]) -> Tensor:
+        """Change basis of tensor along one or more selected axes.
+
+        Slice(None) can be used to indicate no transformation.
+        In contrast to `project`, this function will first test if the tensor can be fully represented in the new basis
+        and raise a `BasisError` otherwise.
+
+        Args:
+            basis: New basis of tensor for the specified axis.
+            axis: One or more axes, along which the basis will be replaced.
+
+        Returns:
+            Tensor in new basis.
+
+        """
+        # Recursive implementation for sequence arguments:
+        if is_sequence(axis):
+            t = self.change_basis_at(basis[0], axis[0])
+            return t.change_basis_at(basis[1:], axis[1:])
+
+        if axis < 0:
+            axis += self.ndim
+        basis_new = self.basis[:axis] + (basis,) + self.basis[axis + 1:]
         return self.change_basis(basis_new)
-
-    def __or__(self, basis: NBasis) -> Tensor:
-        """To allow basis transformation as (array | basis)"""
-        # Left-pad with slice(None), such that the basis transformation applies to the last n axes
-        basis = BasisTuple.create_from_default(basis, default=self.basis, leftpad=True)
-        return self.change_basis(basis)
-
-    def __ror__(self, basis: NBasis) -> Tensor:
-        """To allow basis transformation as (basis | array)"""
-        basis = BasisTuple.create_from_default(basis, default=self.basis)
-        return self.change_basis(basis)
 
     # Arithmetic
 
@@ -322,17 +331,12 @@ class Tensor:
                  copy: bool = True) -> np.ndarray:
         """Get representation of tensor as a NumPy ndarray.
 
-        Parameters
-        ----------
-        basis :
-            Basis used for the representation. Default: None, which uses the current basis.
-        copy :
-            If True, a copy is created of the NumPy data. Default: True.
+        Args:
+            basis: Basis used for the representation. Default: None, which uses the current basis.
+            copy: If True, a copy is created of the NumPy data. Default: True.
 
-        Returns
-        -------
-        ndarray
-            Representation of the tensor.
+        Returns:
+            NumPy array representation of the tensor in the specified basis.
 
         """
         if basis is None:
@@ -342,6 +346,19 @@ class Tensor:
         return self.change_basis(basis=basis)._data
 
     def transpose(self, axes: tuple[int, ...] | None = None) -> Tensor:
+        """Return a tensor with axes transposed.
+
+        Args:
+            axes: If specified, it must be a tuple or list which contains a permutation
+                of [0,1,...,N-1] where N is the number of axes of the tensor. The `i`'th axis
+                of the returned tensor will correspond to the axis numbered ``axes[i]``
+                of the input. If not specified, defaults to ``range(a.ndim)[::-1]``,
+                which reverses the order of the axes.
+
+        Returns:
+            Tensor with it axes permuted.
+
+        """
         value = self._data.transpose(axes)
         if axes is None:
             basis = self.basis[::-1]
@@ -351,21 +368,22 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Transposed tensor."""
+        """Transposed tensor.
+
+        Same as ``self.transpose()``.
+
+        """
         return self.transpose()
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
         """Returns the sum along diagonals of the tensor.
 
-        Parameters
-        ----------
-        axis1, axis2 :
-            Axes to be used as the first and second axis of the 2-D sub-tensors from which the
-            diagonals should be taken. Defaults are the first two axes of the tensor.
+        Args:
+            axis1, axis2 :
+                Axes to be used as the first and second axis of the 2-D sub-tensors from which the
+                diagonals should be taken. Defaults are the first two axes of the tensor.
 
-        Returns
-        -------
-        Tensor | Number
+        Returns:
             If the tensor is 2-D, the sum along along the diagonal is returned. If the tensor is `N`-D,
             with `N > 2`, then a `(N-2)-D` tensor of sums along diagonals is returned.
 
@@ -374,6 +392,15 @@ class Tensor:
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
     def dot(self, other: Tensor | np.ndarray) -> Tensor:
+        """Dot product of two tensors.
+
+        Args:
+            other: The second tensor.
+
+        Returns:
+            A tensor representing the result of the dot product.
+
+        """
         return numpy_functions.dot(self, other)
 
     def _operator(self, operator, *other: Number | Tensor, swap: bool = False) -> Tensor:
@@ -446,9 +473,6 @@ class Tensor:
         return self._operator(operator.truediv, other)
 
     # Not allowed due to basis dependence:
-
-    def sum(self, *args: Never, **kwargs: Never) -> NoReturn:
-        raise BasisDependentOperationError
 
     def __floordiv__(self, other: Never) -> NoReturn:
         raise BasisDependentOperationError
