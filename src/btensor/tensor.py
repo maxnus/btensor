@@ -66,6 +66,7 @@ class Tensor:
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
                  copy_data: bool = True) -> None:
+        """Create new Tensor instance."""
         data = np.array(data, copy=copy_data)
         if data.dtype not in self._SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
@@ -296,9 +297,19 @@ class Tensor:
     # Arithmetic
 
     def is_compatible(self, other: Tensor) -> bool:
-        return all(self.compatible_axes(other))
+        """Check if the basis of the tensor is compatible with another tensor's basis along each axis.
 
-    def compatible_axes(self, other: Tensor) -> list[int]:
+        Args:
+            other: The second tensor.
+
+        Returns:
+            True if the bases are compatible along each axis, False otherwise.
+
+        """
+        return all(self._compatible_axes(other))
+
+    def _compatible_axes(self, other: Tensor) -> list[bool]:
+        """Returns a boolean array, indicating for each axis whether the bases are compatible."""
         axes = []
         for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
             axes.append(bool(compatible_basis(b1, b2)))
@@ -306,7 +317,16 @@ class Tensor:
             axes += (self.ndim-other.ndim)*[False]
         return axes
 
-    def common_basis(self, other: Tensor) -> BasisTuple:
+    def get_common_basis(self, other: Tensor) -> BasisTuple:
+        """Get tuple of common bases between two tensors along each axis.
+
+        Args:
+            other: The second tensor.
+
+        Returns:
+            A tuple, where each element is the common basis between the two tensors along the respective axis.
+
+        """
         return self.basis.get_common_basistuple(other.basis)
 
     # --- NumPy compatibility
@@ -403,10 +423,10 @@ class Tensor:
         """
         return numpy_functions.dot(self, other)
 
-    def _operator(self, operator, *other: Number | Tensor, swap: bool = False) -> Tensor:
+    def _operator(self, op: Callable, *other: Number | Tensor, swap: bool = False) -> Tensor:
         # Unary operator
         if len(other) == 0:
-            return type(self)(operator(self._data), basis=self.basis)
+            return type(self)(op(self._data), basis=self.basis)
         # Ternary+ operator
         if len(other) > 1:
             raise NotImplementedError
@@ -420,7 +440,7 @@ class Tensor:
             if self.basis == other.basis:
                 v2 = other._data
             elif self.is_compatible(other):
-                basis = self.common_basis(other)
+                basis = self.get_common_basis(other)
                 v1 = self.change_basis(basis)._data
                 v2 = other.change_basis(basis)._data
             else:
@@ -429,7 +449,7 @@ class Tensor:
             return NotImplemented
         if swap:
             v1, v2 = v2, v1
-        return type(self)(operator(v1, v2), basis=basis)
+        return type(self)(op(v1, v2), basis=basis)
 
     # Fully supported:
 

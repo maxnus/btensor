@@ -103,7 +103,7 @@ class BasisTuple(tuple):
 
     def get_common_basistuple(self, other: BasisTuple) -> BasisTuple:
         if not self.is_compatible_with(other):
-            raise ValueError
+            raise ValueError(f"Basistuple with shape {self.shape} is not compatible with shape {other.shape}")
         common_parents = tuple(get_common_parent(basis_self, basis_other)
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
