@@ -38,6 +38,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
+              'sphinx.ext.autosectionlabel',
               'sphinx.ext.linkcode',
               ]
 
@@ -65,6 +66,9 @@ autodoc_typehints = 'description'
 
 autosummary_generate = True
 
+# Autosectionlabel
+
+autosectionlabel_prefix_document = True
 
 # Linkcode
 

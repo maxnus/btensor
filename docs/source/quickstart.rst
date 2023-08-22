@@ -12,7 +12,7 @@ and a second (non-orthogonal) basis, with basis vectors
 :math:`\mathbf{e}_{y'}` =  :math:`\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right)`.
 In other words, the first basis vector is identical, however the second basis vector is rotated 45° clockwise.
 
-In BTensor_, these bases can be defined according to
+In BTensor, a :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be defined according to
 
 .. code-block:: python
 
@@ -25,10 +25,10 @@ In BTensor_, these bases can be defined according to
     basis2 = basis1.make_subbasis(tm)
 
 where ``basis1`` represents the euclidian 2D basis, ``tm`` the transformation matrix, and ``basis2`` the second, non-orthogonal basis.
-Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the basis is required.
+Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is required.
 In contrast, ``basis2`` is defined in terms of a transformation matrix and a parent basis, namely ``basis1``.
 
-In BTensor, bases are organized in a **tree structure**. We distinguish two types of bases:
+In BTensor, bases are organized in a *tree structure*. We distinguish two types of bases:
 
 - A **root basis** does not have a parent and is constructed from an integer size argument.
 - A **derived basis** has a parent basis and is defined in terms of a transformation wrt to its parent.
@@ -37,13 +37,15 @@ In this example, ``basis1`` is a root basis and ``basis2`` is a derived basis.
 
 .. note::
 
-    The root basis is not required to be orthogonal. For more details on non-orthogonality see TODO
+    The root basis is not required to be orthogonal.
+    A non-orthogonal root basis can be constructed as ``Basis(2, metric=m)``, where ``m`` is the metric matrix of
+    the basis.
 
 All bases which belong to the same basis tree are considered **compatible**, i.e., BTensor can perform numerical
 operations such as addition between tensors expressed in these bases.
 
 
-For this we require the second fundamental type, the Tensor, which wrapps NumPy_'s ndarray.
+For this we require the second fundamental type, the :ref:`Tensor <api/_autosummary/btensor.tensor.Tensor:Tensor>`, which wraps NumPy_'s ndarray.
 Let us consider the points :math:`\mathbf{p}_1 = -1\mathbf{e}_{x} + 1\mathbf{e}_{y}` and :math:`\mathbf{p}_2 = 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'}`.
 We can construct these as follows:
 
@@ -77,6 +79,11 @@ returns
 
 which agrees with the above result.
 
+Basis Transformation
+--------------------
+
+While the aim of BTensor is to implement abstract tensor types, which can be operate within...
+
 
 Rotatation versus Permutation
 -----------------------------
@@ -92,7 +99,7 @@ which we can think of as a **rotation + projection** operation.
     If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation matrix in the mathematical sense (orthogonal matrix with determinant 1).
 
 Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
-For example, we might be interested in the derived basis defined by the first 2 out of 5 basis vectors of its parent basis.
+For example, we might be interested in the derived basis defined by the first two out of four basis vectors of its parent basis.
 While this transformation can be represented in terms of the matrix
 
 .. math::
@@ -117,10 +124,10 @@ Defining a derived basis via a permutation is not purely for convenience, transf
 Multidimensional Tensors
 ------------------------
 
-In the examples above, we only considered a 1D tensor, with a single associated basis.
-How can we work with higherdimensional tensors? We simply have to work with tuples of ``Basis`` instances, i.e.
+In the examples above, we only considered a 1-D vector, with a single associated basis.
+How can we work with higher-dimensional tensors? We simply have to use tuples of ``Basis`` instances, i.e.
 
-.. literalinclude:: ../../examples/03-matrix.py
+.. literalinclude:: ../../examples/03-2d-tensor.py
     :linenos:
     :lines: 15-
 
@@ -129,6 +136,9 @@ As a result, ``tensor1`` and ``tensor2`` are created using NumPy arrays of diffe
 :math:`2 \times 3` and :math:`2 \times 2`, respectively.
 While it would not be possible to add the NumPy arrays directly, we can add the corresponding ``Tensor`` objects, since their bases are compatible along each dimension.
 
-The resulting ``tensor3`` can be converted back to its array representation with respect to ``basis1``, as shown in line 15.
+The resulting ``tensor3`` can be transformed to any other basis
+
+
+converted back to its array representation with respect to ``basis1``, as shown in line 15.
 However, if we tried the do the same using ``basis2`` and without the additional keyword ``project=True``,
 an exception would occur. The reason for this is, that ``basis2`` cannot represent this tensor without loss of information.

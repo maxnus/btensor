@@ -29,5 +29,5 @@ point1 = Tensor([-1.0, 0.0], basis=basis1)
 point2 = Tensor([1.0, 1.0], basis=basis2)
 point3 = point1 + point2
 
-print(f"Point 3 in basis 1: {point3.to_numpy()}")
-print(f"Point 3 in basis 2: {point3[basis1].to_numpy()}")
+print(f"Point 3 in basis 1: {point3.to_numpy(basis=basis1)}")
+print(f"Point 3 in basis 2: {point3.to_numpy(basis=basis2)}")
