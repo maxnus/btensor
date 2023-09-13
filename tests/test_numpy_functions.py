@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import itertools
 
 import pytest
 import numpy as np
@@ -104,6 +105,18 @@ class TestNumpyFunctions(TestCase):
         eig, eigv = bt.linalg.eigh(array)
         self.assert_allclose(eig, eig_expected)
         self.assert_allclose(bt.einsum('ai,i,bi->ab', eigv, eig, eigv), np_array)
+
+    @pytest.mark.parametrize('dest', list(itertools.permutations([0, 1, 2])), ids=str)
+    def test_moveaxis_3d(self, dest, get_array, ndim_atleast2):
+        array, np_array = get_array(ndim=3)
+        # Remove a bit along the first axis, to make array non-square:
+        b = array.basis[1].make_subbasis(slice(0, 2))
+        array = array[:, b]
+        np_array = np_array[:, :2]
+        source = (0, 1, 2)
+        expected = np.moveaxis(np_array, source, dest)
+        result = bt.moveaxis(array, source, dest)
+        self.assert_allclose(result.to_numpy(), expected)
 
 
 class TestDot(TestCase):

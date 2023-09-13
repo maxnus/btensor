@@ -119,7 +119,7 @@ class Tensor:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
         for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
             if not _is_basis_or_nobasis(baselem):
-                raise ValueError(f"Basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
+                raise ValueError(f"basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
             if _is_nobasis(baselem):
                 continue
             if size != baselem.size:
@@ -150,20 +150,40 @@ class Tensor:
         """Tuple with `ndim` elements with value 1 or -1, for covariance and contravariance, respectively."""
         return self._variance
 
-    #def as_variance(self, variance):
-    #    if np.ndim(variance) == 0:
-    #        variance = self.ndim * (variance,)
-    #    if len(variance) != self.ndim:
-    #        raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
-    #                         f"({len(variance)} given)")
-    #    if not np.isin(variance, (-1, 1)):
-    #        raise ValueError("Variance can only contain values -1 and 1")
-    #    new_basis = []
-    #    for i, (b, v0, v1) in enumerate(zip(self.basis, self.variance, variance)):
-    #        if v0 != v1:
-    #            b = b.dual()
-    #        new_basis.append(b)
-    #    return self.as_basis(basis=new_basis)
+    def _check_variance(self, variance: Sequence[int]) -> None:
+        if len(variance) != self.ndim:
+            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
+                             f"({len(variance)} given)")
+        for var in variance:
+            if var not in {-1, 1}:
+                raise ValueError(f"variance can only contain elements -1 and 1 (not {var})")
+
+    def change_variance(self, variance: Sequence[int]) -> Tensor:
+        self._check_variance(variance)
+        changed_axes = [i for (i, v, w) in enumerate(zip(self.variance, variance)) if v != w]
+        result = self
+        for axis, var in zip(changed_axes, variance):
+            result = result.change_variance_at(var, axis=axis)
+        return result
+
+    def change_variance_at(self, variance: int, axis: int):
+        if variance not in {-1, 1}:
+            raise ValueError(f"variance can only be -1 and 1 (not {variance})")
+        if self.basis[axis].is_orthonormal or self.variance[axis] == variance:
+            return self
+        labels_in = string.ascii_lowercase[:self.ndim]
+        labels_out = list(labels_in)
+        labels_out[axis] = 'Z'
+        labels_out = ''.join(labels_out)
+        contraction = f"{labels_in},{labels_in[axis]}Z->{labels_out}"
+        # to lower index:
+        metric = self.basis[axis].metric
+        # to raise index:
+        if variance == -1:
+            metric = metric.inverse
+        values = np.einsum(contraction, self._data, metric.to_numpy())
+        variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
+        return type(self)(values, basis=self.basis, variance=variance_tuple)
 
     @staticmethod
     def _get_basis_transform(basis1: NBasis, basis2: NBasis, variance: tuple[int, int]):
@@ -408,7 +428,6 @@ class Tensor:
             with `N > 2`, then a `(N-2)-D` tensor of sums along diagonals is returned.
 
         """
-
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
     def dot(self, other: Tensor | np.ndarray) -> Tensor:

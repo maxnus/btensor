@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import *
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -118,11 +118,11 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     basis2 = a.basis[axis2]
     if basis1.root != basis2.root:
         raise BasisError("cannot take trace over axis with incompatible bases!")
-    if basis1 == basis2:
-        a = a
-    else:
+    if basis1 != basis2:
         parent = basis1.find_common_parent(basis2)
-        a = a.change_basis_at(axis1, parent).change_basis_at(axis2, parent)
+        a = a.change_basis_at(parent, axis=axis1).change_basis_at(parent, axis=axis2)
+    if a.variance[axis1] == a.variance[axis2] and not a.basis[axis1].is_orthonormal:
+        a = a.change_variance_at(-a.variance[axis2], axis=axis2)
     value = a.to_numpy(copy=False).trace(axis1=axis1, axis2=axis2)
     if value.ndim == 0:
         return value
@@ -134,3 +134,18 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     return type(a)(value, basis_new)
 
 
+def moveaxis(a: ArrayLike | Tensor,
+             source: int | Sequence[int],
+             destination: int | Sequence[int],
+             name: str | None = None) -> Tensor:
+    a = _to_tensor(a)
+    source = np.core.numeric.normalize_axis_tuple(source, a.ndim, 'source')
+    destination = np.core.numeric.normalize_axis_tuple(destination, a.ndim, 'destination')
+    values_orig = a.to_numpy(copy=False)
+    values = np.moveaxis(values_orig, source=source, destination=destination)
+    order = [n for n in range(a.ndim) if n not in source]
+    for dest, src in sorted(zip(destination, source)):
+        order.insert(dest, src)
+    basis = tuple(np.asarray(a.basis)[order])
+    variance = tuple(np.asarray(a.variance)[order])
+    return type(a)(values, basis=basis, variance=variance, name=name or a.name)
