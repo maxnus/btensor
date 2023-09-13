@@ -150,7 +150,7 @@ class Basis:
             # Convert boolean iterable to indices:
             if ((isinstance(argument, (tuple, list)) or array_like(argument)) and
                     any([isinstance(x, (bool, np.bool_)) for x in argument])):
-                argument = np.arange(len(argument))[argument]
+                argument = np.arange(self.parent.size)[argument]
             matrix = ColumnPermutationMatrix(self.parent.size, argument)
         elif array_like(argument) and argument.ndim == 2:
             matrix = GeneralMatrix(argument)
