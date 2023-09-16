@@ -46,10 +46,10 @@ def generate_einsum_summation(maxdim: int):
 
 def generate_einsum_contraction(maxdim: int):
     for ndim1 in range(1, maxdim + 1):
-        for nsum in range(3):
-            for sub1 in loop_einsum_subscripts(ndim1, nsum=nsum):
+        for nsum1 in range(3):
+            for sub1 in loop_einsum_subscripts(ndim1, nsum=nsum1):
                 for ndim2 in range(1, maxdim + 1):
-                    for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2-nsum):
+                    for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2-nsum1):
                         sub = ','.join([sub1, sub2])
                         for include_result in [True, False]:
                             if include_result:

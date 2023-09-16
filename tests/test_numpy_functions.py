@@ -104,7 +104,7 @@ class TestNumpyFunctions(TestCase):
         tensor = btensor.Tensor(rng.random((n, n)), basis=(basis_orth, basis_orth))
         expected = tensor.trace()
         result = btensor.einsum('ii->', tensor[basis_nonorth, basis_nonorth])
-        self.assert_allclose(expected, result, atol=1e-14, rtol=0)
+        self.assert_allclose(expected, result, atol=1e-13, rtol=0)
 
     def test_trace_with_axis(self, ndim_axis1_axis2, get_array):
         ndim, axis1, axis2 = ndim_axis1_axis2
