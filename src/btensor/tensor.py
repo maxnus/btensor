@@ -169,19 +169,22 @@ class Tensor:
     def change_variance_at(self, variance: int, axis: int):
         if variance not in {-1, 1}:
             raise ValueError(f"variance can only be -1 and 1 (not {variance})")
-        if self.basis[axis].is_orthonormal or self.variance[axis] == variance:
+        if self.variance[axis] == variance:
             return self
-        labels_in = string.ascii_lowercase[:self.ndim]
-        labels_out = list(labels_in)
-        labels_out[axis] = 'Z'
-        labels_out = ''.join(labels_out)
-        contraction = f"{labels_in},{labels_in[axis]}Z->{labels_out}"
-        # to lower index:
-        metric = self.basis[axis].metric
-        # to raise index:
-        if variance == -1:
-            metric = metric.inverse
-        values = np.einsum(contraction, self._data, metric.to_numpy())
+        if self.basis[axis].is_orthonormal:
+            values = self._data
+        else:
+            labels_in = string.ascii_lowercase[:self.ndim]
+            labels_out = list(labels_in)
+            labels_out[axis] = 'Z'
+            labels_out = ''.join(labels_out)
+            contraction = f"{labels_in},{labels_in[axis]}{labels_out[axis]}->{labels_out}"
+            # to lower index:
+            metric = self.basis[axis].metric
+            # to raise index:
+            if variance == -1:
+                metric = metric.inverse
+            values = np.einsum(contraction, self._data, metric.to_numpy())
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
         return type(self)(values, basis=self.basis, variance=variance_tuple)
 

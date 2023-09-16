@@ -78,7 +78,11 @@ class TestEinsum(TestCase):
         with timings('NumPy'):
             expected = np.einsum(einsum_summation, data, optimize=optimize)
         with timings('BTensor'):
-            result = bt.einsum(einsum_summation, array, optimize=optimize).to_numpy()
+            result = bt.einsum(einsum_summation, array, optimize=optimize)
+            try:
+                result = result.to_numpy()
+            except AttributeError:
+                pass
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('optimize', [False])
@@ -89,7 +93,11 @@ class TestEinsum(TestCase):
         with timings('NumPy'):
             expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
         with timings('BTensor'):
-            result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize).to_numpy()
+            result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize)
+            try:
+                result = result.to_numpy()
+            except AttributeError:
+                pass
         self.assert_allclose(result, expected)
 
     def test_matmul(self, tensor_cls_2x):

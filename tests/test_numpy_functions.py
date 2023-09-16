@@ -16,7 +16,7 @@ import itertools
 import pytest
 import numpy as np
 
-import btensor as bt
+import btensor
 from helper import TestCase
 
 
@@ -29,13 +29,13 @@ def with_shape(request, shape_and_basis):
 
 class TestNumpyFunctions(TestCase):
 
-    @pytest.mark.parametrize('funcs', [(bt.empty, np.empty), (bt.zeros, np.zeros), (bt.ones, np.ones)],
+    @pytest.mark.parametrize('funcs', [(btensor.empty, np.empty), (btensor.zeros, np.zeros), (btensor.ones, np.ones)],
                              ids=['empty', 'zeros', 'ones'])
     def test_empty_zeros_ones(self, funcs, shape_and_basis, with_shape):
         bt_func, np_func = funcs
         shape, basis = shape_and_basis
         expected = np_func(shape)
-        if with_shape is None and bt.nobasis in basis:
+        if with_shape is None and btensor.nobasis in basis:
             with pytest.raises(ValueError):
                 bt_func(basis)
             return
@@ -46,13 +46,13 @@ class TestNumpyFunctions(TestCase):
             return
         self.assert_allclose(tensor, expected)
 
-    @pytest.mark.parametrize('funcs', [(bt.empty_like, np.empty_like), (bt.zeros_like, np.zeros_like),
-                                       (bt.ones_like, np.ones_like)], ids=['empty', 'zeros', 'ones'])
+    @pytest.mark.parametrize('funcs', [(btensor.empty_like, np.empty_like), (btensor.zeros_like, np.zeros_like),
+                                       (btensor.ones_like, np.ones_like)], ids=['empty', 'zeros', 'ones'])
     def test_empty_zeros_ones_like(self, funcs, shape_and_basis):
         bt_func, np_func = funcs
         shape, basis = shape_and_basis
         values = np.random.random(shape)
-        tensor = bt.Tensor(values, basis=basis)
+        tensor = btensor.Tensor(values, basis=basis)
         expected = np_func(values)
         assert bt_func(expected).shape == expected.shape
         assert bt_func(expected).dtype == expected.dtype
@@ -76,8 +76,8 @@ class TestNumpyFunctions(TestCase):
         array, np_array = array
         expected = np.sum(np_array)
         self.assert_allclose(array.sum(), expected)
-        self.assert_allclose(bt.sum(array), expected)
-        self.assert_allclose(bt.sum(np_array), expected)
+        self.assert_allclose(btensor.sum(array), expected)
+        self.assert_allclose(btensor.sum(np_array), expected)
 
     def test_sum_with_axis(self, ndim_and_axis, get_array):
         ndim, axis = ndim_and_axis
@@ -87,6 +87,24 @@ class TestNumpyFunctions(TestCase):
     def test_trace(self, ndim_atleast2, get_array):
         array, np_array = get_array(ndim_atleast2)
         self.assert_allclose(array.trace(), np_array.trace())
+
+    def test_trace_nonorthogonal(self, rng):
+        n = 10
+        basis_orth = btensor.Basis(n)
+        basis_nonorth = basis_orth.make_subbasis(rng.random((n, n)))
+        tensor = btensor.Tensor(rng.random((n, n)), basis=(basis_orth, basis_orth))
+        expected = tensor.trace()
+        result = tensor[basis_nonorth, basis_nonorth].trace()
+        self.assert_allclose(expected, result, atol=1e-14, rtol=0)
+
+    def test_einsum_trace_nonorthogonal(self, rng):
+        n = 10
+        basis_orth = btensor.Basis(n)
+        basis_nonorth = basis_orth.make_subbasis(rng.random((n, n)))
+        tensor = btensor.Tensor(rng.random((n, n)), basis=(basis_orth, basis_orth))
+        expected = tensor.trace()
+        result = btensor.einsum('ii->', tensor[basis_nonorth, basis_nonorth])
+        self.assert_allclose(expected, result, atol=1e-14, rtol=0)
 
     def test_trace_with_axis(self, ndim_axis1_axis2, get_array):
         ndim, axis1, axis2 = ndim_axis1_axis2
@@ -102,9 +120,9 @@ class TestNumpyFunctions(TestCase):
     def test_eigh(self, get_array):
         array, np_array = get_array(ndim=2, hermitian=True)
         eig_expected = np.linalg.eigh(np_array)[0]
-        eig, eigv = bt.linalg.eigh(array)
+        eig, eigv = btensor.linalg.eigh(array)
         self.assert_allclose(eig, eig_expected)
-        self.assert_allclose(bt.einsum('ai,i,bi->ab', eigv, eig, eigv), np_array)
+        self.assert_allclose(btensor.einsum('ai,i,bi->ab', eigv, eig, eigv), np_array)
 
     @pytest.mark.parametrize('dest', list(itertools.permutations([0, 1, 2])), ids=str)
     def test_moveaxis_3d(self, dest, get_array, ndim_atleast2):
@@ -115,7 +133,7 @@ class TestNumpyFunctions(TestCase):
         np_array = np_array[:, :2]
         source = (0, 1, 2)
         expected = np.moveaxis(np_array, source, dest)
-        result = bt.moveaxis(array, source, dest)
+        result = btensor.moveaxis(array, source, dest)
         self.assert_allclose(result.to_numpy(), expected)
 
 
@@ -126,9 +144,9 @@ class TestDot(TestCase):
         a = np.random.rand(n)
         b = np.random.rand(n)
         c = np.dot(a, b)
-        aa = tensor_cls_2x[0](a, basis=bt.nobasis)
-        ab = tensor_cls_2x[1](b, basis=bt.nobasis)
-        ac = bt.dot(aa, ab)
+        aa = tensor_cls_2x[0](a, basis=btensor.nobasis)
+        ab = tensor_cls_2x[1](b, basis=btensor.nobasis)
+        ac = btensor.dot(aa, ab)
         self.assert_allclose(ac, c)
 
     def test_dot_21(self, tensor_cls_2x):
@@ -136,9 +154,9 @@ class TestDot(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m)
         c = np.dot(a, b)
-        aa = tensor_cls_2x[0](a, basis=(bt.nobasis, bt.nobasis))
-        ab = tensor_cls_2x[1](b, basis=bt.nobasis)
-        ac = bt.dot(aa, ab)
+        aa = tensor_cls_2x[0](a, basis=(btensor.nobasis, btensor.nobasis))
+        ab = tensor_cls_2x[1](b, basis=btensor.nobasis)
+        ac = btensor.dot(aa, ab)
         self.assert_allclose(ac, c)
 
     def test_dot_31(self, tensor_cls_2x):
@@ -146,9 +164,9 @@ class TestDot(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k)
         c = np.dot(a, b)
-        aa = tensor_cls_2x[0](a, basis=(bt.nobasis, bt.nobasis, bt.nobasis))
-        ab = tensor_cls_2x[1](b, basis=bt.nobasis)
-        ac = bt.dot(aa, ab)
+        aa = tensor_cls_2x[0](a, basis=(btensor.nobasis, btensor.nobasis, btensor.nobasis))
+        ab = tensor_cls_2x[1](b, basis=btensor.nobasis)
+        ac = btensor.dot(aa, ab)
         self.assert_allclose(ac, c)
 
     def test_dot_22(self, tensor_cls_2x):
@@ -156,9 +174,9 @@ class TestDot(TestCase):
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         c = np.dot(a, b)
-        aa = tensor_cls_2x[0](a, basis=(bt.nobasis, bt.nobasis))
-        ab = tensor_cls_2x[1](b, basis=(bt.nobasis, bt.nobasis))
-        ac = bt.dot(aa, ab)
+        aa = tensor_cls_2x[0](a, basis=(btensor.nobasis, btensor.nobasis))
+        ab = tensor_cls_2x[1](b, basis=(btensor.nobasis, btensor.nobasis))
+        ac = btensor.dot(aa, ab)
         self.assert_allclose(ac, c)
 
     def test_dot_32(self, tensor_cls_2x):
@@ -166,7 +184,7 @@ class TestDot(TestCase):
         a = np.random.rand(n, m, k)
         b = np.random.rand(k, l)
         c = np.dot(a, b)
-        aa = tensor_cls_2x[0](a, basis=(bt.nobasis, bt.nobasis, bt.nobasis))
-        ab = tensor_cls_2x[1](b, basis=(bt.nobasis, bt.nobasis))
-        ac = bt.dot(aa, ab)
+        aa = tensor_cls_2x[0](a, basis=(btensor.nobasis, btensor.nobasis, btensor.nobasis))
+        ab = tensor_cls_2x[1](b, basis=(btensor.nobasis, btensor.nobasis))
+        ac = btensor.dot(aa, ab)
         self.assert_allclose(ac, c)
