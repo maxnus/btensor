@@ -77,11 +77,11 @@ class TestCase:
     allclose_atol = 1e-14
     allclose_rtol = 1e-10
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope='module')
     def timings(self) -> TestTimings:
         return TestTimings(self)
 
-    @pytest.fixture(scope='class', autouse=True)
+    @pytest.fixture(scope='module', autouse=True)
     def report_timings(self, timings) -> None:
         yield
         if len(timings):

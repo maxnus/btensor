@@ -159,6 +159,7 @@ class PermutationMatrix(Matrix):
         if isinstance(permutation, slice):
             nperm = len(np.arange(size)[permutation])
         else:
+            permutation = np.asarray(permutation, dtype=int)
             nperm = len(permutation)
         self._shape = (size, nperm)
         self._permutation = permutation
