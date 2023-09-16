@@ -30,6 +30,7 @@ __all__ = [
         'array_like',
         'atleast_1d',
         'BasisError',
+        'VarianceError',
         'BasisDependentOperationError',
         'ndot',
         'expand_axis',
@@ -63,7 +64,15 @@ def atleast_1d(obj):
     return tuple(np.atleast_1d(obj))
 
 
-class BasisError(Exception):
+class BTensorError(Exception):
+    pass
+
+
+class BasisError(BTensorError):
+    pass
+
+
+class VarianceError(BTensorError):
     pass
 
 

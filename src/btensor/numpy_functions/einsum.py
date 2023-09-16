@@ -23,6 +23,7 @@ from loguru import logger
 import numpy as np
 
 from btensor.tensorsum import TensorSum
+from btensor.util import BasisDependentOperationError
 
 if TYPE_CHECKING:
     from btensor import Tensor, IBasis
@@ -40,7 +41,8 @@ class Einsum:
         labels = [x for idx in self._labels_per_operand for x in idx]
         # Remove duplicates while keeping order (sets do not keep order):
         self._unique_labels = list(dict.fromkeys(labels).keys())
-        print(repr(self), self._contraction_is_basis_independent())
+        if not self._contraction_is_basis_independent():
+            raise BasisDependentOperationError(f"contraction {self.get_contraction()} is basis dependent")
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.get_contraction()})"
@@ -101,7 +103,7 @@ class Einsum:
         return basis_per_label
 
     def _resolve_tensorsums(self,
-                            operands: Tuple[EinsumOperandT],
+                            operands: Tuple[EinsumOperandT, ...],
                             tensorsums: List[Tuple[int, List[Tensor]]],
                             intersect_tol: Number | None = None,
                             **kwargs: Any) -> TensorSum:

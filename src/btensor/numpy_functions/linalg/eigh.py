@@ -12,18 +12,29 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import numpy as np
-import btensor
-from btensor.util.util import BasisError
+import scipy
+
+from btensor.util import BasisError, VarianceError
+from btensor.basis import _Variance
 
 
 def eigh(a):
     basis = a.basis[-1]
+    variance = a.variance[-1]
     if a.basis[-2].root != basis.root:
         raise BasisError
-    e, v = np.linalg.eigh(a._data)
-    eigenbasis = btensor.Basis(v, parent=basis)
+    if a.variance[-2] != variance:
+        raise VarianceError(f"variance needs to match between the last two axes")
+    if basis.is_orthonormal:
+        type_ = 1
+        metric = None
+    else:
+        metric = basis.metric.to_numpy()
+        type_ = 1 if (variance == _Variance.COVARIANT) else 2
+
+    e, v = scipy.linalg.eigh(a.to_numpy(copy=False), b=metric, type=type_)
+    eigenbasis = basis.make_subbasis(v, orthonormal=True)
     cls = type(a)
-    v = cls(v, basis=(a.basis[:-1] + (eigenbasis,)))
-    e = cls(e, basis=eigenbasis)
+    v = cls(v, basis=(a.basis[:-1] + (eigenbasis,)), variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
+    e = cls(e, basis=eigenbasis, variance=(_Variance.COVARIANT,))
     return e, v

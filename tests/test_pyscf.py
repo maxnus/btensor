@@ -324,6 +324,7 @@ class TestCluster(TestCase):
             result = self.bt_einsum('ijab,kjab->ik', cx.tensor_t2, cy.tensor_t2).to_numpy()
         self.assert_allclose(result, expected)
 
+    @pytest.mark.skip("Basis dependent operation")
     def test_contraction_t2_occ_ika(self, cc, sizes, get_cluster, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
@@ -347,15 +348,3 @@ class TestCluster(TestCase):
         with timings('BTensor'):
             result = self.bt_einsum('ijab,ijcb->ac', cx.tensor_t2, cy.tensor_t2).to_numpy()
         self.assert_allclose(result, expected)
-
-    #def test_contraction_t2_ac(self, cc, sizes, get_cluster, timings):
-    #    size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
-    #    cx = get_cluster(size_occ_x, size_vir_x)
-    #    cy = get_cluster(size_occ_y, size_vir_y)
-    #    s_occ = np.dot(cx.r_occ.T, cy.r_occ)
-    #    s_vir = np.dot(cx.r_vir.T, cy.r_vir)
-    #    with timings('PySCF'):
-    #        expected = self.np_einsum('ijab,IJCB,iI,jJ,bB->aC', cx.t2, cy.t2, s_occ, s_occ, s_vir)
-    #    with timings('BTensor'):
-    #        result = self.bt_einsum('ijab,ijcb->ac', cx.tensor_t2, cy.tensor_t2)
-    #    self.assert_allclose(result.to_numpy(), expected)

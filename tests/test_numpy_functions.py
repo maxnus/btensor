@@ -122,7 +122,8 @@ class TestNumpyFunctions(TestCase):
         eig_expected = np.linalg.eigh(np_array)[0]
         eig, eigv = btensor.linalg.eigh(array)
         self.assert_allclose(eig, eig_expected)
-        self.assert_allclose(btensor.einsum('ai,i,bi->ab', eigv, eig, eigv), np_array)
+        eigmat = btensor.Tensor(np.diag(eig.to_numpy()), basis=2*eig.basis)
+        self.assert_allclose(btensor.einsum('ai,ij,bj->ab', eigv, eigmat, eigv), np_array)
 
     @pytest.mark.parametrize('dest', list(itertools.permutations([0, 1, 2])), ids=str)
     def test_moveaxis_3d(self, dest, get_array, ndim_atleast2):

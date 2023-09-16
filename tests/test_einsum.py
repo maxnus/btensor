@@ -23,18 +23,17 @@ from btensor import TensorSum
 from helper import TestCase
 
 
-def loop_einsum_subscripts(ndim, start_label=0):
+def loop_einsum_subscripts(ndim: int, nsum: int  = 2, start_label: int = 0):
     indices = list(string.ascii_lowercase)[start_label:start_label+ndim]
-    for nsum in range(0, ndim+1):
-        for sumindices in itertools.combinations(range(ndim), nsum):
-            subscripts = indices.copy()
-            for sumidx in sumindices:
-                subscripts[sumidx] = 'X'
-            subscripts = ''.join(subscripts)
-            yield subscripts
+    for sumindices in itertools.combinations(range(ndim), nsum):
+        subscripts = indices.copy()
+        for sumidx in sumindices:
+            subscripts[sumidx] = 'X'
+        subscripts = ''.join(subscripts)
+        yield subscripts
 
 
-def generate_einsum_summation(maxdim):
+def generate_einsum_summation(maxdim: int):
     for ndim in range(1, maxdim+1):
         for sub in loop_einsum_subscripts(ndim):
             for include_result in [True, False]:
@@ -45,18 +44,19 @@ def generate_einsum_summation(maxdim):
                 yield summation
 
 
-def generate_einsum_contraction(maxdim):
+def generate_einsum_contraction(maxdim: int):
     for ndim1 in range(1, maxdim + 1):
-        for sub1 in loop_einsum_subscripts(ndim1):
-            for ndim2 in range(1, maxdim + 1):
-                for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1):
-                    sub = ','.join([sub1, sub2])
-                    for include_result in [True, False]:
-                        if include_result:
-                            contraction = sub + '->' + (sub1 + sub2).replace('X', '')
-                        else:
-                            contraction = sub
-                        yield contraction
+        for nsum in range(3):
+            for sub1 in loop_einsum_subscripts(ndim1, nsum=nsum):
+                for ndim2 in range(1, maxdim + 1):
+                    for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2-nsum):
+                        sub = ','.join([sub1, sub2])
+                        for include_result in [True, False]:
+                            if include_result:
+                                contraction = sub + '->' + (sub1 + sub2).replace('X', '')
+                            else:
+                                contraction = sub
+                            yield contraction
 
 
 @pytest.fixture(params=generate_einsum_summation(maxdim=4))
