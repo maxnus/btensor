@@ -226,6 +226,59 @@ class Einsum:
         cls = type(operands[0])
         return cls(values, basis=tuple(basis_out), variance=tuple(variance_out), copy_data=False)
 
+    def __kernel_general(self,
+                 *operands: EinsumOperandT,
+                 intersect_tol: Number | None = None,
+                 **kwargs: Any) -> EinsumOperandT | Number:
+        """Older kernel. Slower and does not support non-orthogonal bases, but supports basis dependent operations."""
+        if len(self._labels_per_operand) != len(operands):
+            raise ValueError(f"{len(operands)} operands provided, but {len(self._labels_per_operand)} "
+                             f"specified in subscript string")
+
+        # Support for TensorSums in operands via recursion.
+        # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
+        tensorsums = [(idx, op.to_list()) for idx, op in enumerate(operands) if isinstance(op, TensorSum)]
+        if tensorsums:
+            return self._resolve_tensorsums(operands, tensorsums, intersect_tol=intersect_tol, **kwargs)
+
+        free_labels = self._get_free_labels(self._unique_labels)
+        labels_out = copy.deepcopy(self._labels_per_operand)
+        # Loop over all indices
+        transformations = []
+        basis_per_label = self._get_basis_per_label(operands, intersect_tol=intersect_tol)
+        for unique_label, basis_target in basis_per_label.items():
+            # Replace all other bases corresponding to the same index:
+            for iop, (op, labels_in_op) in enumerate(zip(operands, self._labels_per_operand)):
+                positions_in_op = np.asarray(np.asarray(labels_in_op) == unique_label).nonzero()[0]
+                for pos in positions_in_op:
+                    basis_current = op.basis[pos]
+                    # If the bases are the same, continue, to avoid inserting an unnecessary identity matrix:
+                    if basis_current == basis_target:
+                        continue
+                    # Add transformation from basis_current to basis_target:
+                    label_new = free_labels.pop(0)
+                    labels_out[iop][pos] = label_new
+                    labels_out.append([label_new, unique_label])
+                    trafo_variance = (-op.variance[pos], op.variance[pos])
+                    trafo = basis_current.get_transformation(basis_target, variance=trafo_variance).to_numpy(copy=False)
+                    transformations.append(trafo)
+
+        # Return
+        subscripts_out = ','.join([''.join(label) for label in labels_out])
+        subscripts_out = '->'.join((subscripts_out, self._result_labels))
+        operands_out = [op.to_numpy(copy=False) for op in operands]
+        operands_out.extend(transformations)
+        values = self.einsumfunc(subscripts_out, *operands_out, **kwargs)
+        # Contraction result is scalar:
+        if not self._result_labels:
+            if isinstance(values, np.ndarray):
+                assert values.size == 1
+                values = values[()]
+            return values
+        basis = tuple([basis_per_label[idx] for idx in self._result_labels])
+        cls = type(operands[0])
+        return cls(values, basis, copy_data=False)
+
 
 @overload
 def einsum(subscripts: str,

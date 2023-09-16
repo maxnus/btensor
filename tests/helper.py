@@ -54,10 +54,11 @@ class TestTimings:
     @contextmanager
     def __call__(self, timer_name: str) -> None:
         if timer_name not in self._timings:
-            self._timings[timer_name] = 0.0
+            self._timings[timer_name] = (0, 0.0)
         start = perf_counter()
         yield
-        self._timings[timer_name] += (perf_counter() - start)
+        self._timings[timer_name] = (self._timings[timer_name][0] + 1,
+                                     self._timings[timer_name][1] + (perf_counter() - start))
         return
 
     def print_report(self) -> None:
@@ -67,8 +68,8 @@ class TestTimings:
         print()
         print(header)
         print(len(header)*'=')
-        for key, val in self._timings.items():
-            print(f"{key:10s} {val:.3f} s")
+        for key, (count, time) in self._timings.items():
+            print(f"{key + ':':10s} {count:4d} calls  in  {time:.3f} s")
 
 
 class TestCase:
