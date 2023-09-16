@@ -93,5 +93,5 @@ class Array(Tensor):
         return numpy_functions.sum(self, axis=axis)
 
 
-class Coarray(Array, Cotensor):
-    pass
+#class Coarray(Array, Cotensor):
+#    pass

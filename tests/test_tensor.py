@@ -28,7 +28,7 @@ class TestTensor(TestCase):
 
     def test_repr(self, tensor_or_array):
         tensor = tensor_or_array[0]
-        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, dtype= {tensor.dtype})'
+        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, dtype= {tensor.dtype}, variance= {tensor.variance})'
         assert repr(tensor) == expected
 
     def test_data_copy(self, tensor_cls, np_array):

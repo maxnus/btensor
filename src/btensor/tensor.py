@@ -22,7 +22,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis
+from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
 from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
@@ -55,8 +55,7 @@ DOCSTRING_TEMPLATE = \
 
 class Tensor:
 
-    _DEFAULT_VARIANCE = -1
-    __doc__ = DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_DEFAULT_VARIANCE)
+    __doc__ = DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_Variance.CONTRAVARIANT)
     _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
                         np.float16, np.float32, np.float64]
 
@@ -76,7 +75,7 @@ class Tensor:
         if basis is None:
             basis = data.ndim * (nobasis,)
         if variance is None:
-            variance = data.ndim * [self._DEFAULT_VARIANCE]
+            variance = data.ndim * [_Variance.CONTRAVARIANT]
         variance = tuple(variance)
         basis = BasisTuple.create(basis)
         self._basis = basis
@@ -85,9 +84,7 @@ class Tensor:
         self._cob = _ChangeBasisInterface(self)
 
     def __repr__(self) -> str:
-        attrs = dict(shape=self.shape, dtype=self.dtype)
-        if any(np.asarray(self.variance) != self._DEFAULT_VARIANCE):
-            attrs['variance'] = self.variance
+        attrs = dict(shape=self.shape, dtype=self.dtype, variance=self.variance)
         if self.name is not None:
             attrs['name'] = self.name
         attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
@@ -550,8 +547,15 @@ class Tensor:
         raise BasisDependentOperationError
 
 
-class Cotensor(Tensor):
+def Cotensor(data: ArrayLike,
+             basis: NBasis | None = None,
+             variance: Sequence[int] | None = None,
+             name: str | None = None,
+             copy_data: bool = True) -> Tensor:
+    data = np.array(data, copy=copy_data)
+    if variance is None:
+        variance = data.ndim * [_Variance.COVARIANT]
+    return Tensor(data, basis=basis, variance=variance, name=name, copy_data=False)
 
-    _DEFAULT_VARIANCE = 1
-    __doc__ = DOCSTRING_TEMPLATE.format(name="Cotensor", default_variance=_DEFAULT_VARIANCE)
 
+Cotensor.__doc__ = DOCSTRING_TEMPLATE.format(name=Cotensor.__name__, default_variance=_Variance.COVARIANT)

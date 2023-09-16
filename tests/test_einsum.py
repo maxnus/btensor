@@ -23,7 +23,7 @@ from btensor import TensorSum
 from helper import TestCase
 
 
-def loop_einsum_subscripts(ndim: int, nsum: int  = 2, start_label: int = 0):
+def loop_einsum_subscripts(ndim: int, nsum: int = 2, start_label: int = 0):
     indices = list(string.ascii_lowercase)[start_label:start_label+ndim]
     for sumindices in itertools.combinations(range(ndim), nsum):
         subscripts = indices.copy()

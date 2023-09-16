@@ -26,7 +26,7 @@ logger.disable('btensor')
 from .basis import IBasis, Basis, nobasis
 from .space import Space
 from .tensor import Tensor, Cotensor
-from .array import Array, Coarray
+from .array import Array#, Coarray
 
 from .numpy_functions import *
 
