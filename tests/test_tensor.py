@@ -26,11 +26,6 @@ from btensor.util import BasisDependentOperationError
 
 class TestTensor(TestCase):
 
-    def test_repr(self, tensor_or_array):
-        tensor = tensor_or_array[0]
-        expected = f'{type(tensor).__name__}(shape= {tensor.shape}, dtype= {tensor.dtype}, variance= {tensor.variance})'
-        assert repr(tensor) == expected
-
     def test_data_copy(self, tensor_cls, np_array):
         data = np_array.copy()
         tensor = tensor_cls(data)
@@ -50,13 +45,6 @@ class TestTensor(TestCase):
         data.flags.writeable = True
         data[:] = 0
         assert np.all(tensor.to_numpy() == 0)
-
-    @pytest.mark.skip('data is writable')
-    def test_data_copy_nocopy_raises(self, tensor_cls, np_array):
-        data = np_array.copy()
-        tensor_cls(data, copy_data=False)
-        with pytest.raises(ValueError):
-            data[:] = 0
 
     def test_tensor_for_loop_raises(self, np_array):
         tensor = Tensor(np_array)

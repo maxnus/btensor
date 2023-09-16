@@ -69,7 +69,6 @@ class Tensor:
         data = np.array(data, copy=copy_data)
         if data.dtype not in self._SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
-        #data.flags.writeable = False
         self._data = data
         self.name = name
         if basis is None:
@@ -84,7 +83,8 @@ class Tensor:
         self._cob = _ChangeBasisInterface(self)
 
     def __repr__(self) -> str:
-        attrs = dict(shape=self.shape, dtype=self.dtype, variance=self.variance)
+        basis_names = f"({', '.join([bas.name for bas in self.basis]) + (',' if self.ndim == 1 else '')})"
+        attrs = dict(basis=basis_names, variance=self.variance, dtype=self.dtype)
         if self.name is not None:
             attrs['name'] = self.name
         attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
