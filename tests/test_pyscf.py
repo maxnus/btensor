@@ -290,7 +290,11 @@ class TestCluster(TestCase):
             return cluster(r_occ, r_vir, t1, t2, tensor_t1, tensor_t2)
         return make_cluster
 
-    def test_contraction_t1_ij(self, cc, sizes, get_cluster, timings):
+    @pytest.fixture(params=[None, 1e-14])
+    def intersect_tol(self, request):
+        return request.param
+
+    def test_contraction_t1_ij(self, cc, sizes, get_cluster, intersect_tol, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
@@ -298,10 +302,11 @@ class TestCluster(TestCase):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
             expected = self.np_einsum('ia,JB,aB->iJ', cx.t1, cy.t1, s_vir)
         with timings('BTensor'):
-            result = self.bt_einsum('ia,ja->ij', cx.tensor_t1, cy.tensor_t1).to_numpy()
+            result = self.bt_einsum('ia,ja->ij', cx.tensor_t1, cy.tensor_t1,
+                                    intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
-    def test_contraction_t1_ab(self, cc, sizes, get_cluster, timings):
+    def test_contraction_t1_ab(self, cc, sizes, get_cluster, intersect_tol, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
@@ -309,10 +314,11 @@ class TestCluster(TestCase):
             s_occ = np.dot(cx.r_occ.T, cy.r_occ)
             expected = self.np_einsum('ia,JB,iJ->aB', cx.t1, cy.t1, s_occ)
         with timings('BTensor'):
-            result = self.bt_einsum('ia,ib->ab', cx.tensor_t1, cy.tensor_t1).to_numpy()
+            result = self.bt_einsum('ia,ib->ab', cx.tensor_t1, cy.tensor_t1,
+                                    intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
-    def test_contraction_t2_ik(self, cc, sizes, get_cluster, timings):
+    def test_contraction_t2_ik(self, cc, sizes, get_cluster, intersect_tol, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
@@ -321,11 +327,12 @@ class TestCluster(TestCase):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
             expected = self.np_einsum('ijab,KJAB,jJ,aA,bB->iK', cx.t2, cy.t2, s_occ, s_vir, s_vir)
         with timings('BTensor'):
-            result = self.bt_einsum('ijab,kjab->ik', cx.tensor_t2, cy.tensor_t2).to_numpy()
+            result = self.bt_einsum('ijab,kjab->ik', cx.tensor_t2, cy.tensor_t2,
+                                    intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     @pytest.mark.skip("Basis dependent operation")
-    def test_contraction_t2_occ_ika(self, cc, sizes, get_cluster, timings):
+    def test_contraction_t2_occ_ika(self, cc, sizes, get_cluster, intersect_tol, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
@@ -334,10 +341,11 @@ class TestCluster(TestCase):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
             expected = self.np_einsum('ijab,KJAB,jJ,bB,xa,xA->iKx', cx.t2, cy.t2, s_occ, s_vir, cx.r_vir, cy.r_vir)
         with timings('BTensor'):
-            result = self.bt_einsum('ijab,kjab->ika', cx.tensor_t2, cy.tensor_t2).to_numpy()
+            result = self.bt_einsum('ijab,kjab->ika', cx.tensor_t2, cy.tensor_t2,
+                                    intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
-    def test_contraction_t2_ac(self, cc, sizes, get_cluster, timings):
+    def test_contraction_t2_ac(self, cc, sizes, get_cluster, intersect_tol, timings):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
@@ -346,5 +354,6 @@ class TestCluster(TestCase):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
             expected = self.np_einsum('ijab,IJCB,iI,jJ,bB->aC', cx.t2, cy.t2, s_occ, s_occ, s_vir)
         with timings('BTensor'):
-            result = self.bt_einsum('ijab,ijcb->ac', cx.tensor_t2, cy.tensor_t2).to_numpy()
+            result = self.bt_einsum('ijab,ijcb->ac', cx.tensor_t2, cy.tensor_t2,
+                                    intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)

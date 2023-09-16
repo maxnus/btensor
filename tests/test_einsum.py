@@ -69,16 +69,21 @@ def einsum_contraction(request):
     return request.param
 
 
+@pytest.fixture(params=[None, 1e-14])
+def intersect_tol(request):
+    return request.param
+
+
 class TestEinsum(TestCase):
 
     @pytest.mark.parametrize('optimize', [False])
-    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls, optimize, timings):
+    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls, optimize, intersect_tol, timings):
         ndim = len(einsum_summation.split('->')[0])
         array, data = get_tensor_or_array(ndim, tensor_cls=tensor_cls)
         with timings('NumPy'):
             expected = np.einsum(einsum_summation, data, optimize=optimize)
         with timings('BTensor'):
-            result = bt.einsum(einsum_summation, array, optimize=optimize)
+            result = bt.einsum(einsum_summation, array, optimize=optimize, intersect_tol=intersect_tol)
             try:
                 result = result.to_numpy()
             except AttributeError:
@@ -86,14 +91,14 @@ class TestEinsum(TestCase):
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('optimize', [False])
-    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls, optimize, timings):
+    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls, optimize, intersect_tol, timings):
         ndim1, ndim2 = [len(x) for x in einsum_contraction.split('->')[0].split(',')]
         array1, data1 = get_tensor_or_array(ndim1, tensor_cls=tensor_cls)
         array2, data2 = get_tensor_or_array(ndim2, tensor_cls=tensor_cls)
         with timings('NumPy'):
             expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
         with timings('BTensor'):
-            result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize)
+            result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize, intersect_tol=intersect_tol)
             try:
                 result = result.to_numpy()
             except AttributeError:
