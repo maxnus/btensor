@@ -104,7 +104,7 @@ class Basis:
     """
     __next_id = 1
     # Keep a weak reference of all created bases:
-    __basis_by_name = weakref.WeakValueDictionary()
+    __basis_by_id = weakref.WeakValueDictionary()
 
     def __init__(self,
                  argument: int | BasisArgument,
@@ -125,7 +125,6 @@ class Basis:
         self._id = self._get_next_id()
         if name is None:
             name = f'Basis{self._id}'
-        self._check_valid_name(name)
         self._name = name
         self._matrix = self._argument_to_matrix(argument)
         if metric is None:
@@ -139,7 +138,22 @@ class Basis:
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._intersect_cache = {}
-        self.__basis_by_name[self.name] = self
+        self.__basis_by_id[self.id] = self
+
+    def get_by_id(self, id: int, default: None) -> Basis | None:
+        """Returns a previously defined basis based on its ID, if it exists.
+
+        Note that the basis may not be found because it has been garbage collected.
+
+        Args:
+            id: The ID of the basis.
+            default: If the basis does not exist, default will be returned instead.
+
+        Returns:
+            Existing basis or default.
+
+        """
+        return self.__basis_by_id.get(id, default)
 
     def _argument_to_matrix(self, argument: int | BasisArgument) -> Matrix:
         # Root basis:
@@ -163,19 +177,6 @@ class Basis:
         return matrix
 
     # --- Basis properties and methods
-
-    def _check_valid_name(self, name: str) -> None:
-        """Check that name does not exist and is not reserved for another basis."""
-        if name.startswith('Basis'):
-            try:
-                id = int(name[5:])
-            except ValueError:
-                pass
-            else:
-                if id != self.id:
-                    raise ValueError(f"Cannot use reserved name {name}")
-        if name in self.__basis_by_name.keys():
-            raise ValueError(f"Basis with name {name} already exist")
 
     @property
     def id(self) -> int:
