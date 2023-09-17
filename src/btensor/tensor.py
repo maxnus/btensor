@@ -30,13 +30,13 @@ from btensor import numpy_functions
 class _ChangeBasisInterface:
 
     def __init__(self, tensor: Tensor) -> None:
-        self.tensor = tensor
+        self._tensor = tensor
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.tensor})"
+        return f"{type(self).__name__}({self._tensor})"
 
     def __getitem__(self, key: NBasis) -> Tensor:
-        return self.tensor.change_basis(key)
+        return self._tensor.change_basis(key)
 
 
 DOCSTRING_TEMPLATE = \
@@ -156,6 +156,15 @@ class Tensor:
                 raise ValueError(f"variance can only contain elements -1 and 1 (not {var})")
 
     def change_variance(self, variance: Sequence[int]) -> Tensor:
+        """Change variance of tensor and transform representation accordingly.
+
+        Args:
+            variance: Sequence of new variances for tensor along each axis, -1 for contravariance and 1 for covariance.
+
+        Returns:
+            Tensor with variance changed.
+
+        """
         self._check_variance(variance)
         changed_axes = [i for (i, v, w) in enumerate(zip(self.variance, variance)) if v != w]
         result = self
@@ -164,6 +173,16 @@ class Tensor:
         return result
 
     def change_variance_at(self, variance: int, axis: int):
+        """Change variance of tensor along a single axis and transform representation accordingly.
+
+        Args:
+            variance: New variance for tensor along axis, -1 for contravariance and 1 for covariance.
+            axis: Axis along which the variance is changed.
+
+        Returns:
+            Tensor with variance changed.
+
+        """
         if variance not in {-1, 1}:
             raise ValueError(f"variance can only be -1 and 1 (not {variance})")
         if self.variance[axis] == variance:
