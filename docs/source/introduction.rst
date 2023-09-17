@@ -6,7 +6,6 @@
 Introduction
 ============
 
-
 In some formalisms, such as the `Bra-ket notation <https://en.wikipedia.org/wiki/Bra-ket_notation>`_
 used in quantum mechanics, one distinguishes between the vector
 :math:`\mathbf{v}` as an abstract, mathematical object

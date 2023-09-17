@@ -123,7 +123,7 @@ class Tensor:
             if size != baselem.size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
-    def replace_basis(self, basis: tuple[IBasis | None, ...], inplace: bool = False) -> Tensor:
+    def replace_basis(self, basis: IBasis | tuple[IBasis | None, ...], inplace: bool = False) -> Tensor:
         """Replace basis of tensor with a new basis.
 
         Args:
@@ -136,6 +136,8 @@ class Tensor:
 
         """
         tensor = self if inplace else self.copy()
+        if isinstance(basis, Basis) or basis is None:
+            basis = (basis,)
         new_basis = self.basis.update_with(basis)
         tensor._check_basis(new_basis)
         tensor._basis = new_basis

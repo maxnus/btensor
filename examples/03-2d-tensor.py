@@ -26,5 +26,5 @@ tensor1 = Tensor(data1, basis=basis1)
 tensor2 = Tensor(data2, basis=basis2)
 
 tensor3 = tensor1 + tensor2
-print(f"Tensor 3 in basis 1:\n{tensor3[basis1].to_numpy()}")
-print(f"Tensor 3 in basis 2:\n{tensor3[basis2].to_numpy()}")
+print(f"tensor3 in basis1:\n{tensor3[basis1].to_numpy()}")
+print(f"tensor3 in basis2:\n{tensor3[basis2].to_numpy()}")

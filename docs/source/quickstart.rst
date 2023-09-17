@@ -1,10 +1,11 @@
 .. include:: links.rst
 
-.. _quickstart:
-
 ==========
 Quickstart
 ==========
+
+Defining Bases and Tensors
+--------------------------
 
 As a first example, consider the 2D euclidian basis with basis vectors :math:`\mathbf{e}_x` and :math:`\mathbf{e}_y`,
 and a second (non-orthogonal) basis, with basis vectors
@@ -20,11 +21,11 @@ In BTensor, a :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be d
     from btensor import Basis
 
     basis1 = Basis(2)
-    tm = np.asarray([[1, 1/np.sqrt(2)],
-                     [0, 1/np.sqrt(2)]])
-    basis2 = Basis(tm, parent=basis1)
+    r = np.asarray([[1, 1/np.sqrt(2)],
+                    [0, 1/np.sqrt(2)]])
+    basis2 = Basis(r, parent=basis1)
 
-where ``basis1`` represents the euclidian 2D basis, ``tm`` the transformation matrix, and ``basis2`` the second,
+where ``basis1`` represents the euclidian 2D basis, ``r`` the transformation matrix, and ``basis2`` the second,
 non-orthogonal basis.
 Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is
 required.
@@ -32,7 +33,7 @@ In contrast, ``basis2`` is defined in terms of a transformation matrix and a par
 Note, that the :ref:`make_subbasis <api/_autosummary/btensor.basis.Basis.make_subbasis:Basis.make\\_subbasis>` method of
 ``basis1`` could have been used instead.
 
-In BTensor, bases are organized in a *tree structure*. We distinguish two types of bases:
+In BTensor, bases are organized in a **tree structure**. We distinguish two types of bases:
 
 - A **root-basis** does not have a parent and is constructed from an integer size argument.
 - A **derived basis** has a parent basis and is defined in terms of a transformation wrt to its parent.
@@ -85,24 +86,70 @@ returns
 
 which agrees with the above result.
 
-Basis Transformation
---------------------
+
+Active and Passive Transformations
+----------------------------------
+
+The current basis of a tensor can be accessed via the ``basis``-attribute:
+
+.. code-block:: python
+
+   >>> print(point3.basis)
+   (Basis(id= 1, size= 2, name= Basis1),)
+
+Note that the basis is stored as a tuple, to support multidimensional tensors (see section below).
+To change the basis of a tensor, the ``[]``-operator can be used:
+
+.. code-block:: python
+
+   >>> print(point3[basis2].basis)
+   (Basis(id= 2, size= 2, name= Basis2),)
+
+When changing the basis using the ``[]``-operator, the ndarray representation will be updated automatically:
+
+.. code-block:: python
+
+   >>> print(point3.to_numpy())
+   [0.70710678 0.70710678]
+   >>> print(point3[basis2].to_numpy())
+   [0. 1.]
+
+This is an example of a **passive** transformation.
+In order to replace the basis while keeping the representation fixed,
+the ``replace_basis`` method can be used:
+
+.. code-block:: python
+
+   >>> point4 = point3.change_basis(basis2)
+   >>> print(point4.basis)
+   (Basis(id= 2, size= 2, name= Basis2),)
+   >>> print(point4.to_numpy())
+   [0.70710678 0.70710678]
+
+Chaning the basis using ``replace_basis`` is an **active** transformation and consequently ``point4`` describes a
+different point in space than ``point3``.
+
+
+Projection and Spaces
+---------------------
 
 While the aim of BTensor is to implement abstract tensor types, which can be operate within...
 
 
-Rotatation versus Permutation
------------------------------
 
-In the example above, the derived basis ``basis2`` was defined via the :math:`2 \times 2` transformation matrix.
+
+
+
+Basis from Permutation
+----------------------
+
+In the example on the top, the derived basis ``basis2`` was defined in terms of ``basis1`` via the :math:`2 \times 2`
+transformation matrix.
 In general, any derived basis can be defined in terms of a :math:`m \times n` matrix, where :math:`m` is the size
-of the parent basis, :math:`n` the size of the derived basis, and :math:`0 < n \leq m`.
-If :math:`n = m`, the parent and derived basis span the same space and we consider the derived basis to be a **rotation**
-of its parent basis. If however, :math:`n < m`, then the derived basis only spans a **subspace** of its parent basis,
+of the parent basis, :math:`n` the size of the derived basis, with :math:`0 < n \leq m`.
+If :math:`n = m`, the parent and derived basis span the same space and we consider the derived basis to be a
+**rotation** [#f1]_ of its parent basis. If however, :math:`n < m`, then the derived basis only spans a **subspace** of its parent basis,
 which we can think of as a **rotation + projection** operation.
-
-.. note::
-    If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation matrix in the mathematical sense (orthogonal matrix with determinant 1).
 
 Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
 For example, we might be interested in the derived basis defined by the first two out of four basis vectors of its parent basis.
@@ -122,29 +169,37 @@ we can represent it easier in terms of a **indexing array**, a **slice**, or a *
 - **Slice**: a slice object with start, stop, and step attributes. In this example: ``slice(0, 2, 1)`` (or simply ``slice(2)``).
 - **Masking array**: a 1D array with boolean values, indicating if the corresponding basis vector of the parent basis is included in the derived basis. In this example: ``[True, True, False, False]``.
 
-Opposed to the more general rotation above, we refer to these relations as **permutations**, since indexing array can change the order of basis vectors
+In contrast to to the more general rotation above, we refer to these relations as **permutations**, since indexing array can change the order of basis vectors
 (or **permutation + selection**, if the derived basis is smaller than its parent).
-Defining a derived basis via a permutation is not purely for convenience, transformation can also be carried out more efficiently in this case.
+Defining a derived basis via a permutation when possible is not only more convention, it will also allow for more
+efficient transformations between different bases.
+
+.. rubric:: Footnotes
+
+.. [#f1] If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation
+         matrix in the mathematical sense (orthogonal matrix with determinant 1).
 
 
 Multidimensional Tensors
 ------------------------
 
-In the examples above, we only considered a 1-D vector, with a single associated basis.
-How can we work with higher-dimensional tensors? We simply have to use tuples of ``Basis`` instances, i.e.
+So far we have only considered a 1D tensor, a vector, with a single associated basis.
+How can we work with higher-dimensional tensors in BTensor? We simply have to use tuples of ``Basis`` instances, i.e.
 
 .. literalinclude:: ../../examples/03-2d-tensor.py
     :linenos:
     :lines: 15-
 
 Note that ``basis2[1]`` with size 2 only spans a subspace of ``basis1[1]`` with size 3.
-As a result, ``tensor1`` and ``tensor2`` are created using NumPy arrays of different shapes,
+As a result, ``tensor1`` and ``tensor2`` are created using ndarrays of different shapes,
 :math:`2 \times 3` and :math:`2 \times 2`, respectively.
-While it would not be possible to add the NumPy arrays directly, we can add the corresponding ``Tensor`` objects, since their bases are compatible along each dimension.
+While it would not be possible to add the NumPy arrays directly, we can add the corresponding ``Tensor`` objects,
+since their bases are compatible along each dimension.
+The resulting ``tensor3`` can be transformed to both ``basis1`` or ``basis2``, as shown in lines 15, 16.
 
-The resulting ``tensor3`` can be transformed to any other basis
-
-
-converted back to its array representation with respect to ``basis1``, as shown in line 15.
-However, if we tried the do the same using ``basis2`` and without the additional keyword ``project=True``,
-an exception would occur. The reason for this is, that ``basis2`` cannot represent this tensor without loss of information.
+.. However, we already know that ``basis2`` cannot represent the tensor fully along the second dimensions, since it
+   cannot represent the constituting ``tensor1`` fully.
+   BTensor nevertheless allows
+   converted back to its array representation with respect to ``basis1``, as shown in line 15.
+   However, if we tried the do the same using ``basis2`` and without the additional keyword ``project=True``,
+   an exception would occur. The reason for this is, that ``basis2`` cannot represent this tensor without loss of information.
