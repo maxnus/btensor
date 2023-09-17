@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; BTensor  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="BTensor Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            BTensor
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-tensor-with-basis">A Tensor with Basis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">BTensor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h1>
+<p>In some formalisms, such as the <a class="reference external" href="https://en.wikipedia.org/wiki/Bra-ket_notation">Bra-ket notation</a>
+used in quantum mechanics, one distinguishes between the vector
+<span class="math notranslate nohighlight">\(\mathbf{v}\)</span> as an abstract, mathematical object
+and a representation of that vector in some basis, <span class="math notranslate nohighlight">\(v\)</span>.
+Specifically, <span class="math notranslate nohighlight">\(\mathbf{v}\)</span> can be represented in terms of a basis <span class="math notranslate nohighlight">\(\mathbf{b}_i\)</span>
+and its components <span class="math notranslate nohighlight">\(v^i\)</span> in that basis as</p>
+<div class="math notranslate nohighlight" id="equation-eq-1">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eq-1" title="Permalink to this equation"></a></span>\[\mathbf{v} = \sum_i v^i \: \mathbf{b}_i.\]</div>
+<p>In numerical calculations we exclusively deal with the elements <span class="math notranslate nohighlight">\(v^i\)</span> and usually call this array of numbers
+the vector itself.
+However, care needs to be taken when working with these arrays of numbers; for example when adding two vector
+representations according to <span class="math notranslate nohighlight">\(v^i = u^i + w^i\)</span>, all representations must refer to the same basis in order
+for the addition to be meaningful. Further restrictions apply when dealing with non-orthogonal bases <a class="footnote-reference brackets" href="#f1" id="id2">1</a>.
+This can be contrasted with the completely general expression <span class="math notranslate nohighlight">\(\mathbf{v} =  \mathbf{u} + \mathbf{w}\)</span>,
+which is considered true without making reference to any basis.</p>
+<p>When dealing with vectors, or higher dimensional analogues, here called <strong>tensors</strong>, in different bases,
+being able to work with their abstract versions can be a big advantage, for a number of reasons:</p>
+<ol class="arabic simple">
+<li><p>It avoids the mental overhead of having to keep track of which representation corresponds to which basis.
+In fact, without abstract tensor types, the basis often has to be documented alongside the code itself, either
+via a suitable variable name, or in a docstring. It is advantageous to attach this knowledge to the tensor
+type itself.</p></li>
+<li><p>It prevents illegal operations, such as adding two representation corresponding to different bases. Such a mistake
+would otherwise only become apparent if it results in a shape missmatch (which is only the case if the bases have
+different sizes).</p></li>
+<li><p>It saves the developer from having to repeatedly implement change of basis transformations, which takes time
+and can be a cause of errors.</p></li>
+</ol>
+<p>BTensor was developed to allow working with such abstract tensors and taking benefit from the listed advantages.</p>
+<div class="section" id="a-tensor-with-basis">
+<h2>A Tensor with Basis<a class="headerlink" href="#a-tensor-with-basis" title="Permalink to this headline"></a></h2>
+<p>Equation <a class="reference internal" href="#equation-eq-1">(1)</a> tells us what is needed to represent an
+abstract vector or tensor: a representation, i.e. an array of numbers, and a basis.
+However, a closer look at this equation reveals that each <span class="math notranslate nohighlight">\(\mathbf{b}_i\)</span> in itself is an abstract vector
+(note the bold font).
+We can again assume that these abstract vectors can be represented by some numbers <span class="math notranslate nohighlight">\(r_i^{\hphantom{i}j}\)</span>
+(now forming a matrix) and yet another basis, <span class="math notranslate nohighlight">\(\mathbf{c}_j\)</span>, such that we arrive at</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{v} = \sum_i v^i \sum_j r_i^{\hphantom{i}j} \: \mathbf{c}_j.\]</div>
+<p>Repeating the same step again, we would obtain</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{v} = \sum_i v^i \sum_j r_i^{\hphantom{i}j} \sum_k s_j^{\hphantom{j}k} \: \mathbf{d}_k,\]</div>
+<p>where we introduced yet another basis and matrix of numbers, <span class="math notranslate nohighlight">\(\mathbf{d}_k\)</span> and <span class="math notranslate nohighlight">\(s_j^{\hphantom{j}k}\)</span>,
+but no matter how often we do this, there will always be another
+set of abstract basis vectors on the very right-hand side.
+We thus have to terminate this process at some basis (called <em>root basis</em>) and do what we have been
+doing all along when working with vector representations: we have to accept that the basis of the root basis itself
+remains <em>implicit</em>, in other words only exist in our head (and hopefully as a suitably chosen variable name),
+without any analogue in BTensor <a class="footnote-reference brackets" href="#f2" id="id3">2</a>.</p>
+<p>Once is done, all other bases can be represented in terms of the root basis, following the chain of
+matrix products above.
+The matrix elements which encode the basis transformations, <span class="math notranslate nohighlight">\(r_i^{\hphantom{i}j}\)</span>,
+are the inner products</p>
+<div class="math notranslate nohighlight">
+\[r_i^{\hphantom{i}j} = \langle \mathbf{c}^j , \mathbf{b}_i \rangle,\]</div>
+<p>and relate one basis to the next. They are the input required to define a new basis, based on an existing one
+(starting from the root basis).  Note that the bases do not have to form a linear chain of dependency, as shown here.
+There can be mupliple bases deriving from the same parent basis, forming a tree structure as a result.</p>
+<p>Once all the desired bases have been defined in this way, we can start creating abstract tensors:
+the required input is a set of bases (one for each tensor dimension) and the representation of the tensor within
+this set of bases.
+Any tensors defined in this way can be added or contracted with one another, even if they do not have the same
+set of bases: the only requirement is that all bases derive from the same root basis, such that the basis transformation
+can be resolved automatically.</p>
+<p class="rubric">Footnotes</p>
+<dl class="footnote brackets">
+<dt class="label" id="f1"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
+<dd><p>In a non orthogonal basis, vector representations can only be added if they both transform in the same way:
+covariantly or contravariantly. In contrast, a contraction over one dimension is only allowed if the
+two representations transform differently in that dimension.</p>
+</dd>
+<dt class="label" id="f2"><span class="brackets"><a class="fn-backref" href="#id3">2</a></span></dt>
+<dd><p>In the case of a non-orthogonal root basis it is also necessary to define the metric
+<span class="math notranslate nohighlight">\(M_{ij} = \langle \mathbf{b}_i , \mathbf{b}_j \rangle\)</span>
+of this basis, which is used to change the transformation behavior between co- and contravariant
+whenever necessary. For an orthonormal root basis the metric is simply the identity matrix.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="BTensor Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Max Nusspickel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

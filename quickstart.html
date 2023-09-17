@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash; BTensor  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api/index.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            BTensor
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#defining-bases-and-tensors">Defining Bases and Tensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basis-from-permutation">Basis from Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#active-and-passive-transformations">Active and Passive Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projection-and-spaces">Projection and Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multidimensional-tensors">Multidimensional Tensors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">BTensor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline"></a></h1>
+<div class="section" id="defining-bases-and-tensors">
+<h2>Defining Bases and Tensors<a class="headerlink" href="#defining-bases-and-tensors" title="Permalink to this headline"></a></h2>
+<p>As a first example, consider the 2D euclidian basis with basis vectors <span class="math notranslate nohighlight">\(\mathbf{e}_x\)</span> and <span class="math notranslate nohighlight">\(\mathbf{e}_y\)</span>,
+and a second (non-orthogonal) basis, with basis vectors
+<span class="math notranslate nohighlight">\(\mathbf{e}_{x'}\)</span> =  <span class="math notranslate nohighlight">\(\mathbf{e}_x\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{e}_{y'}\)</span> =  <span class="math notranslate nohighlight">\(\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right)\)</span>.
+In other words, the first basis vector is identical, however the second basis vector is rotated 45° clockwise.</p>
+<p>In BTensor, a <span class="xref std std-ref">Basis</span> can be defined according to</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">btensor</span> <span class="kn">import</span> <span class="n">Basis</span>
+
+<span class="n">basis1</span> <span class="o">=</span> <span class="n">Basis</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]])</span>
+<span class="n">basis2</span> <span class="o">=</span> <span class="n">Basis</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">basis1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">basis1</span></code> represents the euclidian 2D basis, <code class="docutils literal notranslate"><span class="pre">r</span></code> the transformation matrix, and <code class="docutils literal notranslate"><span class="pre">basis2</span></code> the second,
+non-orthogonal basis.
+Note that the definition of <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is very simple: only an integer defining the dimensionality of the space is
+required.
+In contrast, <code class="docutils literal notranslate"><span class="pre">basis2</span></code> is defined in terms of a transformation matrix and a parent basis, namely <code class="docutils literal notranslate"><span class="pre">basis1</span></code>.
+Note, that the <span class="xref std std-ref">make_subbasis</span> method of
+<code class="docutils literal notranslate"><span class="pre">basis1</span></code> could have been used instead.</p>
+<p>In BTensor, bases are organized in a <strong>tree structure</strong>. We distinguish two types of bases:</p>
+<ul class="simple">
+<li><p>A <strong>root-basis</strong> does not have a parent and is constructed from an integer size argument.</p></li>
+<li><p>A <strong>derived basis</strong> has a parent basis and is defined in terms of a transformation wrt to its parent.</p></li>
+</ul>
+<p>In this example, <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is a root basis and <code class="docutils literal notranslate"><span class="pre">basis2</span></code> is a derived basis.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The root-basis is not required to be orthogonal.
+A non-orthogonal root basis can be constructed as <code class="docutils literal notranslate"><span class="pre">Basis(2,</span> <span class="pre">metric=m)</span></code>, where <code class="docutils literal notranslate"><span class="pre">m</span></code> is the metric matrix of
+the root-basis.</p>
+</div>
+<p>All bases which belong to the same basis tree are considered <strong>compatible</strong>, i.e., BTensor can perform numerical
+operations such as addition between tensors expressed in these bases.</p>
+<p>For this we require the second fundamental type, the <span class="xref std std-ref">Tensor</span>,
+which wraps NumPy’s <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">ndarray</a>.
+Let us consider the points <span class="math notranslate nohighlight">\(\mathbf{p}_1 = -1\mathbf{e}_{x} + 1\mathbf{e}_{y}\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{p}_2 = 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'}\)</span>.
+We can construct these as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">btensor</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="n">point1</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">basis</span><span class="o">=</span><span class="n">basis1</span><span class="p">)</span>
+<span class="n">point2</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">basis</span><span class="o">=</span><span class="n">basis2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The important thing to note is that the representations <span class="math notranslate nohighlight">\((-1, 0)\)</span> and <span class="math notranslate nohighlight">\((1, 1)\)</span> of these two points refer to
+differents bases. In particular, it does not make sense to add these representations directly, but instead we have to
+consider the basis vectors they represent, such that
+<span class="math notranslate nohighlight">\(\mathbf{p}_3 = \mathbf{p}_1 + \mathbf{p}_2 = -1\mathbf{e}_{x} + 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'} =
+\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right) = \mathbf{e}_{y'}\)</span></p>
+<p>We can see that there are two ways to represent point <span class="math notranslate nohighlight">\(\mathbf{p}_3\)</span>, either in <code class="docutils literal notranslate"><span class="pre">basis1</span></code> or <code class="docutils literal notranslate"><span class="pre">basis2</span></code>.
+In BTensor, we do not need to worry about <code class="docutils literal notranslate"><span class="pre">point1</span></code> and <code class="docutils literal notranslate"><span class="pre">point2</span></code> being defined in different bases—as
+long as the bases are <strong>compatible</strong> (i.e., the belong to the same basis tree), numerical operations, such as addition
+can be carried out. For example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">point3</span> <span class="o">=</span> <span class="n">point1</span> <span class="o">+</span> <span class="n">point2</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;point3 in basis1: {point3.to_numpy(basis=basis1)}&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;point3 in basis2: {point3.to_numpy(basis=basis2)}&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>returns</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">point3 in basis1: [0.70710678 0.70710678]</span>
+<span class="go">point3 in basis2: [0. 1.]</span>
+</pre></div>
+</div>
+<p>which agrees with the above result.</p>
+</div>
+<div class="section" id="basis-from-permutation">
+<h2>Basis from Permutation<a class="headerlink" href="#basis-from-permutation" title="Permalink to this headline"></a></h2>
+<p>In the example above the derived basis <code class="docutils literal notranslate"><span class="pre">basis2</span></code> was defined in terms of <code class="docutils literal notranslate"><span class="pre">basis1</span></code> via the <span class="math notranslate nohighlight">\(2 \times 2\)</span>
+transformation matrix.
+In general, any derived basis can be defined in terms of a <span class="math notranslate nohighlight">\(m \times n\)</span> matrix, where <span class="math notranslate nohighlight">\(m\)</span> is the size
+of the parent basis, <span class="math notranslate nohighlight">\(n\)</span> the size of the derived basis, with <span class="math notranslate nohighlight">\(0 &lt; n \leq m\)</span>.
+If <span class="math notranslate nohighlight">\(n = m\)</span>, the parent and derived basis span the same space and we consider the derived basis to be a
+<strong>rotation</strong> <a class="footnote-reference brackets" href="#f1" id="id1">1</a> of its parent basis. If however, <span class="math notranslate nohighlight">\(n &lt; m\)</span>, then the derived basis only spans a <strong>subspace</strong> of
+its parent basis,
+which we can think of as a <strong>rotation + projection</strong> operation.</p>
+<p>Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
+For example, we might be interested in the derived basis defined by the first two out of four basis vectors of its
+parent basis.
+While this transformation can be represented in terms of the matrix</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{bmatrix}
+1 &amp; 0  \\
+0 &amp; 1  \\
+0 &amp; 0  \\
+0 &amp; 0  \\
+\end{bmatrix}\end{split}\]</div>
+<p>we can represent it easier in terms of a <strong>indexing array</strong>, a <strong>slice</strong>, or a <strong>masking array</strong>:</p>
+<ul class="simple">
+<li><p><strong>Indexing array</strong>: a 1D array of integer indices, which refer to the basis vectors of the parent basis.
+In this example: <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p></li>
+<li><p><strong>Slice</strong>: a slice object with start, stop, and step attributes. In this example: <code class="docutils literal notranslate"><span class="pre">slice(0,</span> <span class="pre">2,</span> <span class="pre">1)</span></code>
+(or simply <code class="docutils literal notranslate"><span class="pre">slice(2)</span></code>).</p></li>
+<li><p><strong>Masking array</strong>: a 1D array with boolean values, indicating if the corresponding basis vector of the parent basis
+is included in the derived basis. In this example: <code class="docutils literal notranslate"><span class="pre">[True,</span> <span class="pre">True,</span> <span class="pre">False,</span> <span class="pre">False]</span></code>.</p></li>
+</ul>
+<p>In contrast to to the more general rotation above, we refer to these relations as <strong>permutations</strong>, since indexing array can change the order of basis vectors
+(or <strong>permutation + selection</strong>, if the derived basis is smaller than its parent).
+Defining a derived basis via a permutation when possible is not only more convention, it will also allow for more
+efficient transformations between different bases.</p>
+<p class="rubric">Footnotes</p>
+<dl class="footnote brackets">
+<dt class="label" id="f1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation
+matrix in the mathematical sense (orthogonal matrix with determinant 1).</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="active-and-passive-transformations">
+<h2>Active and Passive Transformations<a class="headerlink" href="#active-and-passive-transformations" title="Permalink to this headline"></a></h2>
+<p>The current basis of a tensor can be accessed via the <code class="docutils literal notranslate"><span class="pre">basis</span></code>-attribute:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+<span class="go">(Basis(id= 1, size= 2, name= Basis1),)</span>
+</pre></div>
+</div>
+<p>Note that the basis is stored as a tuple, to support multidimensional tensors (see section below).
+To change the basis of a tensor, the <code class="docutils literal notranslate"><span class="pre">[]</span></code>-operator can be used:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="p">[</span><span class="n">basis2</span><span class="p">]</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+<span class="go">(Basis(id= 2, size= 2, name= Basis2),)</span>
+</pre></div>
+</div>
+<p>When changing the basis using the <code class="docutils literal notranslate"><span class="pre">[]</span></code>-operator, the ndarray representation will be updated automatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="go">[0.70710678 0.70710678]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="p">[</span><span class="n">basis2</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="go">[0. 1.]</span>
+</pre></div>
+</div>
+<p>This is an example of a <strong>passive</strong> transformation, meaning that while basis and representation change, the (abstract)
+point itself does not move in space.</p>
+<p>On the other hand, the
+<span class="xref std std-ref">replace_basis</span> method can be used
+to replace the basis while keeping the representation fixed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">point4</span> <span class="o">=</span> <span class="n">point3</span><span class="o">.</span><span class="n">change_basis</span><span class="p">(</span><span class="n">basis2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point4</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+<span class="go">(Basis(id= 2, size= 2, name= Basis2),)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point4</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="go">[0.70710678 0.70710678]</span>
+</pre></div>
+</div>
+<p>Chaning the basis using <code class="docutils literal notranslate"><span class="pre">replace_basis</span></code> is an <strong>active</strong> transformation and consequently <code class="docutils literal notranslate"><span class="pre">point4</span></code> describes a
+different point in space than <code class="docutils literal notranslate"><span class="pre">point3</span></code>.</p>
+</div>
+<div class="section" id="projection-and-spaces">
+<h2>Projection and Spaces<a class="headerlink" href="#projection-and-spaces" title="Permalink to this headline"></a></h2>
+<p>When using the <code class="docutils literal notranslate"><span class="pre">[]</span></code>-operator to perform a change of basis, it is possible to use a basis which is not large enough to
+to describe the tensor fully:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">basis3</span> <span class="o">=</span> <span class="n">Basis</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">parent</span><span class="o">=</span><span class="n">basis1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="p">[</span><span class="n">basis3</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="go">[0.70710678]</span>
+</pre></div>
+</div>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">[]</span></code>-operator does not only perform a change-of-basis operations, it also performs a <strong>projection</strong>
+onto the subspace spanned by <code class="docutils literal notranslate"><span class="pre">basis3</span></code>.
+In this process, information about the original tensor will be lost and cannot be restored, even when
+transforming back into the original basis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="p">[</span><span class="mf">0.70710678</span> <span class="mf">0.70710678</span><span class="p">]</span>
+ <span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="p">[</span><span class="n">basis3</span><span class="p">][</span><span class="n">basis1</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="p">[</span><span class="mf">0.70710678</span> <span class="mf">0.</span>        <span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To make sure that the information is lost when performing a change of basis, the
+<span class="xref std std-ref">change_basis</span> method
+or the <code class="docutils literal notranslate"><span class="pre">cob</span></code>-interface can be used.
+In this way, a <code class="docutils literal notranslate"><span class="pre">BasisError</span></code> exception will be raised, when trying to perform a transformation
+which would lead to a loss of information:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="o">.</span><span class="n">cob</span><span class="p">[</span><span class="n">basis3</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">btensor.util.util.BasisError</span>: <span class="n">(Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)</span>
+</pre></div>
+</div>
+</div>
+<p>To check if two bases span the same space or are in a sub- or super-space relationship to each other,
+the <code class="docutils literal notranslate"><span class="pre">space</span></code>-attribute can be used in combination with the usual comparison operators:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">basis1</span><span class="o">.</span><span class="n">space</span> <span class="o">==</span> <span class="n">basis2</span><span class="o">.</span><span class="n">space</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">basis1</span><span class="o">.</span><span class="n">space</span> <span class="o">==</span> <span class="n">basis3</span><span class="o">.</span><span class="n">space</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">basis3</span><span class="o">.</span><span class="n">space</span> <span class="o">&lt;</span> <span class="n">basis1</span><span class="o">.</span><span class="n">space</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Furthermore, the <code class="docutils literal notranslate"><span class="pre">|</span></code>-operator can be used to check if two bases are orthogonal:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">basis4</span> <span class="o">=</span> <span class="n">Basis</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">parent</span><span class="o">=</span><span class="n">basis1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">basis3</span><span class="o">.</span><span class="n">space</span> <span class="o">|</span> <span class="n">basis4</span><span class="o">.</span><span class="n">space</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="multidimensional-tensors">
+<h2>Multidimensional Tensors<a class="headerlink" href="#multidimensional-tensors" title="Permalink to this headline"></a></h2>
+<p>So far we have only considered a 1D tensor, a vector, with a single associated basis.
+How can we work with higher-dimensional tensors in BTensor? We simply have to use tuples of <code class="docutils literal notranslate"><span class="pre">Basis</span></code> instances, i.e.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span><span class="kn">from</span> <span class="nn">btensor</span> <span class="kn">import</span> <span class="n">Basis</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span>
+<span class="lineno"> 5 </span><span class="n">basis1</span> <span class="o">=</span> <span class="p">(</span><span class="n">Basis</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">Basis</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="lineno"> 6 </span><span class="n">basis2</span> <span class="o">=</span> <span class="p">(</span><span class="n">basis1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">make_subbasis</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+<span class="lineno"> 7 </span>          <span class="n">basis1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">make_subbasis</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span><span class="n">data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="n">data2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="n">tensor1</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="n">basis1</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="n">tensor2</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">data2</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="n">basis2</span><span class="p">)</span>
+<span class="lineno">13 </span>
+<span class="lineno">14 </span><span class="n">tensor3</span> <span class="o">=</span> <span class="n">tensor1</span> <span class="o">+</span> <span class="n">tensor2</span>
+<span class="lineno">15 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tensor3 in basis1:</span><span class="se">\n</span><span class="s2">{tensor3[basis1].to_numpy()}&quot;</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tensor3 in basis2:</span><span class="se">\n</span><span class="s2">{tensor3[basis2].to_numpy()}&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">basis2[1]</span></code> with size 2 only spans a subspace of <code class="docutils literal notranslate"><span class="pre">basis1[1]</span></code> with size 3.
+As a result, <code class="docutils literal notranslate"><span class="pre">tensor1</span></code> and <code class="docutils literal notranslate"><span class="pre">tensor2</span></code> are created using ndarrays of different shapes,
+<span class="math notranslate nohighlight">\(2 \times 3\)</span> and <span class="math notranslate nohighlight">\(2 \times 2\)</span>, respectively.
+While it would not be possible to add the NumPy arrays directly, we can add the corresponding <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> objects,
+since their bases are compatible along each dimension.
+The resulting <code class="docutils literal notranslate"><span class="pre">tensor3</span></code> can be transformed to both <code class="docutils literal notranslate"><span class="pre">basis1</span></code> or <code class="docutils literal notranslate"><span class="pre">basis2</span></code>, as shown in lines 15, 16.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/index.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Max Nusspickel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
