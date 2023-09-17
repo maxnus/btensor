@@ -1,0 +1,6 @@
+Tensor.to\_numpy
+================
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.to_numpy

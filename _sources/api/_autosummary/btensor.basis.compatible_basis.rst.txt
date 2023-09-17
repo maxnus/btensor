@@ -1,0 +1,6 @@
+btensor.basis.compatible\_basis
+===============================
+
+.. currentmodule:: btensor.basis
+
+.. autofunction:: compatible_basis

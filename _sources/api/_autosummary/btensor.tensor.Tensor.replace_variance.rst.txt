@@ -1,0 +1,6 @@
+Tensor.replace\_variance
+========================
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.replace_variance

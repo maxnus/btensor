@@ -1,0 +1,6 @@
+Tensor.is\_compatible
+=====================
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.is_compatible

@@ -1,0 +1,6 @@
+Basis.is\_compatible\_with
+==========================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.is_compatible_with

@@ -1,0 +1,6 @@
+Tensor.\_\_init\_\_
+===================
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.__init__

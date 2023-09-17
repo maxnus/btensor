@@ -1,0 +1,44 @@
+﻿btensor.basis
+=============
+
+.. currentmodule:: btensor
+
+.. automodule:: btensor.basis
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class-template.rst
+      :nosignatures:
+   
+      Basis
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-function-template.rst
+      :nosignatures:
+   
+      compatible_basis
+      get_common_parent
+   
+   
+
+   
+   
+   
+
+
+

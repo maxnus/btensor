@@ -1,0 +1,6 @@
+Basis.get\_overlap
+==================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.get_overlap

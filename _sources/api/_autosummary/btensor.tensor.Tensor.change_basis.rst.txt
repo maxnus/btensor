@@ -1,0 +1,6 @@
+Tensor.change\_basis
+====================
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.change_basis

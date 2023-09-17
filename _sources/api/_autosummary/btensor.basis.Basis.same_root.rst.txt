@@ -1,0 +1,6 @@
+Basis.same\_root
+================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.same_root
