@@ -96,12 +96,19 @@ class Basis:
 
     Args:
         argument: Integer to create a rootbasis or sequence, slice, or array to create a derived basis.
-        parent: Parent basis object for the derived basis.
-        metric: Metric array, representing the inner product of the basis with itself.
-        name: Name of the basis.
-        orthonormal: Set True, if the basis is orthonormal.
+        parent: Parent basis object for the derived basis. If it is None, the basis is a root-basis. Default: None.
+        metric: Metric array, representing the inner product of the basis with itself. It is used to raise and lower
+            tensor indices, if the basis is non-orthonormal. Default: None.
+        name: Name of the basis, which is used for string representations of basis objects.
+            Basis names are not required to be unique. Default: None.
+        orthonormal: Set True, if the basis is orthonormal, i.e. the metric is the identity matrix. If None,
+            the basis is assumed orthonormal if a) it is a root basis without metric or b) it is a derived basis
+            with an orthonormal parent basis, defined in terms of a permutation + selection (slice or 1D sequence).
+            Default: None.
 
     """
+    # Private (inheriting classes will have their own version)
+    # ID used for next created Basis object:
     __next_id = 1
     # Keep a weak reference of all created bases:
     __basis_by_id = weakref.WeakValueDictionary()
@@ -112,7 +119,7 @@ class Basis:
                  parent: Basis | None = None,
                  metric: np.ndarray | None = None,
                  name: str | None = None,
-                 orthonormal: bool = False) -> None:
+                 orthonormal: bool | None = None) -> None:
         """Initialize new Basis object."""
         super().__init__()
         self._parent = parent
@@ -127,8 +134,11 @@ class Basis:
             name = f'Basis{self._id}'
         self._name = name
         self._matrix = self._argument_to_matrix(argument)
+        if orthonormal is None:
+            orthonormal = (self.is_root() and metric is None) or (not self.is_root() and self.parent.is_orthonormal
+                                                                  and isinstance(self._matrix, ColumnPermutationMatrix))
         if metric is None:
-            if orthonormal or self.is_root():
+            if orthonormal:
                 metric = IdentityMatrix(self.size)
             else:
                 metric = SymmetricMatrix(MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate())
