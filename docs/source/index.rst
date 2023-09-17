@@ -11,16 +11,17 @@ BTensor Documentation
 BTensor_ defines the Tensor type, a generalization of NumPy_'s ndarray, which can store a basis along each dimension.
 When performing tensor operations, such as additions or contractions, BTensor will ensure that:
 
-- The bases of the tensors are compatible along all dimensions, or raise an Exception otherwise
-- If the bases are comptabile, but not equal, a basis transformation will be carried out automatically
+- The bases of the tensors are compatible along all dimensions or raise an exception if not
+- If the bases are compatible, but not equal, necessary basis transformations will be carried out automatically
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   motivation
+   introduction
    quickstart
+   api/index
 
 
 Indices and tables

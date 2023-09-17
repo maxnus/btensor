@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "btensor"
-version = "0.0.1"
+name = "BTensor"
+version = "1.0.0"
 authors = [
   { name="Max Nusspickel", email="max.nusspickel@gmail.com" },
 ]
@@ -23,7 +23,6 @@ classifiers = [
 dependencies = [
     "numpy>=1.19.0",
     "scipy>=1.1.0",
-    "loguru",
 ]
 
 [project.urls]

@@ -19,22 +19,23 @@ try:
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from .basis import BasisInterface, compatible_basis, is_nobasis, get_common_parent, BasisT
+from btensor.basis import (IBasis, compatible_basis, _is_nobasis, get_common_parent, NBasis, Basis, nobasis,
+                           _is_basis_or_nobasis)
 
 
-KeyLike: TypeAlias = Union[BasisInterface, slice, EllipsisType]
+KeyLike: TypeAlias = Union[IBasis, slice, EllipsisType]
 
 
 class BasisTuple(tuple):
 
-    def __init__(self, args: BasisT) -> None:
+    def __init__(self, args: NBasis) -> None:
         for arg in args:
-            if not isinstance(arg, BasisInterface):
-                raise TypeError(f"{type(self).__name__} can only contain elements of type {BasisInterface.__name__} "
+            if not _is_basis_or_nobasis(arg):
+                raise TypeError(f"{type(self).__name__} can only contain elements of type {Basis.__name__} or {nobasis}"
                                 f"(not {arg})")
 
     @classmethod
-    def create(cls, basis: BasisT) -> BasisTuple:
+    def create(cls, basis: NBasis) -> BasisTuple:
         if isinstance(basis, cls):
             return basis
         if not isinstance(basis, tuple):
@@ -78,12 +79,12 @@ class BasisTuple(tuple):
         return tuple(getattr(basis, 'size', None) for basis in self)
 
     @overload
-    def __getitem__(self, key: int) -> BasisInterface: ...
+    def __getitem__(self, key: int) -> IBasis: ...
 
     @overload
     def __getitem__(self, key: slice) -> BasisTuple: ...
 
-    def __getitem__(self, key: int | slice) -> BasisInterface | BasisTuple:
+    def __getitem__(self, key: int | slice) -> IBasis | BasisTuple:
         result = super().__getitem__(key)
         if isinstance(result, tuple):
             return type(self)(result)
@@ -102,28 +103,28 @@ class BasisTuple(tuple):
 
     def get_common_basistuple(self, other: BasisTuple) -> BasisTuple:
         if not self.is_compatible_with(other):
-            raise ValueError
+            raise ValueError(f"Basistuple with shape {self.shape} is not compatible with shape {other.shape}")
         common_parents = tuple(get_common_parent(basis_self, basis_other)
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 
-    def update_with(self, update: tuple[Optional[BasisInterface]], check_size: bool = True) -> BasisTuple:
+    def update_with(self, update: tuple[Optional[IBasis]], check_size: bool = True) -> BasisTuple:
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError
         for axis, (size, b0, b1) in enumerate(zip(self.shape, self, update)):
             if b1 is None:
                 continue
-            if check_size and not is_nobasis(b1) and b1.size != size:
+            if check_size and not _is_nobasis(b1) and b1.size != size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {b1.size}")
             new_basis[axis] = b1
         return BasisTuple.create(tuple(new_basis))
 
     def is_spanning(self, other: BasisTuple) -> bool:
         for basis_self, basis_other in zip(self, other):
-            if is_nobasis(basis_other):
+            if _is_nobasis(basis_other):
                 continue
-            if is_nobasis(basis_self):
+            if _is_nobasis(basis_self):
                 return False
             if basis_other.space > basis_self.space:
                 return False

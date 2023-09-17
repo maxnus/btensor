@@ -15,7 +15,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from loguru import logger
 import numpy as np
 import scipy
 import scipy.linalg
@@ -26,7 +25,19 @@ if TYPE_CHECKING:
 
 class Space:
 
+    #: Default tolerance applied to eigendecompositions
     DEFAULT_TOL = 1e-12
+
+    __doc__ = f"""A class describing the space spanned by some basis.
+    
+    Parameters
+    ----------
+    basis:
+        Basis which spans the space.
+    tol:
+        Tolerance applied to eigenvalues of an eigendecomposition, in order to determine if a corresponding eigenvector
+        is part of the space or not. Default: {DEFAULT_TOL}.
+    """
 
     def __init__(self, basis: Basis, tol: float = DEFAULT_TOL) -> None:
         self._basis = basis
@@ -34,6 +45,7 @@ class Space:
 
     @property
     def basis(self) -> Basis:
+        """Basis spanning the space."""
         return self._basis
 
     def __repr__(self) -> str:
@@ -45,7 +57,6 @@ class Space:
     def _singular_values_of_overlap(self, other: Space) -> np.ndarray:
         ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
-        logger.trace("singular values:\n{}", sv)
         return sv
 
     def _eigenvalues_of_projector(self, other: Space) -> np.ndarray:
@@ -55,7 +66,6 @@ class Space:
         else:
             proj = np.linalg.multi_dot([ovlp, other.basis.metric.inverse.to_numpy(), ovlp.T])
         ev = scipy.linalg.eigh(proj, b=self.basis.metric.to_numpy())[0]
-        logger.trace("eigenvalues:\n{}", ev)
         return ev
 
     def trivially_equal(self, other: Space) -> bool | None:
@@ -70,7 +80,6 @@ class Space:
             rv = True
         else:
             rv = None
-        logger.trace("returns {}", rv)
         return rv
 
     def trivially_less_than(self, other: Space) -> bool | None:
@@ -85,7 +94,6 @@ class Space:
             rv = True
         else:
             rv = None
-        logger.trace("returns {}", rv)
         return rv
 
     def trivially_less_or_equal_than(self, other: Space) -> bool | None:
@@ -100,7 +108,6 @@ class Space:
             rv = True
         else:
             rv = None
-        logger.trace("returns {}", rv)
         return rv
 
     def trivially_orthogonal(self, other: Space) -> bool | None:
@@ -124,7 +131,6 @@ class Space:
         #sv = self._singular_values_of_overlap(other)
         ev = self._eigenvalues_of_projector(other)
         rv = np.all(abs(ev-1) < self._tol)
-        logger.trace("returns {}", rv)
         return rv
 
     def __neq__(self, other: Space) -> bool:
@@ -139,7 +145,6 @@ class Space:
         #sv = self._singular_values_of_overlap(other)
         ev = self._eigenvalues_of_projector(other)
         rv = np.all(abs(ev-1) < self._tol)
-        logger.trace("returns {}", rv)
         #return np.all(ev > 1-self._tol)
         return rv
 

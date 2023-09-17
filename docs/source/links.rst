@@ -6,6 +6,7 @@
 .. _GitHub: https://github.com/
 .. _pip: https://pypi.org/project/pip/
 .. _NumPy: https://numpy.org
+.. _ndarray: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html
 .. _SciPy: https://scipy.org
 .. _MPI: https://www.mpi-forum.org/
 .. _MPI4PY: https://mpi4py.readthedocs.io/en/stable/

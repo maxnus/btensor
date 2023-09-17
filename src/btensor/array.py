@@ -15,8 +15,8 @@
 import numpy as np
 
 from btensor.util import *
-from .basis import Basis
-from .tensor import Tensor, Cotensor
+from btensor.basis import Basis
+from btensor.tensor import Tensor
 from btensor import numpy_functions
 
 
@@ -65,7 +65,7 @@ class Array(Tensor):
                 if isinstance(ki, (int, np.integer)):
                     del basis[idx]
                 elif isinstance(ki, slice):
-                    basis[idx] = Basis(definition=ki, parent=basis[idx])
+                    basis[idx] = Basis(argument=ki, parent=basis[idx])
                 elif ki is np.newaxis:
                     pass
                 else:
@@ -93,5 +93,5 @@ class Array(Tensor):
         return numpy_functions.sum(self, axis=axis)
 
 
-class Coarray(Array, Cotensor):
-    pass
+#class Coarray(Array, Cotensor):
+#    pass

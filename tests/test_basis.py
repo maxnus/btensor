@@ -409,7 +409,7 @@ class TestBasis(TestCase):
     def test_matrices_for_coeff_in_basis(self):
 
         def test(basis1, basis2, expected):
-            mats = basis1.coeff_in_basis(basis2)
+            mats = basis1._coeff_in_basis(basis2)
             self.assert_allclose(mats.evaluate(), expected)
 
         test(self.rootbasis_a, self.rootbasis_a, np.identity(self.rootbasis_a.size))

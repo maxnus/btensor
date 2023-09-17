@@ -16,23 +16,22 @@ import numpy as np
 from btensor import Basis
 
 
-basis = Basis(3)
+rootbasis = Basis(3)
 
 # --- A derived basis can be constructed in terms of
 # 1) A general transformation matrix
-tfm = np.asarray([[1, 0],
-                  [0, 0],
-                  [0, 1]])
-basis1 = Basis(tfm, parent=basis)
+tm = np.asarray([[1, 0],
+                 [0, 0],
+                 [0, 1]])
+basis1 = Basis(tm, parent=rootbasis)
 # 2) an indexing array
-basis2 = Basis([0, 2], parent=basis)
+basis2 = Basis([0, 2], parent=rootbasis)
 # 3) a slice object
-basis3 = Basis(slice(0, 3, 2), parent=basis)
+basis3 = Basis(slice(0, 3, 2), parent=rootbasis)
 # 4) a masking array
-basis4 = Basis([True, False, True], parent=basis)
+basis4 = Basis([True, False, True], parent=rootbasis)
 
 # --- Note that all the definitions above are equivalent:
-assert np.all(basis1.coeff_in_basis(basis).evaluate() == tfm)
-assert np.all(basis2.coeff_in_basis(basis).evaluate() == tfm)
-assert np.all(basis3.coeff_in_basis(basis).evaluate() == tfm)
-assert np.all(basis4.coeff_in_basis(basis).evaluate() == tfm)
+assert np.allclose(basis1.get_transformation_to(basis2).to_numpy(), np.identity(2))
+assert np.allclose(basis1.get_transformation_to(basis3).to_numpy(), np.identity(2))
+assert np.allclose(basis1.get_transformation_to(basis4).to_numpy(), np.identity(2))
