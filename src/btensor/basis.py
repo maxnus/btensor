@@ -17,7 +17,6 @@ from functools import lru_cache
 import weakref
 from typing import *
 
-from loguru import logger
 import numpy as np
 import scipy
 
@@ -321,7 +320,6 @@ class Basis:
         # Caching
         cache_key = (other.id, tol)
         if (cached := self._intersect_cache.get(cache_key, None)) is not None:
-            logger.debug("returning cached result")
             return cached
 
         # Alternative method (works only for orthonormal basis?)
@@ -336,12 +334,9 @@ class Basis:
         else:
             p = np.linalg.multi_dot([s, other.metric.inverse.to_numpy(), s.T])
         e, v = scipy.linalg.eigh(p, b=self.metric.to_numpy())
-        logger.debug("tolerance= {}, eigenvalues= {}", tol, e)
         v = v[:, e >= tol]
         intersect = self.make_subbasis(v, name=name, orthonormal=self.is_orthonormal)
-        logger.debug("basis sizes: self= {}, other= {}, intersect= {}", len(self), len(other), len(intersect))
         if cache:
-            logger.debug("storing result in cache")
             self._intersect_cache[cache_key] = intersect
         return intersect
 

@@ -15,7 +15,6 @@
 from __future__ import annotations
 import operator
 
-from loguru import logger
 import pytest
 import itertools
 import numpy as np
@@ -23,9 +22,6 @@ import scipy
 
 import btensor
 from btensor import Basis, Array, Tensor, TensorSum
-
-
-#logger.enable('btensor')
 
 
 class UserSlice:

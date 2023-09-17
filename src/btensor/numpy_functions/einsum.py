@@ -19,7 +19,6 @@ import itertools
 from numbers import Number
 from typing import *
 
-from loguru import logger
 import numpy as np
 
 from btensor.tensorsum import TensorSum
@@ -119,7 +118,6 @@ class Einsum:
             ops = list(operands)
             for tensorsum_idx, pos in enumerate(tensorsums_positions):
                 ops[pos] = tensors[tensorsum_idx]
-            logger.debug(f"recursive {self} with operands {ops}")
             result.append(self(*ops, intersect_tol=intersect_tol, **kwargs))
         return TensorSum(result)
 

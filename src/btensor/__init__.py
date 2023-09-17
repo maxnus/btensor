@@ -12,21 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-__version__ = '0.0.0'
-
-from loguru import logger
-logger.disable('btensor')
-#logger.configure(
-#    handlers=[
-#        dict(sink=sys.stderr, format="[{time}] {message}", colors=True),
-#        dict(sink='btensor.log', format="[{time}] {message}")
-#    ]
-#)
+__version__ = '1.0.0'
 
 from .basis import IBasis, Basis, nobasis
 from .space import Space
 from .tensor import Tensor, Cotensor
-from .array import Array#, Coarray
+from .array import Array
 
 from .numpy_functions import *
 
