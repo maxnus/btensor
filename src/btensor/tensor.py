@@ -204,6 +204,23 @@ class Tensor:
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
         return type(self)(values, basis=self.basis, variance=variance_tuple)
 
+    def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Tensor:
+        """Replace variance of tensor without corresponding transformation of the representation.
+
+        Args:
+            variance: Sequence of new variances for tensor along each axis, -1 for contravariance and 1 for covariance.
+            inplace: If True, the tensor will be modified in-place, otherwise a new Tensor instance will be created.
+                Default: False.
+
+        Returns:
+            Tensor with replaced variance.
+
+        """
+        tensor = self if inplace else self.copy()
+        tensor._check_variance(variance)
+        tensor._variance = variance
+        return tensor
+
     @staticmethod
     def _get_basis_transform(basis1: NBasis, basis2: NBasis, variance: tuple[int, int]):
         return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
