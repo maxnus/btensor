@@ -40,8 +40,7 @@ class _ChangeBasisInterface:
 
 
 DOCSTRING_TEMPLATE = \
-    """A numerical container class with support for automatic basis transformation.
-
+    """
     Args:
         data: NumPy array containing the representation of the {name}.
         basis: Basis object or tuple of Basis objects, representing the Basis along each axis of the input data.
@@ -55,7 +54,9 @@ DOCSTRING_TEMPLATE = \
 
 class Tensor:
 
-    __doc__ = DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_Variance.CONTRAVARIANT)
+    __doc__ = \
+        """A numerical container class with support for automatic basis transformation.
+        """ + DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_Variance.CONTRAVARIANT)
     _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
                         np.float16, np.float32, np.float64]
 
@@ -594,4 +595,6 @@ def Cotensor(data: ArrayLike,
     return Tensor(data, basis=basis, variance=variance, name=name, copy_data=False)
 
 
-Cotensor.__doc__ = DOCSTRING_TEMPLATE.format(name=Cotensor.__name__, default_variance=_Variance.COVARIANT)
+Cotensor.__doc__ = \
+    """A helper function to create Tensor objects with default variance 1 (covariant).
+    """ + DOCSTRING_TEMPLATE.format(name=Cotensor.__name__, default_variance=_Variance.COVARIANT)
