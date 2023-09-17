@@ -45,9 +45,9 @@ DOCSTRING_TEMPLATE = \
     Args:
         data: NumPy array containing the representation of the {name}.
         basis: Basis object or tuple of Basis objects, representing the Basis along each axis of the input data.
-            Default: nobasis along each axis..
+            Default: nobasis along each axis.
         variance: Variance along each dimension. Default: {default_variance}.
-        name: Name of the {name}. Default: 'BasisX' where X is the ID of the basis.
+        name: Name of the {name}. Default: 'Basis<ID>' where <ID> is the ID of the basis.
         copy_data: If False, no copy of the NumPy data will be created. Default: True.
 
     """
