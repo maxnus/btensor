@@ -63,8 +63,10 @@ We can construct these as follows:
     point2 = Tensor([ 1, 1], basis=basis2)
 
 The important thing to note is that the representations :math:`(-1, 0)` and :math:`(1, 1)` of these two points refer to
-differents bases. In particular, it does not make sense to add these representations directly, but instead we have to consider the basis vectors they represent, such that
-:math:`\mathbf{p}_3 = \mathbf{p}_1 + \mathbf{p}_2 = -1\mathbf{e}_{x} + 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'} = \frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right) = \mathbf{e}_{y'}`
+differents bases. In particular, it does not make sense to add these representations directly, but instead we have to
+consider the basis vectors they represent, such that
+:math:`\mathbf{p}_3 = \mathbf{p}_1 + \mathbf{p}_2 = -1\mathbf{e}_{x} + 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'} =
+\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right) = \mathbf{e}_{y'}`
 
 We can see that there are two ways to represent point :math:`\mathbf{p}_3`, either in ``basis1`` or ``basis2``.
 In BTensor, we do not need to worry about ``point1`` and ``point2`` being defined in different bases---as
@@ -86,6 +88,49 @@ returns
 
 which agrees with the above result.
 
+Basis from Permutation
+----------------------
+
+In the example above the derived basis ``basis2`` was defined in terms of ``basis1`` via the :math:`2 \times 2`
+transformation matrix.
+In general, any derived basis can be defined in terms of a :math:`m \times n` matrix, where :math:`m` is the size
+of the parent basis, :math:`n` the size of the derived basis, with :math:`0 < n \leq m`.
+If :math:`n = m`, the parent and derived basis span the same space and we consider the derived basis to be a
+**rotation** [#f1]_ of its parent basis. If however, :math:`n < m`, then the derived basis only spans a **subspace** of
+its parent basis,
+which we can think of as a **rotation + projection** operation.
+
+Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
+For example, we might be interested in the derived basis defined by the first two out of four basis vectors of its
+parent basis.
+While this transformation can be represented in terms of the matrix
+
+.. math::
+    \begin{bmatrix}
+    1 & 0  \\
+    0 & 1  \\
+    0 & 0  \\
+    0 & 0  \\
+    \end{bmatrix}
+
+we can represent it easier in terms of a **indexing array**, a **slice**, or a **masking array**:
+
+- **Indexing array**: a 1D array of integer indices, which refer to the basis vectors of the parent basis.
+  In this example: ``[0, 1]``.
+- **Slice**: a slice object with start, stop, and step attributes. In this example: ``slice(0, 2, 1)``
+  (or simply ``slice(2)``).
+- **Masking array**: a 1D array with boolean values, indicating if the corresponding basis vector of the parent basis
+  is included in the derived basis. In this example: ``[True, True, False, False]``.
+
+In contrast to to the more general rotation above, we refer to these relations as **permutations**, since indexing array can change the order of basis vectors
+(or **permutation + selection**, if the derived basis is smaller than its parent).
+Defining a derived basis via a permutation when possible is not only more convention, it will also allow for more
+efficient transformations between different bases.
+
+.. rubric:: Footnotes
+
+.. [#f1] If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation
+         matrix in the mathematical sense (orthogonal matrix with determinant 1).
 
 Active and Passive Transformations
 ----------------------------------
@@ -114,9 +159,12 @@ When changing the basis using the ``[]``-operator, the ndarray representation wi
    >>> print(point3[basis2].to_numpy())
    [0. 1.]
 
-This is an example of a **passive** transformation.
-In order to replace the basis while keeping the representation fixed,
-the ``replace_basis`` method can be used:
+This is an example of a **passive** transformation, meaning that while basis and representation change, the (abstract)
+point itself does not move in space.
+
+On the other hand, the
+:ref:`replace_basis <api/_autosummary/btensor.tensor.Tensor.replace_basis:Tensor.replace\\_basis>` method can be used
+to replace the basis while keeping the representation fixed:
 
 .. code-block:: python
 
@@ -133,52 +181,62 @@ different point in space than ``point3``.
 Projection and Spaces
 ---------------------
 
-While the aim of BTensor is to implement abstract tensor types, which can be operate within...
+When using the ``[]``-operator to perform a change of basis, it is possible to use a basis which is not large enough to
+to describe the tensor fully:
+
+.. code-block:: python
+
+   >>> basis3 = Basis([0], parent=basis1)
+   >>> print(point3[basis3].to_numpy())
+   [0.70710678]
+
+In this case, the ``[]``-operator does not only perform a change-of-basis operations, it also performs a **projection**
+onto the subspace spanned by ``basis3``.
+In this process, information about the original tensor will be lost and cannot be restored, even when
+transforming back into the original basis:
+
+.. code-block:: python
+
+    >>> print(point3.to_numpy())
+   [0.70710678 0.70710678]
+    >>> print(point3[basis3][basis1].to_numpy())
+   [0.70710678 0.        ]
+
+.. note::
+
+   To make sure that the information is lost when performing a change of basis, the
+   :ref:`change_basis <api/_autosummary/btensor.tensor.Tensor.change_basis:Tensor.change\\_basis>` method
+   or the ``cob``-interface can be used.
+   In this way, a ``BasisError`` exception will be raised, when trying to perform a transformation
+   which would lead to a loss of information:
+
+   .. code-block:: python
+
+      >>> print(point3.cob[basis3].to_numpy())
+      Traceback (most recent call last):
+      ...
+      btensor.util.util.BasisError: (Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)
 
 
+To check if two bases span the same space or are in a sub- or super-space relationship to each other,
+the ``space``-attribute can be used in combination with the usual comparison operators:
 
+   .. code-block:: python
 
+      >>> print(basis1.space == basis2.space)
+      True
+      >>> print(basis1.space == basis3.space)
+      False
+      >>> print(basis3.space < basis1.space)
+      True
 
+Furthermore, the ``|``-operator can be used to check if two bases are orthogonal:
 
-Basis from Permutation
-----------------------
+   .. code-block:: python
 
-In the example on the top, the derived basis ``basis2`` was defined in terms of ``basis1`` via the :math:`2 \times 2`
-transformation matrix.
-In general, any derived basis can be defined in terms of a :math:`m \times n` matrix, where :math:`m` is the size
-of the parent basis, :math:`n` the size of the derived basis, with :math:`0 < n \leq m`.
-If :math:`n = m`, the parent and derived basis span the same space and we consider the derived basis to be a
-**rotation** [#f1]_ of its parent basis. If however, :math:`n < m`, then the derived basis only spans a **subspace** of its parent basis,
-which we can think of as a **rotation + projection** operation.
-
-Often, we are dealing with derived bases which derive from their parent basis in a simpler way.
-For example, we might be interested in the derived basis defined by the first two out of four basis vectors of its parent basis.
-While this transformation can be represented in terms of the matrix
-
-.. math::
-    \begin{bmatrix}
-    1 & 0  \\
-    0 & 1  \\
-    0 & 0  \\
-    0 & 0  \\
-    \end{bmatrix}
-
-we can represent it easier in terms of a **indexing array**, a **slice**, or a **masking array**:
-
-- **Indexing array**: a 1D array of integer indices, which refer to the basis vectors of the parent basis. In this example: ``[0, 1]``.
-- **Slice**: a slice object with start, stop, and step attributes. In this example: ``slice(0, 2, 1)`` (or simply ``slice(2)``).
-- **Masking array**: a 1D array with boolean values, indicating if the corresponding basis vector of the parent basis is included in the derived basis. In this example: ``[True, True, False, False]``.
-
-In contrast to to the more general rotation above, we refer to these relations as **permutations**, since indexing array can change the order of basis vectors
-(or **permutation + selection**, if the derived basis is smaller than its parent).
-Defining a derived basis via a permutation when possible is not only more convention, it will also allow for more
-efficient transformations between different bases.
-
-.. rubric:: Footnotes
-
-.. [#f1] If parent or derived basis are non-orthogonal, their transformation matrix will not generally be a rotation
-         matrix in the mathematical sense (orthogonal matrix with determinant 1).
-
+      >>> basis4 = Basis([1], parent=basis1)
+      >>> print(basis3.space | basis4.space)
+      True
 
 Multidimensional Tensors
 ------------------------
@@ -196,10 +254,3 @@ As a result, ``tensor1`` and ``tensor2`` are created using ndarrays of different
 While it would not be possible to add the NumPy arrays directly, we can add the corresponding ``Tensor`` objects,
 since their bases are compatible along each dimension.
 The resulting ``tensor3`` can be transformed to both ``basis1`` or ``basis2``, as shown in lines 15, 16.
-
-.. However, we already know that ``basis2`` cannot represent the tensor fully along the second dimensions, since it
-   cannot represent the constituting ``tensor1`` fully.
-   BTensor nevertheless allows
-   converted back to its array representation with respect to ``basis1``, as shown in line 15.
-   However, if we tried the do the same using ``basis2`` and without the additional keyword ``project=True``,
-   an exception would occur. The reason for this is, that ``basis2`` cannot represent this tensor without loss of information.
