@@ -22,31 +22,37 @@ In BTensor, a :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be d
     basis1 = Basis(2)
     tm = np.asarray([[1, 1/np.sqrt(2)],
                      [0, 1/np.sqrt(2)]])
-    basis2 = basis1.make_subbasis(tm)
+    basis2 = Basis(tm, parent=basis1)
 
-where ``basis1`` represents the euclidian 2D basis, ``tm`` the transformation matrix, and ``basis2`` the second, non-orthogonal basis.
-Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is required.
+where ``basis1`` represents the euclidian 2D basis, ``tm`` the transformation matrix, and ``basis2`` the second,
+non-orthogonal basis.
+Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is
+required.
 In contrast, ``basis2`` is defined in terms of a transformation matrix and a parent basis, namely ``basis1``.
+Note, that the :ref:`make_subbasis <api/_autosummary/btensor.basis.Basis.make_subbasis:Basis.make\\_subbasis>` method of
+``basis1`` could have been used instead.
 
 In BTensor, bases are organized in a *tree structure*. We distinguish two types of bases:
 
-- A **root basis** does not have a parent and is constructed from an integer size argument.
+- A **root-basis** does not have a parent and is constructed from an integer size argument.
 - A **derived basis** has a parent basis and is defined in terms of a transformation wrt to its parent.
 
 In this example, ``basis1`` is a root basis and ``basis2`` is a derived basis.
 
 .. note::
 
-    The root basis is not required to be orthogonal.
+    The root-basis is not required to be orthogonal.
     A non-orthogonal root basis can be constructed as ``Basis(2, metric=m)``, where ``m`` is the metric matrix of
-    the basis.
+    the root-basis.
 
 All bases which belong to the same basis tree are considered **compatible**, i.e., BTensor can perform numerical
 operations such as addition between tensors expressed in these bases.
 
 
-For this we require the second fundamental type, the :ref:`Tensor <api/_autosummary/btensor.tensor.Tensor:Tensor>`, which wraps NumPy_'s ndarray.
-Let us consider the points :math:`\mathbf{p}_1 = -1\mathbf{e}_{x} + 1\mathbf{e}_{y}` and :math:`\mathbf{p}_2 = 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'}`.
+For this we require the second fundamental type, the :ref:`Tensor <api/_autosummary/btensor.tensor.Tensor:Tensor>`,
+which wraps NumPy's ndarray_.
+Let us consider the points :math:`\mathbf{p}_1 = -1\mathbf{e}_{x} + 1\mathbf{e}_{y}` and
+:math:`\mathbf{p}_2 = 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'}`.
 We can construct these as follows:
 
 .. code-block:: python
@@ -56,26 +62,26 @@ We can construct these as follows:
     point2 = Tensor([ 1, 1], basis=basis2)
 
 The important thing to note is that the representations :math:`(-1, 0)` and :math:`(1, 1)` of these two points refer to
-differents bases. In particular, it does not make sense to add these row vectors directly, but instead we have to consider the basis vectors they represent, such that
+differents bases. In particular, it does not make sense to add these representations directly, but instead we have to consider the basis vectors they represent, such that
 :math:`\mathbf{p}_3 = \mathbf{p}_1 + \mathbf{p}_2 = -1\mathbf{e}_{x} + 1\mathbf{e}_{x'} + 1\mathbf{e}_{y'} = \frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right) = \mathbf{e}_{y'}`
 
-We can see that there are two ways to represent point :math:`\mathbf{p}_3`, either in basis 1 or basis 2.
-In BTensor, we do not need to worry about ``point2`` and ``point2`` being defined in different bases---as
+We can see that there are two ways to represent point :math:`\mathbf{p}_3`, either in ``basis1`` or ``basis2``.
+In BTensor, we do not need to worry about ``point1`` and ``point2`` being defined in different bases---as
 long as the bases are **compatible** (i.e., the belong to the same basis tree), numerical operations, such as addition
 can be carried out. For example
 
 .. code-block:: python
 
     point3 = point1 + point2
-    print(f"Point 3 in basis 1: {point3.to_numpy(basis=basis1)}")
-    print(f"Point 3 in basis 2: {point3.to_numpy(basis=basis2)}")
+    print(f"point3 in basis1: {point3.to_numpy(basis=basis1)}")
+    print(f"point3 in basis2: {point3.to_numpy(basis=basis2)}")
 
 returns
 
 .. code-block:: console
 
-    Point 3 in basis 1: [0.70710678 0.70710678]
-    Point 3 in basis 2: [0. 1.]
+    point3 in basis1: [0.70710678 0.70710678]
+    point3 in basis2: [0. 1.]
 
 which agrees with the above result.
 

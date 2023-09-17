@@ -150,7 +150,8 @@ class Basis:
         self._intersect_cache = {}
         self.__basis_by_id[self.id] = self
 
-    def get_by_id(self, id: int, default: None) -> Basis | None:
+    @classmethod
+    def get_by_id(cls, id: int, default: None) -> Basis | None:
         """Returns a previously defined basis based on its ID, if it exists.
 
         Note that the basis may not be found because it has been garbage collected.
@@ -163,7 +164,7 @@ class Basis:
             Existing basis or default.
 
         """
-        return self.__basis_by_id.get(id, default)
+        return cls.__basis_by_id.get(id, default)
 
     def _argument_to_matrix(self, argument: int | BasisArgument) -> Matrix:
         # Root basis:
