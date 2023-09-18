@@ -46,8 +46,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="_autosummary/btensor.basis.html">btensor.basis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_autosummary/btensor.tensor.html">btensor.tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/btensor.basis.html">btensor.basis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/btensor.tensor.html">btensor.tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/btensor.dot.html">btensor.dot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/btensor.einsum.html">btensor.einsum</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -78,6 +86,8 @@
              
   <div class="section" id="api-reference">
 <span id="api"></span><h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline"></a></h1>
+<div class="section" id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
@@ -85,13 +95,31 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/btensor.basis.html#module-btensor.basis" title="btensor.basis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">btensor.basis</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Module defining the Basis class and related functions.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="_autosummary/btensor.tensor.html#module-btensor.tensor" title="btensor.tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">btensor.tensor</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Module defining the Tensor class and related functions.</p></td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/btensor.dot.html#btensor.dot" title="btensor.dot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">btensor.dot</span></code></a></p></td>
+<td><p>Evaluates the dot product of two tensors while performing required basis transformations automatically.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/btensor.einsum.html#btensor.einsum" title="btensor.einsum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">btensor.einsum</span></code></a></p></td>
+<td><p>Evaluates the Einstein summation on the operands while performing required basis transformations automatically.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 

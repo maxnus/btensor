@@ -46,29 +46,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="btensor.basis.html">btensor.basis</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="btensor.tensor.html">btensor.tensor</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="btensor.tensor.Tensor.html">Tensor</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.__init__.html">Tensor.__init__</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.change_basis.html">Tensor.change_basis</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.change_basis_at.html">Tensor.change_basis_at</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.change_variance.html">Tensor.change_variance</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.change_variance_at.html">Tensor.change_variance_at</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.copy.html">Tensor.copy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.dot.html">Tensor.dot</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.get_common_basis.html">Tensor.get_common_basis</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.is_compatible.html">Tensor.is_compatible</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">Tensor.project</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.replace_basis.html">Tensor.replace_basis</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.replace_variance.html">Tensor.replace_variance</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.to_numpy.html">Tensor.to_numpy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.trace.html">Tensor.trace</a></li>
-<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Tensor.transpose.html">Tensor.transpose</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#modules">Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="btensor.basis.html">btensor.basis</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="btensor.tensor.html">btensor.tensor</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="btensor.tensor.Tensor.html">Tensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="btensor.tensor.Cotensor.html">btensor.tensor.Cotensor</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="btensor.tensor.Cotensor.html">btensor.tensor.Cotensor</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 </ul>
 </li>
 </ul>
@@ -104,7 +91,7 @@
 <h1>Tensor.project<a class="headerlink" href="#tensor-project" title="Permalink to this headline"></a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="btensor.tensor.Tensor.project">
-<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L248"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.project" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L250"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.project" title="Permalink to this definition"></a></dt>
 <dd><p>Transforms tensor to a different set of basis.</p>
 <p>Slice(None) can be used to indicate no transformation.
 Note that this can reduce the rank of the array, for example when projecting onto an orthogonal space.</p>
