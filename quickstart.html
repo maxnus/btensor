@@ -89,7 +89,7 @@ and a second (non-orthogonal) basis, with basis vectors
 <span class="math notranslate nohighlight">\(\mathbf{e}_{x'}\)</span> =  <span class="math notranslate nohighlight">\(\mathbf{e}_x\)</span> and
 <span class="math notranslate nohighlight">\(\mathbf{e}_{y'}\)</span> =  <span class="math notranslate nohighlight">\(\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right)\)</span>.
 In other words, the first basis vector is identical, however the second basis vector is rotated 45° clockwise.</p>
-<p>In BTensor, a <a class="reference internal" href="api/_autosummary/btensor.basis.Basis.html#basis"><span class="std std-ref">Basis</span></a> can be defined according to</p>
+<p>A <a class="reference internal" href="api/_autosummary/btensor.basis.Basis.html#basis"><span class="std std-ref">Basis</span></a> can be defined according to</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">btensor</span> <span class="kn">import</span> <span class="n">Basis</span>
 
@@ -101,17 +101,17 @@ In other words, the first basis vector is identical, however the second basis ve
 </div>
 <p>where <code class="docutils literal notranslate"><span class="pre">basis1</span></code> represents the euclidian 2D basis, <code class="docutils literal notranslate"><span class="pre">r</span></code> the transformation matrix, and <code class="docutils literal notranslate"><span class="pre">basis2</span></code> the second,
 non-orthogonal basis.
-Note that the definition of <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is very simple: only an integer defining the dimensionality of the space is
+The definition of <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is very simple: only an integer defining the dimensionality of the space is
 required.
 In contrast, <code class="docutils literal notranslate"><span class="pre">basis2</span></code> is defined in terms of a transformation matrix and a parent basis, namely <code class="docutils literal notranslate"><span class="pre">basis1</span></code>.
-Note, that the <a class="reference internal" href="api/_autosummary/btensor.basis.Basis.make_subbasis.html#basis-make-subbasis"><span class="std std-ref">make_subbasis</span></a> method of
+Note that the <a class="reference internal" href="api/_autosummary/btensor.basis.Basis.make_subbasis.html#basis-make-subbasis"><span class="std std-ref">make_subbasis</span></a> method of
 <code class="docutils literal notranslate"><span class="pre">basis1</span></code> could have been used instead.</p>
 <p>In BTensor, bases are organized in a <strong>tree structure</strong>. We distinguish two types of bases:</p>
 <ul class="simple">
 <li><p>A <strong>root-basis</strong> does not have a parent and is constructed from an integer size argument.</p></li>
 <li><p>A <strong>derived basis</strong> has a parent basis and is defined in terms of a transformation wrt to its parent.</p></li>
 </ul>
-<p>In this example, <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is a root basis and <code class="docutils literal notranslate"><span class="pre">basis2</span></code> is a derived basis.</p>
+<p>In this example, <code class="docutils literal notranslate"><span class="pre">basis1</span></code> is a root-basis and <code class="docutils literal notranslate"><span class="pre">basis2</span></code> is a derived basis.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The root-basis is not required to be orthogonal.
@@ -218,7 +218,7 @@ point itself does not move in space.</p>
 <p>On the other hand, the
 <a class="reference internal" href="api/_autosummary/btensor.tensor.Tensor.replace_basis.html#tensor-replace-basis"><span class="std std-ref">replace_basis</span></a> method can be used
 to replace the basis while keeping the representation fixed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">point4</span> <span class="o">=</span> <span class="n">point3</span><span class="o">.</span><span class="n">change_basis</span><span class="p">(</span><span class="n">basis2</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">point4</span> <span class="o">=</span> <span class="n">point3</span><span class="o">.</span><span class="n">replace_basis</span><span class="p">(</span><span class="n">basis2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point4</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
 <span class="go">(Basis(id= 2, size= 2, name= Basis2),)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point4</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>

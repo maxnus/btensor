@@ -13,7 +13,7 @@ and a second (non-orthogonal) basis, with basis vectors
 :math:`\mathbf{e}_{y'}` =  :math:`\frac{1}{\sqrt{2}} \left( \mathbf{e}_x + \mathbf{e}_y \right)`.
 In other words, the first basis vector is identical, however the second basis vector is rotated 45° clockwise.
 
-In BTensor, a :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be defined according to
+A :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be defined according to
 
 .. code-block:: python
 
@@ -27,10 +27,10 @@ In BTensor, a :ref:`Basis <api/_autosummary/btensor.basis.Basis:Basis>` can be d
 
 where ``basis1`` represents the euclidian 2D basis, ``r`` the transformation matrix, and ``basis2`` the second,
 non-orthogonal basis.
-Note that the definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is
+The definition of ``basis1`` is very simple: only an integer defining the dimensionality of the space is
 required.
 In contrast, ``basis2`` is defined in terms of a transformation matrix and a parent basis, namely ``basis1``.
-Note, that the :ref:`make_subbasis <api/_autosummary/btensor.basis.Basis.make_subbasis:Basis.make\\_subbasis>` method of
+Note that the :ref:`make_subbasis <api/_autosummary/btensor.basis.Basis.make_subbasis:Basis.make\\_subbasis>` method of
 ``basis1`` could have been used instead.
 
 In BTensor, bases are organized in a **tree structure**. We distinguish two types of bases:
@@ -38,7 +38,7 @@ In BTensor, bases are organized in a **tree structure**. We distinguish two type
 - A **root-basis** does not have a parent and is constructed from an integer size argument.
 - A **derived basis** has a parent basis and is defined in terms of a transformation wrt to its parent.
 
-In this example, ``basis1`` is a root basis and ``basis2`` is a derived basis.
+In this example, ``basis1`` is a root-basis and ``basis2`` is a derived basis.
 
 .. note::
 
@@ -168,7 +168,7 @@ to replace the basis while keeping the representation fixed:
 
 .. code-block:: python
 
-   >>> point4 = point3.change_basis(basis2)
+   >>> point4 = point3.replace_basis(basis2)
    >>> print(point4.basis)
    (Basis(id= 2, size= 2, name= Basis2),)
    >>> print(point4.to_numpy())
