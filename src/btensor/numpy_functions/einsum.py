@@ -281,18 +281,35 @@ class Einsum:
 @overload
 def einsum(subscripts: str,
            *operands: Tensor,
-           einsumfunc: Callable = np.einsum,
            intersect_tol: Number | None = None,
+           einsumfunc: Callable = np.einsum,
            **kwargs: Any) -> Tensor | Number: ...
 
 
 def einsum(subscripts: str,
            *operands: EinsumOperandT,
-           einsumfunc: Callable = np.einsum,
            intersect_tol: Number | None = None,
+           einsumfunc: Callable = np.einsum,
            **kwargs: Any) -> EinsumOperandT | Number:
-    """Allows contraction of Array objects using Einstein notation.
+    """Evaluates the Einstein summation on the operands while performing required basis transformations automatically.
 
-    The overlap matrices between non-matching dimensions are automatically added.
+    Only basis independent summations are supported. A summation is basis independent, if each label either:
+
+    * Appears once on both the input (before '->') and output side (free label).
+    * Appears twice on the input side and not on the output side (contracted label).
+
+    See also the documentation of numpy.einsum.
+
+    Args:
+        subscripts: Specifies the subscripts for summation as comma separated list of subscript labels.
+        operands: Sequence of tensors for the Einstein summation.
+        itersect_tol: If not None, contracted dimensions will first be transformed to the intersect_basis using
+            intersect_tol as the truncation tolerance. This may speed up the summation but introduces an error which
+            increases with the tolerance. Default: None.
+        einsumfunc: Passing this argument allows using a different einsum driver as backend. Default: numpy.einsum.
+
+    Returns:
+        Result of the Einstein summation as a tensor or number.
+
     """
     return Einsum(subscripts, einsumfunc)(*operands, intersect_tol=intersect_tol, **kwargs)

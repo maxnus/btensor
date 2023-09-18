@@ -75,6 +75,16 @@ def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
 
 
 def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
+    """Evaluates the dot product of two tensors while performing required basis transformations automatically.
+
+    See also numpy.dot.
+
+    Args:
+        a, b: First and second tensor.
+
+    Returns:
+        Dot product of a and b.
+    """
     a, b = _to_tensor(a, b)
     basis = variance = None
     if a.ndim == b.ndim == 1:
