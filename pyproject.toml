@@ -41,3 +41,6 @@ version = {attr = "btensor.__version__"}
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 pythonpath = "tests"
+
+[tool.ruff]
+line-length = 120
