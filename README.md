@@ -1,3 +1,5 @@
+[![CI](https://github.com/maxnus/btensor/actions/workflows/ci.yml/badge.svg)](https://github.com/maxnus/btensor/actions/workflows/ci.yml)
+
 BTensor
 =======
 
