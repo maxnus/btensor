@@ -42,9 +42,9 @@ Tensor
       ~Tensor.T
       ~Tensor.basis
       ~Tensor.cob
+      ~Tensor.current_shape
       ~Tensor.dtype
       ~Tensor.ndim
-      ~Tensor.shape
       ~Tensor.variance
    
    
