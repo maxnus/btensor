@@ -40,7 +40,7 @@ class TestNumpyFunctions(TestCase):
                 bt_func(basis)
             return
         tensor = bt_func(basis, shape=with_shape)
-        assert tensor.shape == expected.shape
+        assert tensor.current_shape == expected.shape
         assert tensor.dtype == expected.dtype
         if np_func is np.empty:
             return
@@ -54,9 +54,9 @@ class TestNumpyFunctions(TestCase):
         values = np.random.random(shape)
         tensor = btensor.Tensor(values, basis=basis)
         expected = np_func(values)
-        assert bt_func(expected).shape == expected.shape
+        assert bt_func(expected).current_shape == expected.shape
         assert bt_func(expected).dtype == expected.dtype
-        assert bt_func(tensor).shape == expected.shape
+        assert bt_func(tensor).current_shape == expected.shape
         assert bt_func(tensor).dtype == expected.dtype
         if np_func is np.empty_like:
             return
