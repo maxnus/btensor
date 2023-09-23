@@ -117,7 +117,7 @@ class Tensor:
     def _check_basis(self, basis: BasisTuple) -> None:
         if len(basis) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
-        for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
+        for axis, (size, baselem) in enumerate(zip(self.current_shape, basis)):
             if not _is_basis_or_nobasis(baselem):
                 raise ValueError(f"basis instance or nobasis required (given: {baselem} of type {type(baselem)}).")
             if _is_nobasis(baselem):
@@ -403,8 +403,8 @@ class Tensor:
         return self._data.ndim
 
     @property
-    def shape(self) -> tuple[int, ...]:
-        """Shape of the tensor."""
+    def current_shape(self) -> tuple[int, ...]:
+        """Current shape of the tensor."""
         return self._data.shape
 
     def to_numpy(self,

@@ -52,7 +52,7 @@ zeros = _empty_factory(np.zeros)
 def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
         a = _to_tensor(a)
-        return func(a.basis, *args, shape=a.shape, **kwargs)
+        return func(a.basis, *args, shape=a.current_shape, **kwargs)
     return func_like
 
 
@@ -109,8 +109,8 @@ def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
         variance_ovlp = (-a.variance[leftaxis], -b.variance[rightaxis])
         ovlp = basis_left.get_transformation(basis_right, variance=variance_ovlp)
     elif basis_left is btensor.nobasis and basis_right is btensor.nobasis:
-        size = a.shape[leftaxis]
-        if b.shape[rightaxis] != size:
+        size = a.current_shape[leftaxis]
+        if b.current_shape[rightaxis] != size:
             raise BasisError
         ovlp = IdentityMatrix(size)
     else:
