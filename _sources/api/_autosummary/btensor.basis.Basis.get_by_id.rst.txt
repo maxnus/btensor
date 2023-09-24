@@ -1,0 +1,6 @@
+Basis.get\_by\_id
+=================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.get_by_id

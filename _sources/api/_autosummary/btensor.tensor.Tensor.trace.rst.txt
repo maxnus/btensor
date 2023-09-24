@@ -1,0 +1,6 @@
+Tensor.trace
+============
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.trace

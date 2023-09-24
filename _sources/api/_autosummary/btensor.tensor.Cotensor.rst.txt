@@ -1,0 +1,6 @@
+btensor.tensor.Cotensor
+=======================
+
+.. currentmodule:: btensor.tensor
+
+.. autofunction:: Cotensor

@@ -1,0 +1,52 @@
+Basis
+=====
+
+.. currentmodule:: btensor.basis
+
+.. autoclass:: Basis
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree:
+      :template: custom-method-template.rst
+      :nosignatures:
+   
+      ~Basis.__init__
+      ~Basis.get_by_id
+      ~Basis.get_common_parent
+      ~Basis.get_overlap
+      ~Basis.get_parents
+      ~Basis.get_transformation
+      ~Basis.get_transformation_from
+      ~Basis.get_transformation_to
+      ~Basis.is_compatible_with
+      ~Basis.is_derived_from
+      ~Basis.is_parent_of
+      ~Basis.is_root
+      ~Basis.make_intersect_basis
+      ~Basis.make_subbasis
+      ~Basis.make_union_basis
+      ~Basis.same_root
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Basis.id
+      ~Basis.is_orthonormal
+      ~Basis.metric
+      ~Basis.name
+      ~Basis.parent
+      ~Basis.root
+      ~Basis.size
+      ~Basis.space
+   
+   

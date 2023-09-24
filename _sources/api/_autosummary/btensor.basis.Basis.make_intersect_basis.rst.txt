@@ -1,0 +1,6 @@
+Basis.make\_intersect\_basis
+============================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.make_intersect_basis

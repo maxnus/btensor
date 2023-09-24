@@ -1,0 +1,50 @@
+Tensor
+======
+
+.. currentmodule:: btensor.tensor
+
+.. autoclass:: Tensor
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree:
+      :template: custom-method-template.rst
+      :nosignatures:
+   
+      ~Tensor.__init__
+      ~Tensor.change_basis
+      ~Tensor.change_basis_at
+      ~Tensor.change_variance
+      ~Tensor.change_variance_at
+      ~Tensor.copy
+      ~Tensor.dot
+      ~Tensor.get_common_basis
+      ~Tensor.is_compatible
+      ~Tensor.project
+      ~Tensor.replace_basis
+      ~Tensor.replace_variance
+      ~Tensor.to_numpy
+      ~Tensor.trace
+      ~Tensor.transpose
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Tensor.T
+      ~Tensor.basis
+      ~Tensor.cob
+      ~Tensor.current_shape
+      ~Tensor.dtype
+      ~Tensor.ndim
+      ~Tensor.variance
+   
+   

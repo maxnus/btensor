@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basis &mdash; BTensor  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Basis.__init__" href="btensor.basis.Basis.__init__.html" />
+    <link rel="prev" title="btensor.basis" href="btensor.basis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            BTensor
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#modules">Modules</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="btensor.basis.html">btensor.basis</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Basis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="btensor.basis.compatible_basis.html">btensor.basis.compatible_basis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="btensor.basis.get_common_parent.html">btensor.basis.get_common_parent</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="btensor.tensor.html">btensor.tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">BTensor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="btensor.basis.html">btensor.basis</a></li>
+      <li class="breadcrumb-item active">Basis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/_autosummary/btensor.basis.Basis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="basis">
+<h1>Basis<a class="headerlink" href="#basis" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="btensor.basis.Basis">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">btensor.basis.</span></span><span class="sig-name descname"><span class="pre">Basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argument</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orthonormal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/basis.py#L96"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.basis.Basis" title="Permalink to this definition"></a></dt>
+<dd><p>Class to represent a vector space basis, which can be used to define a Tensor object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>argument</strong> (<em>int</em><em> | </em><em>BasisArgument</em>) – Integer to create a rootbasis or sequence, slice, or array to create a derived basis.</p></li>
+<li><p><strong>parent</strong> (<a class="reference internal" href="#btensor.basis.Basis" title="btensor.basis.Basis"><em>Basis</em></a><em> | </em><em>None</em>) – Parent basis object for the derived basis. If it is None, the basis is a root-basis. Default: None.</p></li>
+<li><p><strong>metric</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Metric array, representing the inner product of the basis with itself. It is used to raise and lower
+tensor indices, if the basis is non-orthonormal. Default: None.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of the basis, which is used for string representations of basis objects.
+Basis names are not required to be unique. Default: None.</p></li>
+<li><p><strong>orthonormal</strong> (<em>bool</em><em> | </em><em>None</em>) – Set True, if the basis is orthonormal, i.e. the metric is the identity matrix. If None,
+the basis is assumed orthonormal if a) it is a root basis without metric or b) it is a derived basis
+with an orthonormal parent basis, defined in terms of a permutation + selection (slice or 1D sequence).
+Default: None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.__init__.html#btensor.basis.Basis.__init__" title="btensor.basis.Basis.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a></p></td>
+<td><p>Initialize new Basis object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.get_by_id.html#btensor.basis.Basis.get_by_id" title="btensor.basis.Basis.get_by_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_by_id</span></code></a></p></td>
+<td><p>Returns a previously defined basis based on its ID, if it exists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.get_common_parent.html#btensor.basis.Basis.get_common_parent" title="btensor.basis.Basis.get_common_parent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_common_parent</span></code></a></p></td>
+<td><p>Find first common ancestor basis between multiple bases.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.get_overlap.html#btensor.basis.Basis.get_overlap" title="btensor.basis.Basis.get_overlap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_overlap</span></code></a></p></td>
+<td><p>Get overlap matrix with another basis as a Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.get_parents.html#btensor.basis.Basis.get_parents" title="btensor.basis.Basis.get_parents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parents</span></code></a></p></td>
+<td><p>Get list of parent bases ordered from direct parent to root basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.get_transformation.html#btensor.basis.Basis.get_transformation" title="btensor.basis.Basis.get_transformation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_transformation</span></code></a></p></td>
+<td><p>Get transformation matrix to another basis as a Tensor with general variance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.get_transformation_from.html#btensor.basis.Basis.get_transformation_from" title="btensor.basis.Basis.get_transformation_from"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_transformation_from</span></code></a></p></td>
+<td><p>Get transformation matrix from another basis as a Tensor with variance (-1, 1).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.get_transformation_to.html#btensor.basis.Basis.get_transformation_to" title="btensor.basis.Basis.get_transformation_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_transformation_to</span></code></a></p></td>
+<td><p>Get transformation matrix to another basis as a Tensor with variance (-1, 1).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.is_compatible_with.html#btensor.basis.Basis.is_compatible_with" title="btensor.basis.Basis.is_compatible_with"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_compatible_with</span></code></a></p></td>
+<td><p>Check if basis is compatible with another basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.is_derived_from.html#btensor.basis.Basis.is_derived_from" title="btensor.basis.Basis.is_derived_from"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_derived_from</span></code></a></p></td>
+<td><p>Check if the basis is derived from a second basis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.is_parent_of.html#btensor.basis.Basis.is_parent_of" title="btensor.basis.Basis.is_parent_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_parent_of</span></code></a></p></td>
+<td><p>Check if the basis is parent of a second basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.is_root.html#btensor.basis.Basis.is_root" title="btensor.basis.Basis.is_root"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_root</span></code></a></p></td>
+<td><p>True if basis is a root-basis, False otherwise.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.make_intersect_basis.html#btensor.basis.Basis.make_intersect_basis" title="btensor.basis.Basis.make_intersect_basis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_intersect_basis</span></code></a></p></td>
+<td><p>Make the smallest orthonormal basis, which spans the intersecting space of both the basis and another basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.make_subbasis.html#btensor.basis.Basis.make_subbasis" title="btensor.basis.Basis.make_subbasis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_subbasis</span></code></a></p></td>
+<td><p>Make a new basis with coefficients or indices in reference to the current basis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.basis.Basis.make_union_basis.html#btensor.basis.Basis.make_union_basis" title="btensor.basis.Basis.make_union_basis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_union_basis</span></code></a></p></td>
+<td><p>Make the smallest orthonormal basis, which spans both the basis and one or more other bases.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.basis.Basis.same_root.html#btensor.basis.Basis.same_root" title="btensor.basis.Basis.same_root"><code class="xref py py-obj docutils literal notranslate"><span class="pre">same_root</span></code></a></p></td>
+<td><p>Check if all bases have the same root.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>Unique ID of basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_orthonormal</span></code></p></td>
+<td><p>True if the basis is orthonormal.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">metric</span></code></p></td>
+<td><p>Metric matrix, used to raise and lower tensor indices.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Name of basis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<td><p>Parent of basis or None, if the basis is a root-basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">root</span></code></p></td>
+<td><p>Root-basis of the basis or None, if the basis itself is the root-basis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<td><p>Size of basis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">space</span></code></p></td>
+<td><p>Space spanned by basis.</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="btensor.basis.html" class="btn btn-neutral float-left" title="btensor.basis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="btensor.basis.Basis.__init__.html" class="btn btn-neutral float-right" title="Basis.__init__" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Max Nusspickel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

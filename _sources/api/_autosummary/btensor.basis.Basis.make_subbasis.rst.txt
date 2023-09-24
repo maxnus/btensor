@@ -1,0 +1,6 @@
+Basis.make\_subbasis
+====================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.make_subbasis

@@ -1,0 +1,6 @@
+Basis.get\_transformation
+=========================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.get_transformation

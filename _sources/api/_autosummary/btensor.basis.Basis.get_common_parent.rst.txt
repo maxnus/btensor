@@ -1,0 +1,6 @@
+Basis.get\_common\_parent
+=========================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.get_common_parent

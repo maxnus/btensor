@@ -1,0 +1,6 @@
+Basis.is\_parent\_of
+====================
+
+.. currentmodule:: btensor.basis
+
+.. automethod:: Basis.is_parent_of
