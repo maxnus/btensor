@@ -64,6 +64,7 @@ class TestTensor(TestCase):
 
     def test_array_interface(self, tensor):
         tensor, np_array = tensor
+        tensor.allow_bdo = False
         with pytest.raises(BTensorError):
             np.asarray(tensor)
 
@@ -77,13 +78,16 @@ class TestArithmetic(TestCase):
 
     def test_unary_operator_exception(self, tensor):
         tensor, np_array = tensor
+        tensor.allow_bdo = False
         with pytest.raises(BasisDependentOperationError):
             abs(tensor)
 
     @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
-    def test_binary_operator(self, ndim, tensor_cls, binary_operator, get_tensor_or_array):
+    def test_add_sub_operator(self, ndim, tensor_cls, binary_operator, get_tensor_or_array):
         (tensor1, np_array1), (tensor2, np_array2) = get_tensor_or_array(ndim, tensor_cls, number=2)
-        self.assert_allclose(binary_operator(tensor1, tensor2), binary_operator(np_array1, np_array2))
+        result = binary_operator(tensor1, tensor2)
+        expected = binary_operator(np_array1, np_array2)
+        self.assert_allclose(result.to_numpy(), expected)
 
     @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
     @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub, operator.mul, operator.truediv])

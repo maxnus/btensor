@@ -27,5 +27,5 @@ class VarianceError(BTensorError):
 
 class BasisDependentOperationError(BasisError):
 
-    def __init__(self, msg: str = "operation is basis dependent and therefore not allowed", *args) -> None:
+    def __init__(self, msg: str = "operation may be basis dependent; set allow_bdo to True to allow", *args) -> None:
         super().__init__(msg, *args)

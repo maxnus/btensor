@@ -53,7 +53,7 @@ zeros = _empty_factory(np.zeros)
 def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
         a = _to_tensor(a)
-        return func(a.basis, *args, shape=a.current_shape, **kwargs)
+        return func(a.basis, *args, shape=a.shape, **kwargs)
     return func_like
 
 
@@ -67,12 +67,10 @@ def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
     value = a.to_numpy(copy=False).sum(axis=axis)
     if value.ndim == 0:
         return value
-    if axis is None:
-        return value
     if isinstance(axis, (int, np.integer)):
         axis = (axis,)
-    basis = tuple(a.basis[ax] for ax in range(a.ndim) if ax not in axis)
-    return type(a)(value, basis=basis)
+    basis, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in range(a.ndim) if ax not in axis))
+    return type(a)(value, basis=basis, variance=variance, allow_bdo=a.allow_bdo, copy_data=False)
 
 
 def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
@@ -110,8 +108,8 @@ def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
         variance_ovlp = (-a.variance[leftaxis], -b.variance[rightaxis])
         ovlp = basis_left.get_transformation(basis_right, variance=variance_ovlp)
     elif basis_left is btensor.nobasis and basis_right is btensor.nobasis:
-        size = a.current_shape[leftaxis]
-        if b.current_shape[rightaxis] != size:
+        size = a.shape[leftaxis]
+        if b.shape[rightaxis] != size:
             raise BasisError
         ovlp = IdentityMatrix(size)
     else:
@@ -120,7 +118,8 @@ def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
     value = ndot(a.to_numpy(copy=False), ovlp, b.to_numpy(copy=False))
     if not isinstance(value, np.ndarray):
         return value
-    return type(a)(value, basis=basis, variance=variance)
+    allow_bdo = a.allow_bdo and b.allow_bdo
+    return type(a)(value, basis=basis, variance=variance, allow_bdo=allow_bdo, copy_data=False)
 
 
 def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
@@ -141,8 +140,8 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
         axis1 += a.ndim
     if axis2 < 0:
         axis2 += a.ndim
-    basis_new = tuple(a.basis[i] for i in set(range(a.ndim)) - {axis1, axis2})
-    return type(a)(value, basis_new)
+    basis_new, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in range(a.ndim) if ax not in {axis1, axis2}))
+    return type(a)(value, basis=basis_new, variance=variance, allow_bdo=a.allow_bdo, copy_data=False)
 
 
 def moveaxis(a: ArrayLike | Tensor,
@@ -157,6 +156,5 @@ def moveaxis(a: ArrayLike | Tensor,
     order = [n for n in range(a.ndim) if n not in source]
     for dest, src in sorted(zip(destination, source)):
         order.insert(dest, src)
-    basis = tuple(np.asarray(a.basis)[order])
-    variance = tuple(np.asarray(a.variance)[order])
-    return type(a)(values, basis=basis, variance=variance, name=name or a.name)
+    basis, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in order))
+    return type(a)(values, basis=basis, variance=variance, name=name, allow_bdo=a.allow_bdo)
