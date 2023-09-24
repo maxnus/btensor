@@ -19,7 +19,8 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 import btensor
-from btensor.util import ndot, BasisError, IdentityMatrix
+from btensor.util import ndot, IdentityMatrix
+from btensor.exceptions import BasisError
 from btensor.basis import _is_nobasis
 
 if TYPE_CHECKING:

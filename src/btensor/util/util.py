@@ -29,9 +29,6 @@ __all__ = [
         'is_sequence',
         'array_like',
         'atleast_1d',
-        'BasisError',
-        'VarianceError',
-        'BasisDependentOperationError',
         'ndot',
         'expand_axis',
         'replace_attr',
@@ -62,24 +59,6 @@ def array_like(obj):
 
 def atleast_1d(obj):
     return tuple(np.atleast_1d(obj))
-
-
-class BTensorError(Exception):
-    pass
-
-
-class BasisError(BTensorError):
-    pass
-
-
-class VarianceError(BTensorError):
-    pass
-
-
-class BasisDependentOperationError(BasisError):
-
-    def __init__(self, msg: str = "operation is basis dependent and therefore not allowed", *args) -> None:
-        super().__init__(msg, *args)
 
 
 def ndot(*args) -> np.ndarray | Number:

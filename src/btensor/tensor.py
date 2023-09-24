@@ -24,6 +24,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
+from btensor.exceptions import BTensorError, BasisError, BasisDependentOperationError
 from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
 from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
@@ -58,7 +59,7 @@ class Tensor:
 
     __doc__ = \
         """A numerical container class with support for automatic basis transformation.
-        """ + DOCSTRING_TEMPLATE.format(name="Tensor", default_variance=_Variance.CONTRAVARIANT)
+        """ + DOCSTRING_TEMPLATE.format(name="tensor", default_variance=_Variance.CONTRAVARIANT)
     _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
                         np.float16, np.float32, np.float64]
 
@@ -106,6 +107,7 @@ class Tensor:
 
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
+
 
     # --- Basis
 
@@ -483,15 +485,11 @@ class Tensor:
         """
         return numpy_functions.dot(self, other)
 
-    def _operator(self, op: Callable, *other: Number | Tensor, swap: bool = False) -> Tensor:
+    def _operator(self, op: Callable, other: Number | Tensor | None = None, reverse: bool = False) -> Self:
         # Unary operator
-        if len(other) == 0:
+        if other is None:
             return type(self)(op(self._data), basis=self.basis)
-        # Ternary+ operator
-        if len(other) > 1:
-            raise NotImplementedError
         # Binary operator
-        other = other[0]
         basis = self.basis
         v1 = self._data
         if isinstance(other, Number):
@@ -507,7 +505,7 @@ class Tensor:
                 raise ValueError(f"{self} and {other} are not compatible")
         else:
             return NotImplemented
-        if swap:
+        if reverse:
             v1, v2 = v2, v1
         return type(self)(op(v1, v2), basis=basis)
 
@@ -520,13 +518,13 @@ class Tensor:
         return self._operator(operator.sub, other)
 
     def __radd__(self, other: Number | Tensor) -> Tensor:
-        return self._operator(operator.add, other, swap=True)
+        return self._operator(operator.add, other, reverse=True)
 
     def __rsub__(self, other: Number | Tensor) -> Tensor:
-        return self._operator(operator.sub, other, swap=True)
+        return self._operator(operator.sub, other, reverse=True)
 
     def __rmul__(self, other: Number | Tensor) -> Tensor:
-        return self._operator(operator.mul, other, swap=True)
+        return self._operator(operator.mul, other, reverse=True)
 
     def __pos__(self) -> Tensor:
         return self._operator(operator.pos)
@@ -600,5 +598,5 @@ def Cotensor(data: ArrayLike,
 
 
 Cotensor.__doc__ = \
-    """A helper function to create Tensor objects with default variance 1 (covariant).
-    """ + DOCSTRING_TEMPLATE.format(name=Cotensor.__name__, default_variance=_Variance.COVARIANT)
+    """A helper function to create tensors with default variance 1 (covariant).
+    """ + DOCSTRING_TEMPLATE.format(name=Cotensor.__name__.lower(), default_variance=_Variance.COVARIANT)

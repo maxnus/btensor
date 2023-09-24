@@ -14,7 +14,7 @@
 
 import scipy
 
-from btensor.util import BasisError, VarianceError
+from btensor.exceptions import BasisError, VarianceError
 from btensor.basis import _Variance
 
 

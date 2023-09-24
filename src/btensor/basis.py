@@ -23,7 +23,8 @@ import numpy as np
 import scipy
 
 from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermutationMatrix, GeneralMatrix,
-                          MatrixProductList, is_int, array_like, BasisError)
+                          MatrixProductList, is_int, array_like)
+from btensor.exceptions import BasisError
 from btensor.space import Space
 
 

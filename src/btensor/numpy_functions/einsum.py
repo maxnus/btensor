@@ -22,7 +22,7 @@ from typing import *
 import numpy as np
 
 from btensor.tensorsum import TensorSum
-from btensor.util import BasisDependentOperationError
+from btensor.exceptions import BasisDependentOperationError
 
 if TYPE_CHECKING:
     from btensor import Tensor, IBasis
