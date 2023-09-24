@@ -109,7 +109,7 @@ class TestCase:
             return
 
         def to_array(obj):
-            if isinstance(obj, (Number, np.ndarray, btensor.Array)):
+            if isinstance(obj, (Number, np.ndarray)):
                 return obj
             if isinstance(obj, btensor.Tensor):
                 return obj.to_numpy()

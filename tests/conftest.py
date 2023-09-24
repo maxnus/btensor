@@ -21,7 +21,7 @@ import numpy as np
 import scipy
 
 import btensor
-from btensor import Basis, Array, Tensor, TensorSum
+from btensor import Basis, Tensor, TensorSum
 
 
 class UserSlice:
@@ -132,12 +132,6 @@ def ndim_axis1_axis2(request):
     return request.param
 
 
-@pytest.fixture(params=[Tensor, Array], scope='module')
-def tensor_cls(request):
-    """One tensor class (Tensor or Array)"""
-    return request.param
-
-
 @pytest.fixture(params=[1, 4], scope='module', ids=lambda x: f'size{x}')
 def basis_size(request):
     return request.param
@@ -152,20 +146,6 @@ def basis_size(request):
                 scope='module')
 def binary_operator(request):
     return request.param
-
-# --- Combi fixtures
-
-
-@pytest.fixture(params=[Tensor, Array], scope='module')
-def tensor_cls_2x(request, tensor_cls):
-    """All combination of two tensor classes (Tensor, Tensor), (Tensor, Array), ..."""
-    return tensor_cls, request.param
-
-
-@pytest.fixture(params=[Tensor, Array], scope='module')
-def tensor_cls_3x(request, tensor_cls_2x):
-    """All combination of two tensor classes (Tensor, Tensor, Tensor), (Tensor, Tensor, Array), ..."""
-    return *tensor_cls_2x, request.param
 
 
 # --- Derived fixtures
@@ -312,8 +292,8 @@ def array_large_atleast2d(shape_large_atleast2d, basis_for_shape_large_atleast2d
 
 
 @pytest.fixture(scope='module')
-def get_tensor_or_array(rootbasis):
-    def get_tensor_or_array(ndim: int, tensor_cls: type, number: int = 1, hermitian: bool = False) \
+def get_tensor(rootbasis):
+    def get_tensor(ndim: int, number: int = 1, hermitian: bool = False) \
             -> list[tuple] | tuple:
         np.random.seed(0)
         basis = tuple(ndim * [rootbasis])
@@ -322,41 +302,17 @@ def get_tensor_or_array(rootbasis):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
                 data = (data + data.T)/2
-            tensor = tensor_cls(data, basis=basis)
+            tensor = Tensor(data, basis=basis)
             result.append((tensor, data))
         if number == 1:
             return result[0]
         return result
-    return get_tensor_or_array
-
-
-@pytest.fixture(scope='module')
-def get_tensor(get_tensor_or_array):
-    def get_tensor(ndim, number=1, hermitian=False):
-        return get_tensor_or_array(ndim, Tensor, number=number, hermitian=hermitian)
     return get_tensor
-
-
-@pytest.fixture(scope='module')
-def get_array(get_tensor_or_array):
-    def get_array(ndim, number=1, hermitian=False):
-        return get_tensor_or_array(ndim, Array, number=number, hermitian=hermitian)
-    return get_array
-
-
-@pytest.fixture(scope='module')
-def tensor_or_array(ndim, tensor_cls, get_tensor_or_array):
-    return get_tensor_or_array(ndim, tensor_cls)
 
 
 @pytest.fixture(scope='module')
 def tensor(ndim, get_tensor):
     return get_tensor(ndim)
-
-
-@pytest.fixture(scope='module')
-def array(ndim, get_array):
-    return get_array(ndim)
 
 
 @pytest.fixture(scope='module')
