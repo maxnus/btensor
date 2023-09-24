@@ -1,6 +1,0 @@
-Basis.make\_union\_basis
-========================
-
-.. currentmodule:: btensor.basis
-
-.. automethod:: Basis.make_union_basis

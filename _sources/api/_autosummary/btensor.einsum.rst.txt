@@ -1,6 +1,0 @@
-﻿btensor.einsum
-==============
-
-.. currentmodule:: btensor
-
-.. autofunction:: einsum

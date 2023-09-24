@@ -1,6 +1,0 @@
-Basis.is\_derived\_from
-=======================
-
-.. currentmodule:: btensor.basis
-
-.. automethod:: Basis.is_derived_from

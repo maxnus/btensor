@@ -1,6 +1,0 @@
-Basis.\_\_init\_\_
-==================
-
-.. currentmodule:: btensor.basis
-
-.. automethod:: Basis.__init__

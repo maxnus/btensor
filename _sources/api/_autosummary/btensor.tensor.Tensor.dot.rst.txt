@@ -1,6 +1,0 @@
-Tensor.dot
-==========
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.dot

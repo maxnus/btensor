@@ -1,6 +1,0 @@
-Tensor.change\_variance\_at
-===========================
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.change_variance_at

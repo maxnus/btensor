@@ -1,6 +1,0 @@
-Tensor.transpose
-================
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.transpose

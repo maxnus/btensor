@@ -1,6 +1,0 @@
-Basis.is\_root
-==============
-
-.. currentmodule:: btensor.basis
-
-.. automethod:: Basis.is_root

@@ -1,6 +1,0 @@
-Basis.get\_parents
-==================
-
-.. currentmodule:: btensor.basis
-
-.. automethod:: Basis.get_parents

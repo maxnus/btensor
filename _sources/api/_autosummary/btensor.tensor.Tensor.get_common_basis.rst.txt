@@ -1,6 +1,0 @@
-Tensor.get\_common\_basis
-=========================
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.get_common_basis

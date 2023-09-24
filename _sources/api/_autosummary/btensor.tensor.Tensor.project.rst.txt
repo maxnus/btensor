@@ -1,6 +1,0 @@
-Tensor.project
-==============
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.project

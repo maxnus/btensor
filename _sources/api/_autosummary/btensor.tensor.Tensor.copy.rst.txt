@@ -1,6 +1,0 @@
-Tensor.copy
-===========
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.copy

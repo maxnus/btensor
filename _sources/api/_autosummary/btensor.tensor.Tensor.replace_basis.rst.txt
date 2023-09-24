@@ -1,6 +1,0 @@
-Tensor.replace\_basis
-=====================
-
-.. currentmodule:: btensor.tensor
-
-.. automethod:: Tensor.replace_basis
