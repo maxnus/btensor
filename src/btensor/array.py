@@ -12,19 +12,29 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from __future__ import annotations
+from typing import *
+from numbers import Number
+import operator
+
 import numpy as np
 
 from btensor.util import *
-from btensor.basis import Basis
-from btensor.tensor import Tensor
+from btensor.exceptions import BasisDependentOperationError
+from btensor.basis import Basis, _Variance, NBasis
+from btensor.tensor import Tensor, DOCSTRING_TEMPLATE
 from btensor import numpy_functions
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
 
 
 class Array(Tensor):
 
-    @property
-    def __array_interface__(self):
-        return self._data.__array_interface__
+    __doc__ = \
+        """A numerical container class with support for automatic basis transformation.
+        """ + DOCSTRING_TEMPLATE.format(name="tensor", default_variance=_Variance.CONTRAVARIANT)
+
 
     def __getitem__(self, key):
         """Construct and return sub-Array."""
@@ -86,12 +96,79 @@ class Array(Tensor):
         #basis_new = tuple(nobasis if elem is np.newaxis else basis_old.pop(0) for elem in key)
         #self.basis = basis_new
 
-    def to_tensor(self):
+    def to_tensor(self) -> Tensor:
         return Tensor(self._data, basis=self.basis)
 
-    def sum(self, axis=None):
+    def sum(self, axis: int | Tuple[int] | None = None) -> Array | Number:
         return numpy_functions.sum(self, axis=axis)
 
+    @property
+    def __array_interface__(self):
+        return self._data.__array_interface__
 
-#class Coarray(Array, Cotensor):
-#    pass
+    def __mul__(self, other: Number | Array) -> Array:
+        if not isinstance(other, Number) and self.basis != other.basis:
+            raise BasisDependentOperationError
+        return self._operator(operator.mul, other)
+
+    def __truediv__(self, other: Number | Array) -> Array:
+        if not isinstance(other, Number) and self.basis != other.basis:
+            raise BasisDependentOperationError
+        return self._operator(operator.truediv, other)
+
+    def _operator_check_same_basis(self, op: Callable, other: Number | Array | None = None,
+                                   reverse: bool = False) -> Self:
+        if other is None:
+            return self._operator(op, reverse=reverse)
+        if not isinstance(other, Number) and self.basis != other.basis:
+            raise BasisDependentOperationError("operation only allowed for arrays with the same basis")
+        return self._operator(op, other, reverse=reverse)
+
+    def __floordiv__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.floordiv, other)
+
+    def __mod__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.mod, other)
+
+    def __pow__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.pow, other)
+
+    def __rtruediv__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.truediv, other, reverse=True)
+
+    def __rfloordiv__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.floordiv, other, reverse=True)
+
+    def __rpow__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.pow, other, reverse=True)
+
+    def __gt__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.gt, other)
+
+    def __ge__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.ge, other)
+
+    def __lt__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.lt, other)
+
+    def __le__(self, other: Number | Array) -> Self:
+        return self._operator_check_same_basis(operator.le, other)
+
+    def __abs__(self) -> Self:
+        return self._operator(operator.abs)
+
+
+def Coarray(data: ArrayLike,
+            basis: NBasis | None = None,
+            variance: Sequence[int] | None = None,
+            name: str | None = None,
+            copy_data: bool = True) -> Tensor:
+    data = np.array(data, copy=copy_data)
+    if variance is None:
+        variance = data.ndim * [_Variance.COVARIANT]
+    return Array(data, basis=basis, variance=variance, name=name, copy_data=False)
+
+
+Coarray.__doc__ = \
+    """A helper function to create arrays with default variance 1 (covariant).
+    """ + DOCSTRING_TEMPLATE.format(name=Coarray.__name__.lower(), default_variance=_Variance.COVARIANT)
