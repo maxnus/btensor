@@ -69,6 +69,38 @@ class TestTensor(TestCase):
             np.asarray(tensor)
 
 
+#operators_all = {
+#    operator.add: '+',
+#    operator.sub: '-',
+#    operator.mul: '*',
+#    operator.truediv: '/',
+#    operator.floordiv: '//',
+#    operator.mod: '%',
+#    operator.pow: '**',
+#    operator.eq: '==',
+#    operator.ne: '!=',
+#    operator.gt: '>',
+#    operator.ge: '>=',
+#    operator.lt: '<',
+#    operator.le: '<=',
+#}
+operators_div_mod_pow = {
+    #'add': operator.add,
+    #'sub': operator.sub,
+    #'mul': operator.mul,
+    'truediv': operator.truediv,
+    'floordiv': operator.floordiv,
+    'mod': operator.mod,
+    'pow': operator.pow,
+    #'eq': operator.eq,
+    #'ne': operator.ne,
+    #'gt': operator.gt,
+    #'ge': operator.ge,
+    #'lt': operator.lt,
+    #'le': operator.le,
+}
+
+
 class TestArithmetic(TestCase):
 
     @pytest.mark.parametrize('unary_operator', [operator.pos, operator.neg])
@@ -82,28 +114,40 @@ class TestArithmetic(TestCase):
         with pytest.raises(BasisDependentOperationError):
             abs(tensor)
 
-    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
-    def test_add_sub_operator(self, ndim, binary_operator, get_tensor):
-        (tensor1, np_array1), (tensor2, np_array2) = get_tensor(ndim, number=2)
-        result = binary_operator(tensor1, tensor2)
-        expected = binary_operator(np_array1, np_array2)
+    @pytest.mark.parametrize('op', [operator.add, operator.sub])
+    def test_add_sub_operator(self, ndim, op, get_tensor_data):
+        a, b = get_tensor_data(ndim=ndim, number=2)
+        result = op(a.tensor, b.tensor)
+        expected = op(a.array, b.array)
         self.assert_allclose(result.to_numpy(), expected)
 
-    @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
-    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub, operator.mul, operator.truediv])
-    def test_scalar_operator(self, scalar, ndim, binary_operator, tensor):
-        tensor, np_array = tensor
-        expected = binary_operator(np_array, scalar)
-        result = binary_operator(tensor, scalar)
+    scalars = [-2.1, 0.0, 0.2, 1.0, 3.2]
+
+    @pytest.mark.parametrize('scalar', scalars)
+    @pytest.mark.parametrize('op', [operator.add, operator.sub, operator.mul, operator.truediv])
+    def test_scalar_add_sub_mul_truediv_operator(self, scalar, ndim, op, tensor_data):
+        result = op(tensor_data.tensor, scalar)
+        expected = op(tensor_data.array, scalar)
         self.assert_allclose(result, expected)
 
-    @pytest.mark.parametrize('scalar', [-2.2, -1, -0.4, 0, 0.3, 1, 1.2, 2, 3.3])
-    @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
-    def test_scalar_operator_reverse(self, scalar, ndim, binary_operator, tensor):
-        tensor, np_array = tensor
-        expected = binary_operator(scalar, np_array)
-        result = binary_operator(scalar, tensor)
+    @pytest.mark.parametrize('scalar', scalars)
+    @pytest.mark.parametrize('op', [operator.add, operator.sub, operator.mul])
+    def test_scalar_add_sub_mul_reverse(self, scalar, ndim, op, tensor_data):
+        result = op(scalar, tensor_data.tensor)
+        expected = op(scalar, tensor_data.array)
         self.assert_allclose(result, expected)
+
+    @pytest.mark.parametrize('scalar', scalars)
+    @pytest.mark.parametrize('op', operators_div_mod_pow.values(), ids=operators_div_mod_pow.keys())
+    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, allow_bdo):
+        tensor_data = get_tensor_data(ndim=ndim, allow_bdo=allow_bdo)
+        if allow_bdo:
+            result = op(scalar, tensor_data.tensor)
+            expected = op(scalar, tensor_data.array)
+            self.assert_allclose(result, expected)
+        else:
+            with pytest.raises(BasisDependentOperationError):
+                result = op(scalar, tensor_data.tensor)
 
     @pytest.mark.parametrize('subsize1', [1, 5, 10])
     @pytest.mark.parametrize('subsize2', [1, 5, 10])

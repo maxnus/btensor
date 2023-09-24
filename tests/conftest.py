@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 import operator
+from typing import *
 
 import pytest
 import itertools
@@ -282,19 +283,48 @@ def shape_and_basis(request):
 def basis_for_shape_large_atleast2d(shape_large_atleast2d):
     return tuple(Basis(size) for size in shape_large_atleast2d)
 
+# --- Tensor
 
-@pytest.fixture
-def array_large_atleast2d(shape_large_atleast2d, basis_for_shape_large_atleast2d):
-    basis = basis_for_shape_large_atleast2d
-    np_array = np.random.random(shape_large_atleast2d)
-    array = Array(np_array, basis=basis)
-    return array, np_array, basis
+
+class TensorDataForTesting:
+
+    def __init__(self, array: np.ndarray, basis: Basis | Tuple[Basis, ...], variance: Tuple[int] | None = None,
+                 allow_bdo: bool = True):
+        self.array = array
+        self.basis = basis
+        self.variance = variance
+        self.allow_bdo = allow_bdo
+        self.tensor = Tensor(array, basis=basis, variance=variance, allow_bdo=allow_bdo)
+
+
+@pytest.fixture(scope='module')
+def get_tensor_data(rootbasis):
+    def get_tensor_data(ndim: int,
+                        number: int = 1,
+                        hermitian: bool = False,
+                        allow_bdo: bool = True) -> TensorDataForTesting | List[TensorDataForTesting]:
+        np.random.seed(0)
+        basis = tuple(ndim * [rootbasis])
+        result = []
+        for n in range(number):
+            data = np.random.random(tuple([b.size for b in basis]))
+            if hermitian:
+                data = (data + data.T)/2
+            result.append(TensorDataForTesting(data, basis=basis, allow_bdo=allow_bdo))
+        if number == 1:
+            return result[0]
+        return result
+    return get_tensor_data
+
+
+@pytest.fixture(params=[True, False], scope='module', ids=['BDO(1)', 'BDO(0)'])
+def allow_bdo(request):
+    return request.param
 
 
 @pytest.fixture(scope='module')
 def get_tensor(rootbasis):
-    def get_tensor(ndim: int, number: int = 1, hermitian: bool = False) \
-            -> list[tuple] | tuple:
+    def get_tensor(ndim: int, number: int = 1, hermitian: bool = False) -> list[tuple] | tuple:
         np.random.seed(0)
         basis = tuple(ndim * [rootbasis])
         result = []
@@ -313,6 +343,11 @@ def get_tensor(rootbasis):
 @pytest.fixture(scope='module')
 def tensor(ndim, get_tensor):
     return get_tensor(ndim)
+
+
+@pytest.fixture(scope='module')
+def tensor_data(ndim, get_tensor_data):
+    return get_tensor_data(ndim=ndim)
 
 
 @pytest.fixture(scope='module')

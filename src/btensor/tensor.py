@@ -617,6 +617,9 @@ class Tensor:
     def __rfloordiv__(self, other: Number | Tensor) -> Self:
         return self._operator_check_bdo(operator.floordiv, other, reverse=True)
 
+    def __rmod__(self, other: Number | Tensor) -> Self:
+        return self._operator_check_bdo(operator.mod, other, reverse=True)
+
     def __rpow__(self, other: Number | Tensor) -> Self:
         return self._operator_check_bdo(operator.pow, other, reverse=True)
 
