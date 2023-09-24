@@ -116,43 +116,45 @@ class Array(Tensor):
             raise BasisDependentOperationError
         return self._operator(operator.truediv, other)
 
-    def _operator_check_same_basis(self, op: Callable, other: Number | Array | None = None,
-                                   reverse: bool = False) -> Self:
+    def _operator_check_allowed(self, op: Callable, other: Number | Array | None = None,
+                                reverse: bool = False) -> Self:
         if other is None:
             return self._operator(op, reverse=reverse)
+        if isinstance(other, Tensor):
+            raise BasisDependentOperationError("operation only allowed between two arrays, not array and tensor")
         if not isinstance(other, Number) and self.basis != other.basis:
             raise BasisDependentOperationError("operation only allowed for arrays with the same basis")
         return self._operator(op, other, reverse=reverse)
 
     def __floordiv__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.floordiv, other)
+        return self._operator_check_allowed(operator.floordiv, other)
 
     def __mod__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.mod, other)
+        return self._operator_check_allowed(operator.mod, other)
 
     def __pow__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.pow, other)
+        return self._operator_check_allowed(operator.pow, other)
 
     def __rtruediv__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.truediv, other, reverse=True)
+        return self._operator_check_allowed(operator.truediv, other, reverse=True)
 
     def __rfloordiv__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.floordiv, other, reverse=True)
+        return self._operator_check_allowed(operator.floordiv, other, reverse=True)
 
     def __rpow__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.pow, other, reverse=True)
+        return self._operator_check_allowed(operator.pow, other, reverse=True)
 
     def __gt__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.gt, other)
+        return self._operator_check_allowed(operator.gt, other)
 
     def __ge__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.ge, other)
+        return self._operator_check_allowed(operator.ge, other)
 
     def __lt__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.lt, other)
+        return self._operator_check_allowed(operator.lt, other)
 
     def __le__(self, other: Number | Array) -> Self:
-        return self._operator_check_same_basis(operator.le, other)
+        return self._operator_check_allowed(operator.le, other)
 
     def __abs__(self) -> Self:
         return self._operator(operator.abs)

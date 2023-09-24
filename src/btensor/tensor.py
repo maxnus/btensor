@@ -30,16 +30,19 @@ from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
 
+T = TypeVar('T')
+
+
 class _ChangeBasisInterface:
 
-    def __init__(self, tensor: Tensor) -> None:
-        self._tensor = tensor
+    def __init__(self, obj: T) -> None:
+        self._obj = obj
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._tensor})"
+        return f"{type(self).__name__}({self._obj})"
 
-    def __getitem__(self, key: NBasis) -> Tensor:
-        return self._tensor.change_basis(key)
+    def __getitem__(self, key: NBasis) -> T:
+        return self._obj.change_basis(key)
 
 
 DOCSTRING_TEMPLATE = \
@@ -94,7 +97,7 @@ class Tensor:
         attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
         return f'{type(self).__name__}({attrs})'
 
-    def copy(self, name: str | None = None, copy_data: bool = True) -> Tensor:
+    def copy(self, name: str | None = None, copy_data: bool = True) -> Self:
         """Create a copy of the tensor.
 
         Args:
@@ -107,7 +110,6 @@ class Tensor:
 
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data)
-
 
     # --- Basis
 
@@ -127,7 +129,7 @@ class Tensor:
             if size != baselem.size:
                 raise ValueError(f"axis {axis} with size {size} incompatible with basis size {baselem.size}")
 
-    def replace_basis(self, basis: IBasis | tuple[IBasis | None, ...], inplace: bool = False) -> Tensor:
+    def replace_basis(self, basis: IBasis | tuple[IBasis | None, ...], inplace: bool = False) -> Self:
         """Replace basis of tensor with a new basis.
 
         Args:
@@ -162,7 +164,7 @@ class Tensor:
             if var not in {-1, 1}:
                 raise ValueError(f"variance can only contain elements -1 and 1 (not {var})")
 
-    def change_variance(self, variance: Sequence[int]) -> Tensor:
+    def change_variance(self, variance: Sequence[int]) -> Self:
         """Change variance of tensor and transform representation accordingly.
 
         Args:
@@ -179,7 +181,7 @@ class Tensor:
             result = result.change_variance_at(var, axis=axis)
         return result
 
-    def change_variance_at(self, variance: int, axis: int):
+    def change_variance_at(self, variance: int, axis: int) -> Self:
         """Change variance of tensor along a single axis and transform representation accordingly.
 
         Args:
@@ -211,7 +213,7 @@ class Tensor:
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
         return type(self)(values, basis=self.basis, variance=variance_tuple)
 
-    def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Tensor:
+    def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Self:
         """Replace variance of tensor without corresponding transformation of the representation.
 
         Args:
@@ -232,7 +234,7 @@ class Tensor:
     def _get_basis_transform(basis1: NBasis, basis2: NBasis, variance: tuple[int, int]):
         return basis1._get_overlap_mpl(basis2, variance=variance, simplify=True)
 
-    def __getitem__(self, key: slice | Ellipsis | NBasis) -> Tensor:
+    def __getitem__(self, key: slice | Ellipsis | NBasis) -> Self:
         if (isinstance(key, slice) and key == slice(None)) or key is Ellipsis:
             return self
         if isinstance(key, Basis):
@@ -249,7 +251,7 @@ class Tensor:
 
         return self.project(key)
 
-    def project(self, basis: NBasis) -> Tensor:
+    def project(self, basis: NBasis) -> Self:
         """Transforms tensor to a different set of basis.
 
         Slice(None) can be used to indicate no transformation.
@@ -304,7 +306,7 @@ class Tensor:
 
     # --- Change of basis
 
-    def change_basis(self, basis: NBasis) -> Tensor:
+    def change_basis(self, basis: NBasis) -> Self:
         """Change basis of tensor.
 
         Slice(None) can be used to indicate no transformation.
@@ -332,7 +334,7 @@ class Tensor:
         """
         return self._cob
 
-    def change_basis_at(self, basis: IBasis | Sequence[IBasis], axis: int | Sequence[int]) -> Tensor:
+    def change_basis_at(self, basis: IBasis | Sequence[IBasis], axis: int | Sequence[int]) -> Self:
         """Change basis of tensor along one or more selected axes.
 
         Slice(None) can be used to indicate no transformation.
@@ -428,7 +430,7 @@ class Tensor:
             return self._data
         return self.change_basis(basis=basis)._data
 
-    def transpose(self, axes: tuple[int, ...] | None = None) -> Tensor:
+    def transpose(self, axes: tuple[int, ...] | None = None) -> Self:
         """Return a tensor with axes transposed.
 
         Args:
@@ -450,7 +452,7 @@ class Tensor:
         return type(self)(value, basis=basis)
 
     @property
-    def T(self) -> Tensor:
+    def T(self) -> Self:
         """Transposed tensor.
 
         Same as ``self.transpose()``.
@@ -458,7 +460,7 @@ class Tensor:
         """
         return self.transpose()
 
-    def trace(self, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
+    def trace(self, axis1: int = 0, axis2: int = 1) -> Self | Number:
         """Returns the sum along diagonals of the tensor.
 
         Args:
@@ -473,7 +475,7 @@ class Tensor:
         """
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
-    def dot(self, other: Tensor | np.ndarray) -> Tensor:
+    def dot(self, other: Tensor | np.ndarray) -> Self:
         """Dot product of two tensors.
 
         Args:
@@ -511,25 +513,25 @@ class Tensor:
 
     # Fully supported:
 
-    def __add__(self, other: Number | Tensor) -> Tensor:
+    def __add__(self, other: Number | Tensor) -> Self:
         return self._operator(operator.add, other)
 
-    def __sub__(self, other: Number | Tensor) -> Tensor:
+    def __sub__(self, other: Number | Tensor) -> Self:
         return self._operator(operator.sub, other)
 
-    def __radd__(self, other: Number | Tensor) -> Tensor:
+    def __radd__(self, other: Number | Tensor) -> Self:
         return self._operator(operator.add, other, reverse=True)
 
-    def __rsub__(self, other: Number | Tensor) -> Tensor:
+    def __rsub__(self, other: Number | Tensor) -> Self:
         return self._operator(operator.sub, other, reverse=True)
 
-    def __rmul__(self, other: Number | Tensor) -> Tensor:
+    def __rmul__(self, other: Number | Tensor) -> Self:
         return self._operator(operator.mul, other, reverse=True)
 
-    def __pos__(self) -> Tensor:
+    def __pos__(self) -> Self:
         return self._operator(operator.pos)
 
-    def __neg__(self) -> Tensor:
+    def __neg__(self) -> Self:
         return self._operator(operator.neg)
 
     def __eq__(self, other):
@@ -540,12 +542,12 @@ class Tensor:
 
     # Only supported for numbers:
 
-    def __mul__(self, other: Number) -> Tensor:
+    def __mul__(self, other: Number) -> Self:
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other)
 
-    def __truediv__(self, other: Number) -> Tensor:
+    def __truediv__(self, other: Number) -> Self:
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.truediv, other)
@@ -554,7 +556,7 @@ class Tensor:
 
     @property
     def __array_interface__(self) -> NoReturn:
-        raise BTensorError("cannot use Tensor here; convert to array with to_array() method")
+        raise BTensorError("cannot use tensor here; convert to array with to_array() method")
 
     def __floordiv__(self, other: Never) -> NoReturn:
         raise BasisDependentOperationError
