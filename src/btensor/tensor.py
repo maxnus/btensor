@@ -552,6 +552,10 @@ class Tensor:
 
     # Not allowed due to basis dependence:
 
+    @property
+    def __array_interface__(self) -> NoReturn:
+        raise BTensorError("cannot use Tensor here; convert to array with to_array() method")
+
     def __floordiv__(self, other: Never) -> NoReturn:
         raise BasisDependentOperationError
 

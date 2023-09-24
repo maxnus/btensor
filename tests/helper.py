@@ -15,6 +15,7 @@
 from __future__ import annotations
 import itertools
 from contextlib import contextmanager
+from numbers import Number
 from time import perf_counter
 from typing import *
 
@@ -106,11 +107,16 @@ class TestCase:
             for i in range(len(actual)):
                 self.assert_allclose(actual[i], desired[i], rtol=rtol, atol=atol, **kwargs)
             return
-        # Tensor does not have __array_interface__:
-        if isinstance(actual, btensor.Tensor) and not hasattr(actual, '__array_interface__'):
-            actual = actual.to_numpy()
-        if isinstance(desired, btensor.Tensor) and not hasattr(desired, '__array_interface__'):
-            desired = desired.to_numpy()
+
+        def to_array(obj):
+            if isinstance(obj, (Number, np.ndarray, btensor.Array)):
+                return obj
+            if isinstance(obj, btensor.Tensor):
+                return obj.to_numpy()
+            raise TypeError(f"unknown type: {type(obj)}")
+
+        actual = to_array(actual)
+        desired = to_array(desired)
         np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol, **kwargs)
 
 

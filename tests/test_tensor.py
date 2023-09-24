@@ -62,6 +62,11 @@ class TestTensor(TestCase):
             assert id(tensor_out) != id(tensor)
         assert tensor_out.basis == tensor.basis
 
+    def test_array_interface(self, tensor):
+        tensor, np_array = tensor
+        with pytest.raises(BTensorError):
+            np.asarray(tensor)
+
 
 class TestArithmetic(TestCase):
 
@@ -70,10 +75,10 @@ class TestArithmetic(TestCase):
         tensor, np_array = tensor_or_array
         self.assert_allclose(unary_operator(tensor), unary_operator(np_array))
 
-    def test_unary_operator_exception(self, tensor_or_array):
-        tensor, np_array = tensor_or_array
+    def test_unary_operator_exception(self, tensor):
+        tensor, np_array = tensor
         with pytest.raises(BasisDependentOperationError):
-            self.assert_allclose(abs(tensor), abs(np_array))
+            abs(tensor)
 
     @pytest.mark.parametrize('binary_operator', [operator.add, operator.sub])
     def test_binary_operator(self, ndim, tensor_cls, binary_operator, get_tensor_or_array):
