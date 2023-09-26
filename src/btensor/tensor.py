@@ -553,7 +553,7 @@ class Tensor:
     def _check_mode(mode: tensor_mode) -> tensor_mode:
         valid_modes = get_args(tensor_mode)
         if mode not in valid_modes:
-            raise ValueError(f"invalid mode '{mode}' (must be in {text_enumeration(valid_modes, 'or')})")
+            raise ValueError(f"invalid mode '{mode}' (must be in {text_enumeration(valid_modes, 'or', quotes=True)})")
         return mode
 
     @mode.setter

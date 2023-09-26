@@ -84,7 +84,9 @@ def expand_axis(a, size, indices=None, axis=-1):
     return b
 
 
-def text_enumeration(words: Sequence[str], conjunction: str = 'and') -> str:
+def text_enumeration(words: Sequence[str], conjunction: str = 'and', quotes: bool = False) -> str:
+    if quotes:
+        words = [f"'{word}'" for word in words]
     return f"{', '.join(words[:-1])} {conjunction} {words[-1]}"
 
 
