@@ -560,18 +560,31 @@ class Tensor:
     def _allow_bdo(self) -> bool:
         return self.mode == 'array'
 
-    def _check_bdo_allowed(self) -> bool:
-        if not self._allow_bdo:
-            raise BasisDependentOperationError
+    def _check_bdo_allowed(self, other: Tensor | None = None) -> bool:
+        if other is None:
+            if not self._allow_bdo:
+                raise BasisDependentOperationError(f"operation not allowed in mode '{self.mode}'")
+        else:
+            if not (self._allow_bdo and other._allow_bdo):
+                raise BasisDependentOperationError(f"operation not allowed between tensors with mode '{self.mode}'"
+                                                   f"and {other.mode}")
         return True
 
     def _operator_check_bdo(self, op: Callable, other: Number | Tensor | None = None,
                             reverse: bool = False) -> Self:
-        self._check_bdo_allowed()
+
+        # Check that basis dependent operation is allowed
+        if isinstance(other, Number):
+            self._check_bdo_allowed()
+        else:
+            self._check_bdo_allowed(other)
+
         if other is None:
             return self._operator(op, reverse=reverse)
-        if not isinstance(other, Number) and self.basis != other.basis:
-            raise BasisDependentOperationError("operation only allowed for arrays with the same basis")
+
+        if not (isinstance(other, Number) or self.basis == other.basis):
+            raise BasisDependentOperationError("operation only allowed for tensors with the same basis")
+
         return self._operator(op, other, reverse=reverse)
 
     @property
@@ -602,21 +615,21 @@ class Tensor:
     # Partially basis independent operations:
 
     def __mul__(self, other: Number | Tensor) -> Self:
-        if self._allow_bdo:
+        if isinstance(other, Tensor):
             return self._operator_check_bdo(operator.mul, other)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other)
 
     def __rmul__(self, other: Number | Tensor) -> Self:
-        if self._allow_bdo:
+        if isinstance(other, Tensor):
             return self._operator_check_bdo(operator.mul, other, reverse=True)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other, reverse=True)
 
     def __truediv__(self, other: Number | Tensor) -> Self:
-        if self._allow_bdo:
+        if isinstance(other, Tensor):
             return self._operator_check_bdo(operator.truediv, other)
         if not isinstance(other, Number):
             return NotImplemented
