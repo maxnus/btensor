@@ -64,7 +64,7 @@ class TestTensor(TestCase):
 
     def test_array_interface(self, tensor):
         tensor, np_array = tensor
-        tensor.allow_bdo = False
+        tensor.mode = 'tensor'
         with pytest.raises(BTensorError):
             np.asarray(tensor)
 
@@ -110,7 +110,7 @@ class TestArithmetic(TestCase):
 
     def test_unary_operator_exception(self, tensor):
         tensor, np_array = tensor
-        tensor.allow_bdo = False
+        tensor.mode = 'tensor'
         with pytest.raises(BasisDependentOperationError):
             abs(tensor)
 
@@ -139,9 +139,9 @@ class TestArithmetic(TestCase):
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', operators_div_mod_pow.values(), ids=operators_div_mod_pow.keys())
-    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, allow_bdo):
-        tensor_data = get_tensor_data(ndim=ndim, allow_bdo=allow_bdo)
-        if allow_bdo:
+    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, mode):
+        tensor_data = get_tensor_data(ndim=ndim, mode=mode)
+        if mode == 'array':
             result = op(scalar, tensor_data.tensor)
             expected = op(scalar, tensor_data.array)
             self.assert_allclose(result, expected)

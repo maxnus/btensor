@@ -23,6 +23,7 @@ import scipy
 
 import btensor
 from btensor import Basis, Tensor, TensorSum
+from btensor.tensor import tensor_mode
 
 
 class UserSlice:
@@ -289,12 +290,12 @@ def basis_for_shape_large_atleast2d(shape_large_atleast2d):
 class TensorDataForTesting:
 
     def __init__(self, array: np.ndarray, basis: Basis | Tuple[Basis, ...], variance: Tuple[int] | None = None,
-                 allow_bdo: bool = True):
+                 mode: tensor_mode = 'array'):
         self.array = array
         self.basis = basis
         self.variance = variance
-        self.allow_bdo = allow_bdo
-        self.tensor = Tensor(array, basis=basis, variance=variance, allow_bdo=allow_bdo)
+        self.mode = mode
+        self.tensor = Tensor(array, basis=basis, variance=variance, mode=mode)
 
 
 @pytest.fixture(scope='module')
@@ -302,7 +303,7 @@ def get_tensor_data(rootbasis):
     def get_tensor_data(ndim: int,
                         number: int = 1,
                         hermitian: bool = False,
-                        allow_bdo: bool = True) -> TensorDataForTesting | List[TensorDataForTesting]:
+                        mode: tensor_mode = 'array') -> TensorDataForTesting | List[TensorDataForTesting]:
         np.random.seed(0)
         basis = tuple(ndim * [rootbasis])
         result = []
@@ -310,15 +311,15 @@ def get_tensor_data(rootbasis):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
                 data = (data + data.T)/2
-            result.append(TensorDataForTesting(data, basis=basis, allow_bdo=allow_bdo))
+            result.append(TensorDataForTesting(data, basis=basis, mode=mode))
         if number == 1:
             return result[0]
         return result
     return get_tensor_data
 
 
-@pytest.fixture(params=[True, False], scope='module', ids=['BDO(1)', 'BDO(0)'])
-def allow_bdo(request):
+@pytest.fixture(params=['array', 'tensor'], scope='module')
+def mode(request):
     return request.param
 
 

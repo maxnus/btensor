@@ -70,7 +70,7 @@ def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
     if isinstance(axis, (int, np.integer)):
         axis = (axis,)
     basis, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in range(a.ndim) if ax not in axis))
-    return type(a)(value, basis=basis, variance=variance, allow_bdo=a.allow_bdo, copy_data=False)
+    return type(a)(value, basis=basis, variance=variance, mode=a.mode, copy_data=False)
 
 
 def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
@@ -118,8 +118,8 @@ def dot(a: ArrayLike | Tensor, b: ArrayLike | Tensor) -> Tensor | Number:
     value = ndot(a.to_numpy(copy=False), ovlp, b.to_numpy(copy=False))
     if not isinstance(value, np.ndarray):
         return value
-    allow_bdo = a.allow_bdo and b.allow_bdo
-    return type(a)(value, basis=basis, variance=variance, allow_bdo=allow_bdo, copy_data=False)
+    mode = 'tensor' if (a.mode == 'tensor') or (b.mode == 'tensor') else 'array'
+    return type(a)(value, basis=basis, variance=variance, mode=mode, copy_data=False)
 
 
 def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Number:
@@ -141,7 +141,7 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     if axis2 < 0:
         axis2 += a.ndim
     basis_new, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in range(a.ndim) if ax not in {axis1, axis2}))
-    return type(a)(value, basis=basis_new, variance=variance, allow_bdo=a.allow_bdo, copy_data=False)
+    return type(a)(value, basis=basis_new, variance=variance, mode=a.mode, copy_data=False)
 
 
 def moveaxis(a: ArrayLike | Tensor,
@@ -157,4 +157,4 @@ def moveaxis(a: ArrayLike | Tensor,
     for dest, src in sorted(zip(destination, source)):
         order.insert(dest, src)
     basis, variance = zip(*((a.basis[ax], a.variance[ax]) for ax in order))
-    return type(a)(values, basis=basis, variance=variance, name=name, allow_bdo=a.allow_bdo)
+    return type(a)(values, basis=basis, variance=variance, name=name, mode=a.mode)

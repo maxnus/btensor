@@ -24,13 +24,17 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import *
-from btensor.exceptions import BTensorError, BasisError, BasisDependentOperationError
+from btensor.exceptions import BasisError, BasisDependentOperationError
 from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
 from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
 
-T = TypeVar('T')
+if TYPE_CHECKING:
+    T = TypeVar('T')
+
+
+tensor_mode = Literal['array', 'tensor']
 
 
 class _ChangeBasisInterface:
@@ -78,7 +82,7 @@ class Tensor:
                  basis: NBasis | None = None,
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
-                 allow_bdo: bool = True,
+                 mode: tensor_mode = 'array',
                  copy_data: bool = True) -> None:
         """Create new Tensor instance."""
         data = np.array(data, copy=copy_data)
@@ -96,7 +100,7 @@ class Tensor:
         self._variance = variance
         self._check_basis(basis)
         self._cob = _ChangeBasisInterface(self)
-        self.allow_bdo = allow_bdo
+        self._mode = self._check_mode(mode)
 
     def __repr__(self) -> str:
         basis_names = f"({', '.join([bas.name for bas in self.basis]) + (',' if self.ndim == 1 else '')})"
@@ -119,7 +123,7 @@ class Tensor:
 
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data,
-                          allow_bdo=self.allow_bdo)
+                          mode=self.mode)
 
     # --- Basis
 
@@ -221,7 +225,7 @@ class Tensor:
                 metric = metric.inverse
             values = np.einsum(contraction, self._data, metric.to_numpy())
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
-        return type(self)(values, basis=self.basis, variance=variance_tuple, allow_bdo=self.allow_bdo, copy_data=False)
+        return type(self)(values, basis=self.basis, variance=variance_tuple, mode=self.mode, copy_data=False)
 
     def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Self:
         """Replace variance of tensor without corresponding transformation of the representation.
@@ -313,7 +317,7 @@ class Tensor:
         basis_out = tuple(basis_out)
         subscripts += '->' + (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
-        return type(self)(value, basis=basis_out, variance=self.variance, allow_bdo=self.allow_bdo, copy_data=False)
+        return type(self)(value, basis=basis_out, variance=self.variance, mode=self.mode, copy_data=False)
 
     # --- Change of basis
 
@@ -462,7 +466,7 @@ class Tensor:
             variance = self.variance[::-1]
         else:
             basis, variance = zip(*((self.basis[ax], self.variance[ax]) for ax in axes))
-        return type(self)(value, basis=basis, variance=variance, allow_bdo=self.allow_bdo)
+        return type(self)(value, basis=basis, variance=variance, mode=self.mode)
 
     @property
     def T(self) -> Self:
@@ -538,10 +542,28 @@ class Tensor:
             v1, v2 = v2, v1
         return type(self)(op(v1, v2), basis=basis)
 
-    def _check_bdo_allowed(self) -> None:
-        if self.allow_bdo:
-            return
-        raise BasisDependentOperationError
+    @property
+    def mode(self) -> tensor_mode:
+        return self._mode
+
+    @staticmethod
+    def _check_mode(mode: tensor_mode) -> tensor_mode:
+        if mode not in get_args(tensor_mode):
+            raise ValueError(f"invalid mode '{mode}'")
+        return mode
+
+    @mode.setter
+    def mode(self, mode: tensor_mode) -> None:
+        self._mode = self._check_mode(mode)
+
+    @property
+    def _allow_bdo(self) -> bool:
+        return self.mode == 'array'
+
+    def _check_bdo_allowed(self) -> bool:
+        if not self._allow_bdo:
+            raise BasisDependentOperationError
+        return True
 
     def _operator_check_bdo(self, op: Callable, other: Number | Tensor | None = None,
                             reverse: bool = False) -> Self:
@@ -580,21 +602,21 @@ class Tensor:
     # Partially basis independent operations:
 
     def __mul__(self, other: Number | Tensor) -> Self:
-        if self.allow_bdo:
+        if self._allow_bdo:
             return self._operator_check_bdo(operator.mul, other)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other)
 
     def __rmul__(self, other: Number | Tensor) -> Self:
-        if self.allow_bdo:
+        if self._allow_bdo:
             return self._operator_check_bdo(operator.mul, other, reverse=True)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other, reverse=True)
 
     def __truediv__(self, other: Number | Tensor) -> Self:
-        if self.allow_bdo:
+        if self._allow_bdo:
             return self._operator_check_bdo(operator.truediv, other)
         if not isinstance(other, Number):
             return NotImplemented
@@ -649,12 +671,12 @@ def Cotensor(data: ArrayLike,
              basis: NBasis | None = None,
              variance: Sequence[int] | None = None,
              name: str | None = None,
-             allow_bdo: bool = True,
+             mode: tensor_mode = 'array',
              copy_data: bool = True) -> Tensor:
     data = np.array(data, copy=copy_data)
     if variance is None:
         variance = data.ndim * [_Variance.COVARIANT]
-    return Tensor(data, basis=basis, variance=variance, name=name, allow_bdo=allow_bdo, copy_data=False)
+    return Tensor(data, basis=basis, variance=variance, name=name, mode=mode, copy_data=False)
 
 
 Cotensor.__doc__ = \
