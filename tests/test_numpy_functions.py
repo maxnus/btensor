@@ -76,6 +76,7 @@ class TestNumpyFunctions(TestCase):
     def test_sum(self, tensor):
         tensor, np_array = tensor
         expected = np.sum(np_array)
+        self.assert_allclose(np.sum(tensor), expected)
         self.assert_allclose(tensor.sum(), expected)
         self.assert_allclose(btensor.sum(tensor), expected)
         self.assert_allclose(btensor.sum(np_array), expected)

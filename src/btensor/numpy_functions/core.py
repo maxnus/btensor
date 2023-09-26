@@ -62,9 +62,10 @@ empty_like = _empty_like_factory(empty)
 ones_like = _empty_like_factory(ones)
 
 
-def _sum(a: ArrayLike | Tensor, axis=None) -> Tensor | Number:
+def _sum(a: ArrayLike | Tensor, axis: int | Tuple[int, ...] | None = None,
+         out: np.ndarray | None = None) -> Tensor | Number:
     a = _to_tensor(a)
-    value = a.to_numpy(copy=False).sum(axis=axis)
+    value = a.to_numpy(copy=False).sum(axis=axis, out=out)
     if value.ndim == 0:
         return value
     if isinstance(axis, (int, np.integer)):

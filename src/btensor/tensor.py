@@ -477,20 +477,22 @@ class Tensor:
         """
         return self.transpose()
 
-    def sum(self, axis: int | Tuple[int] | None = None) -> Self | Number:
+    def sum(self, axis: int | Tuple[int] | None = None, out: np.ndarray | None = None) -> Self | Number:
         """Sum of tensor elements over a given axis or tuple of axes.
 
         Args:
             axis: Axis or axes along which a sum is performed. The default, axis=None, will sum all of the elements of
-            the input tensor. If axis is negative it counts from the last to the first axis. If axis is a tuple of ints,
-            a sum is performed on all of the axes specified in the tuple instead of a single axis or all the axes as
-            before.
+                the input tensor. If axis is negative it counts from the last to the first axis. If axis is a tuple of
+                ints, a sum is performed on all of the axes specified in the tuple instead of a single axis or all the
+                axes as before.
+            out: Alternative output array in which to place the result. It must have the same shape as the expected
+                output, but the type of the output values will be cast if necessary. Default: None.
         Returns:
             A tensor with the specified axis or set of axes removed.
 
         """
         self._check_bdo_allowed()
-        return numpy_functions.sum(self, axis=axis)
+        return numpy_functions.sum(self, axis=axis, out=out)
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Self | Number:
         """Returns the sum along diagonals of the tensor.
@@ -566,8 +568,8 @@ class Tensor:
                 raise BasisDependentOperationError(f"operation not allowed in mode '{self.mode}'")
         else:
             if not (self._allow_bdo and other._allow_bdo):
-                raise BasisDependentOperationError(f"operation not allowed between tensors with mode '{self.mode}'"
-                                                   f"and {other.mode}")
+                raise BasisDependentOperationError(f"operation not allowed between tensors with modes '{self.mode}'"
+                                                   f" and '{other.mode}'")
         return True
 
     def _operator_check_bdo(self, op: Callable, other: Number | Tensor | None = None,
