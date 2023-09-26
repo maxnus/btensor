@@ -23,7 +23,8 @@ from typing import *
 import numpy as np
 from numpy.typing import ArrayLike
 
-from btensor.util import *
+from btensor.util import (expand_axis, is_sequence, IdentityMatrix, PermutationMatrix, ColumnPermutationMatrix,
+                          RowPermutationMatrix, MatrixProductList, text_enumeration)
 from btensor.exceptions import BasisError, BasisDependentOperationError
 from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
 from btensor.basistuple import BasisTuple
@@ -303,7 +304,7 @@ class Tensor:
                 perm = ovlp[0]
                 indices = perm.indices
                 if isinstance(perm, RowPermutationMatrix):
-                    operands[0] = util.expand_axis(operands[0], perm.shape[1], indices=indices, axis=i)
+                    operands[0] = expand_axis(operands[0], perm.shape[1], indices=indices, axis=i)
                 if isinstance(perm, ColumnPermutationMatrix):
                     operands[0] = np.take(operands[0], indices, axis=i)
                 continue
@@ -550,8 +551,9 @@ class Tensor:
 
     @staticmethod
     def _check_mode(mode: tensor_mode) -> tensor_mode:
-        if mode not in get_args(tensor_mode):
-            raise ValueError(f"invalid mode '{mode}'")
+        valid_modes = get_args(tensor_mode)
+        if mode not in valid_modes:
+            raise ValueError(f"invalid mode '{mode}' (must be in {text_enumeration(valid_modes, 'or')})")
         return mode
 
     @mode.setter

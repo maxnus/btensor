@@ -32,6 +32,7 @@ __all__ = [
         'ndot',
         'expand_axis',
         'replace_attr',
+        'text_enumeration',
         ]
 
 
@@ -81,6 +82,10 @@ def expand_axis(a, size, indices=None, axis=-1):
     b = np.zeros_like(a, shape=shape)
     b[mask] = a
     return b
+
+
+def text_enumeration(words: Sequence[str], conjunction: str = 'and') -> str:
+    return f"{', '.join(words[:-1])} {conjunction} {words[-1]}"
 
 
 @contextmanager
