@@ -24,7 +24,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from btensor.util import (expand_axis, is_sequence, IdentityMatrix, PermutationMatrix, ColumnPermutationMatrix,
-                          RowPermutationMatrix, MatrixProductList, text_enumeration)
+                          RowPermutationMatrix, MatrixProductList, check_input)
 from btensor.exceptions import BasisError, BasisDependentOperationError
 from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
 from btensor.basistuple import BasisTuple
@@ -33,9 +33,6 @@ from btensor import numpy_functions
 
 if TYPE_CHECKING:
     T = TypeVar('T')
-
-
-tensor_mode = Literal['array', 'tensor']
 
 
 class _ChangeBasisInterface:
@@ -59,11 +56,9 @@ DOCSTRING_TEMPLATE = \
         variance: Variance along each dimension. Default: {default_variance}.
         name: Name of the {name}. Default: 'Basis<ID>' where <ID> is the ID of the
             basis.
-        allow_bdo: If False, any attempt to perform an operation which is basis
-            dependent (e.g., elementwise multiplication with a second tensor) will
-            raise an BasisDependentOperationError. If True, basis dependent
-            operations are allowed and the tensor will function mostly like a
-            generalized ndarray. Default: True.
+        numpy_compatible: If True, the tensor can be used in standard NumPy function
+            calls. The basis of the tensor will however not be taken into consideration
+            and no automatic basis transformations will be performed. Default: True.
         copy_data: If False, no copy of the NumPy data will be created.
             Default: True.
     
@@ -83,7 +78,7 @@ class Tensor:
                  basis: NBasis | None = None,
                  variance: Sequence[int] | None = None,
                  name: str | None = None,
-                 mode: tensor_mode = 'array',
+                 numpy_compatible: bool = True,
                  copy_data: bool = True) -> None:
         """Create new Tensor instance."""
         data = np.array(data, copy=copy_data)
@@ -99,9 +94,9 @@ class Tensor:
         basis = BasisTuple.create(basis)
         self._basis = basis
         self._variance = variance
-        self._check_basis(basis)
+        self._check_basis_input(basis)
         self._cob = _ChangeBasisInterface(self)
-        self._mode = self._check_mode(mode)
+        self._numpy_compatible = self._check_numpy_compatible_input(numpy_compatible)
 
     def __repr__(self) -> str:
         basis_names = f"({', '.join([bas.name for bas in self.basis]) + (',' if self.ndim == 1 else '')})"
@@ -124,7 +119,7 @@ class Tensor:
 
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data,
-                          mode=self.mode)
+                          numpy_compatible=self.numpy_compatible)
 
     # --- Basis
 
@@ -133,7 +128,7 @@ class Tensor:
         """Basis of the tensor."""
         return self._basis
 
-    def _check_basis(self, basis: BasisTuple) -> None:
+    def _check_basis_input(self, basis: BasisTuple) -> None:
         if len(basis) != self.ndim:
             raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} basis elements ({len(basis)} given)")
         for axis, (size, baselem) in enumerate(zip(self.shape, basis)):
@@ -160,7 +155,7 @@ class Tensor:
         if isinstance(basis, Basis) or basis is None:
             basis = (basis,)
         new_basis = self.basis.update_with(basis)
-        tensor._check_basis(new_basis)
+        tensor._check_basis_input(new_basis)
         tensor._basis = new_basis
         return tensor
 
@@ -226,7 +221,7 @@ class Tensor:
                 metric = metric.inverse
             values = np.einsum(contraction, self._data, metric.to_numpy())
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
-        return type(self)(values, basis=self.basis, variance=variance_tuple, mode=self.mode, copy_data=False)
+        return type(self)(values, basis=self.basis, variance=variance_tuple, numpy_compatible=self.numpy_compatible, copy_data=False)
 
     def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Self:
         """Replace variance of tensor without corresponding transformation of the representation.
@@ -318,7 +313,7 @@ class Tensor:
         basis_out = tuple(basis_out)
         subscripts += '->' + (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
-        return type(self)(value, basis=basis_out, variance=self.variance, mode=self.mode, copy_data=False)
+        return type(self)(value, basis=basis_out, variance=self.variance, numpy_compatible=self.numpy_compatible, copy_data=False)
 
     # --- Change of basis
 
@@ -467,7 +462,7 @@ class Tensor:
             variance = self.variance[::-1]
         else:
             basis, variance = zip(*((self.basis[ax], self.variance[ax]) for ax in axes))
-        return type(self)(value, basis=basis, variance=variance, mode=self.mode)
+        return type(self)(value, basis=basis, variance=variance, numpy_compatible=self.numpy_compatible)
 
     @property
     def T(self) -> Self:
@@ -492,7 +487,6 @@ class Tensor:
             A tensor with the specified axis or set of axes removed.
 
         """
-        self._check_bdo_allowed()
         return numpy_functions.sum(self, axis=axis, out=out)
 
     def trace(self, axis1: int = 0, axis2: int = 1) -> Self | Number:
@@ -546,42 +540,19 @@ class Tensor:
         return type(self)(op(v1, v2), basis=basis)
 
     @property
-    def mode(self) -> tensor_mode:
-        return self._mode
+    def numpy_compatible(self) -> bool:
+        return self._numpy_compatible
 
     @staticmethod
-    def _check_mode(mode: tensor_mode) -> tensor_mode:
-        valid_modes = get_args(tensor_mode)
-        if mode not in valid_modes:
-            raise ValueError(f"invalid mode '{mode}' (must be in {text_enumeration(valid_modes, 'or', quotes=True)})")
-        return mode
+    def _check_numpy_compatible_input(value: bool) -> bool:
+        return check_input(value, [True, False])
 
-    @mode.setter
-    def mode(self, mode: tensor_mode) -> None:
-        self._mode = self._check_mode(mode)
+    @numpy_compatible.setter
+    def numpy_compatible(self, value: bool) -> None:
+        self._numpy_compatible = self._check_numpy_compatible_input(value)
 
-    @property
-    def _allow_bdo(self) -> bool:
-        return self.mode == 'array'
-
-    def _check_bdo_allowed(self, other: Tensor | None = None) -> bool:
-        if other is None:
-            if not self._allow_bdo:
-                raise BasisDependentOperationError(f"operation not allowed in mode '{self.mode}'")
-        else:
-            if not (self._allow_bdo and other._allow_bdo):
-                raise BasisDependentOperationError(f"operation not allowed between tensors with modes '{self.mode}'"
-                                                   f" and '{other.mode}'")
-        return True
-
-    def _operator_check_bdo(self, op: Callable, other: Number | Tensor | None = None,
-                            reverse: bool = False) -> Self:
-
-        # Check that basis dependent operation is allowed
-        if isinstance(other, Number):
-            self._check_bdo_allowed()
-        else:
-            self._check_bdo_allowed(other)
+    def _operator_check_same_basis(self, op: Callable, other: Number | Tensor | None = None,
+                                   reverse: bool = False) -> Self:
 
         if other is None:
             return self._operator(op, reverse=reverse)
@@ -593,7 +564,8 @@ class Tensor:
 
     @property
     def __array_interface__(self) -> Dict[str, Any]:
-        self._check_bdo_allowed()
+        if not self.numpy_compatible:
+            raise BasisDependentOperationError("not allowed, if numpy_compatible is set to False")
         return self._data.__array_interface__
 
     # Basis independent operations:
@@ -620,21 +592,21 @@ class Tensor:
 
     def __mul__(self, other: Number | Tensor) -> Self:
         if isinstance(other, Tensor):
-            return self._operator_check_bdo(operator.mul, other)
+            return self._operator_check_same_basis(operator.mul, other)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other)
 
     def __rmul__(self, other: Number | Tensor) -> Self:
         if isinstance(other, Tensor):
-            return self._operator_check_bdo(operator.mul, other, reverse=True)
+            return self._operator_check_same_basis(operator.mul, other, reverse=True)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.mul, other, reverse=True)
 
     def __truediv__(self, other: Number | Tensor) -> Self:
         if isinstance(other, Tensor):
-            return self._operator_check_bdo(operator.truediv, other)
+            return self._operator_check_same_basis(operator.truediv, other)
         if not isinstance(other, Number):
             return NotImplemented
         return self._operator(operator.truediv, other)
@@ -642,58 +614,58 @@ class Tensor:
     # Basis dependent operations:
 
     def __floordiv__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.floordiv, other)
+        return self._operator_check_same_basis(operator.floordiv, other)
 
     def __mod__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.mod, other)
+        return self._operator_check_same_basis(operator.mod, other)
 
     def __pow__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.pow, other)
+        return self._operator_check_same_basis(operator.pow, other)
 
     def __rtruediv__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.truediv, other, reverse=True)
+        return self._operator_check_same_basis(operator.truediv, other, reverse=True)
 
     def __rfloordiv__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.floordiv, other, reverse=True)
+        return self._operator_check_same_basis(operator.floordiv, other, reverse=True)
 
     def __rmod__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.mod, other, reverse=True)
+        return self._operator_check_same_basis(operator.mod, other, reverse=True)
 
     def __rpow__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.pow, other, reverse=True)
+        return self._operator_check_same_basis(operator.pow, other, reverse=True)
 
     def __eq__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.eq, other)
+        return self._operator_check_same_basis(operator.eq, other)
 
     def __ne__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.ne, other)
+        return self._operator_check_same_basis(operator.ne, other)
 
     def __gt__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.gt, other)
+        return self._operator_check_same_basis(operator.gt, other)
 
     def __ge__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.ge, other)
+        return self._operator_check_same_basis(operator.ge, other)
 
     def __lt__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.lt, other)
+        return self._operator_check_same_basis(operator.lt, other)
 
     def __le__(self, other: Number | Tensor) -> Self:
-        return self._operator_check_bdo(operator.le, other)
+        return self._operator_check_same_basis(operator.le, other)
 
     def __abs__(self) -> Self:
-        return self._operator_check_bdo(operator.abs)
+        return self._operator_check_same_basis(operator.abs)
 
 
 def Cotensor(data: ArrayLike,
              basis: NBasis | None = None,
              variance: Sequence[int] | None = None,
              name: str | None = None,
-             mode: tensor_mode = 'array',
+             numpy_compatible: bool = True,
              copy_data: bool = True) -> Tensor:
     data = np.array(data, copy=copy_data)
     if variance is None:
         variance = data.ndim * [_Variance.COVARIANT]
-    return Tensor(data, basis=basis, variance=variance, name=name, mode=mode, copy_data=False)
+    return Tensor(data, basis=basis, variance=variance, name=name, numpy_compatible=numpy_compatible, copy_data=False)
 
 
 Cotensor.__doc__ = \

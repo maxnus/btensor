@@ -80,7 +80,7 @@ except Exception as e:
     print(f"Exception encountered:\n{e.__class__.__name__}: {e}\n")
 
 
-# Scalar multiplication/division works as expected:
+# Scalar operations work as expected:
 error = np.linalg.norm((2*fock).to_numpy() - 2*(fock.to_numpy()))
 print(f"Scalar multiplication error = {error}\n")
 
@@ -105,15 +105,18 @@ error = np.linalg.norm(dm_cc.to_numpy() - dm_cc_reassembled.to_numpy())
 print(f"Error in reassembled matrix = {error}\n")
 
 
-# Other elementwise operation, e.g. elementwise multiplication, are not supported,
-# since the result depends on the basis in which the operation is performed:
+# All other elementwise operation (except for addition and subtraction), e.g. elementwise multiplication,
+# are only permitted, if both tensors have the same basis along each axis. The reason for this is that the result of
+# these operations depends on the basis that they are carried out in, hence it is required to be explicit about this
+# choice:
+dm_oo[mo, mo] * dm_vv[mo, mo]         # OK: same basis
+dm_oo[mo, mo] + dm_vv[ao, ao]         # also OK: addition
 try:
-    dm_oo * dm_vv
+    dm_oo[mo, mo] * dm_vv[ao, ao]     # not OK
 except Exception as e:
     print(f"Exception encountered:\n{e.__class__.__name__}: {e}\n")
 
 
-# By the same argument, tensor has a .trace(), but no .sum() method.
 # Note that the value of the trace is correct, even though dm was defined in the AO basis.
 # The metric is inserted automatically to obtain the mixed covariant-contravariant representation.
 print(f"Trace of density-matrix: {dm.trace()}\n")

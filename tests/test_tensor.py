@@ -64,7 +64,7 @@ class TestTensor(TestCase):
 
     def test_array_interface(self, tensor):
         tensor, np_array = tensor
-        tensor.mode = 'tensor'
+        tensor.numpy_compatible = False
         with pytest.raises(BTensorError):
             np.asarray(tensor)
 
@@ -103,16 +103,10 @@ operators_div_mod_pow = {
 
 class TestArithmetic(TestCase):
 
-    @pytest.mark.parametrize('unary_operator', [operator.pos, operator.neg])
+    @pytest.mark.parametrize('unary_operator', [operator.pos, operator.neg, operator.abs])
     def test_unary_operator(self, unary_operator, tensor):
         tensor, np_array = tensor
         self.assert_allclose(unary_operator(tensor), unary_operator(np_array))
-
-    def test_unary_operator_exception(self, tensor):
-        tensor, np_array = tensor
-        tensor.mode = 'tensor'
-        with pytest.raises(BasisDependentOperationError):
-            abs(tensor)
 
     @pytest.mark.parametrize('op', [operator.add, operator.sub])
     def test_add_sub_operator(self, ndim, op, get_tensor_data):
@@ -139,15 +133,11 @@ class TestArithmetic(TestCase):
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', operators_div_mod_pow.values(), ids=operators_div_mod_pow.keys())
-    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, mode):
-        tensor_data = get_tensor_data(ndim=ndim, mode=mode)
-        if mode == 'array':
-            result = op(scalar, tensor_data.tensor)
-            expected = op(scalar, tensor_data.array)
-            self.assert_allclose(result, expected)
-        else:
-            with pytest.raises(BasisDependentOperationError):
-                result = op(scalar, tensor_data.tensor)
+    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, numpy_compatible):
+        tensor_data = get_tensor_data(ndim=ndim, numpy_compatible=numpy_compatible)
+        result = op(scalar, tensor_data.tensor)
+        expected = op(scalar, tensor_data.array)
+        self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('subsize1', [1, 5, 10])
     @pytest.mark.parametrize('subsize2', [1, 5, 10])

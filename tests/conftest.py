@@ -23,7 +23,6 @@ import scipy
 
 import btensor
 from btensor import Basis, Tensor, TensorSum
-from btensor.tensor import tensor_mode
 
 
 class UserSlice:
@@ -290,12 +289,12 @@ def basis_for_shape_large_atleast2d(shape_large_atleast2d):
 class TensorDataForTesting:
 
     def __init__(self, array: np.ndarray, basis: Basis | Tuple[Basis, ...], variance: Tuple[int] | None = None,
-                 mode: tensor_mode = 'array'):
+                 numpy_compatible: bool = True):
         self.array = array
         self.basis = basis
         self.variance = variance
-        self.mode = mode
-        self.tensor = Tensor(array, basis=basis, variance=variance, mode=mode)
+        self.numpy_compatible = numpy_compatible
+        self.tensor = Tensor(array, basis=basis, variance=variance, numpy_compatible=numpy_compatible)
 
 
 @pytest.fixture(scope='module')
@@ -303,7 +302,7 @@ def get_tensor_data(rootbasis):
     def get_tensor_data(ndim: int,
                         number: int = 1,
                         hermitian: bool = False,
-                        mode: tensor_mode = 'array') -> TensorDataForTesting | List[TensorDataForTesting]:
+                        numpy_compatible: bool = True) -> TensorDataForTesting | List[TensorDataForTesting]:
         np.random.seed(0)
         basis = tuple(ndim * [rootbasis])
         result = []
@@ -311,15 +310,15 @@ def get_tensor_data(rootbasis):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
                 data = (data + data.T)/2
-            result.append(TensorDataForTesting(data, basis=basis, mode=mode))
+            result.append(TensorDataForTesting(data, basis=basis, numpy_compatible=numpy_compatible))
         if number == 1:
             return result[0]
         return result
     return get_tensor_data
 
 
-@pytest.fixture(params=['array', 'tensor'], scope='module')
-def mode(request):
+@pytest.fixture(params=[True, False], scope='module')
+def numpy_compatible(request):
     return request.param
 
 
