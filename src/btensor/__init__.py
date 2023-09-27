@@ -17,7 +17,6 @@ __version__ = '1.0.1'
 from .basis import IBasis, Basis, nobasis
 from .space import Space
 from .tensor import Tensor, Cotensor
-from .array import Array
 
 from .numpy_functions import *
 

@@ -12,19 +12,17 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from __future__ import annotations
+from typing import *
+
 import numpy as np
 
 from btensor.util import *
-from btensor.basis import Basis
-from btensor.tensor import Tensor
-from btensor import numpy_functions
+from btensor.basis import Basis, _Variance, NBasis
+from btensor.tensor import Tensor, DOCSTRING_TEMPLATE
 
 
 class Array(Tensor):
-
-    @property
-    def __array_interface__(self):
-        return self._data.__array_interface__
 
     def __getitem__(self, key):
         """Construct and return sub-Array."""
@@ -32,7 +30,7 @@ class Array(Tensor):
         # getitem of Tensor base class:
         try:
             return super().__getitem__(key)
-        except IndexError as e:
+        except TypeError as e:
             pass
 
         if isinstance(key, int):
@@ -85,13 +83,3 @@ class Array(Tensor):
         #basis_old = list(self.basis)
         #basis_new = tuple(nobasis if elem is np.newaxis else basis_old.pop(0) for elem in key)
         #self.basis = basis_new
-
-    def to_tensor(self):
-        return Tensor(self._data, basis=self.basis)
-
-    def sum(self, axis=None):
-        return numpy_functions.sum(self, axis=axis)
-
-
-#class Coarray(Array, Cotensor):
-#    pass

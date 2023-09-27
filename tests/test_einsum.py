@@ -19,7 +19,7 @@ import string
 import numpy as np
 
 import btensor as bt
-from btensor import TensorSum
+from btensor import Basis, Tensor, TensorSum
 from helper import TestCase
 
 
@@ -77,9 +77,9 @@ def intersect_tol(request):
 class TestEinsum(TestCase):
 
     @pytest.mark.parametrize('optimize', [False])
-    def test_summation(self, einsum_summation, get_tensor_or_array, tensor_cls, optimize, intersect_tol, timings):
+    def test_summation(self, einsum_summation, get_tensor, optimize, intersect_tol, timings):
         ndim = len(einsum_summation.split('->')[0])
-        array, data = get_tensor_or_array(ndim, tensor_cls=tensor_cls)
+        array, data = get_tensor(ndim)
         with timings('NumPy'):
             expected = np.einsum(einsum_summation, data, optimize=optimize)
         with timings('BTensor'):
@@ -91,10 +91,10 @@ class TestEinsum(TestCase):
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('optimize', [False])
-    def test_contraction(self, einsum_contraction, get_tensor_or_array, tensor_cls, optimize, intersect_tol, timings):
+    def test_contraction(self, einsum_contraction, get_tensor, optimize, intersect_tol, timings):
         ndim1, ndim2 = [len(x) for x in einsum_contraction.split('->')[0].split(',')]
-        array1, data1 = get_tensor_or_array(ndim1, tensor_cls=tensor_cls)
-        array2, data2 = get_tensor_or_array(ndim2, tensor_cls=tensor_cls)
+        array1, data1 = get_tensor(ndim1)
+        array2, data2 = get_tensor(ndim2)
         with timings('NumPy'):
             expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
         with timings('BTensor'):
@@ -105,62 +105,62 @@ class TestEinsum(TestCase):
                 pass
         self.assert_allclose(result, expected)
 
-    def test_matmul(self, tensor_cls_2x):
+    def test_matmul(self):
         n, m, k = 30, 40, 50
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         contract = 'ij,jk->ik'
         c = np.einsum(contract, a, b)
-        bn = bt.Basis(n)
-        bm = bt.Basis(m)
-        bk = bt.Basis(k)
-        aa = tensor_cls_2x[0](a, basis=(bn, bm))
-        ab = tensor_cls_2x[1](b, basis=(bm, bk))
+        bn = Basis(n)
+        bm = Basis(m)
+        bk = Basis(k)
+        aa = Tensor(a, basis=(bn, bm))
+        ab = Tensor(b, basis=(bm, bk))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 
-    def test_double_matmul(self, tensor_cls_3x):
+    def test_double_matmul(self):
         n, m, k, l = 30, 40, 50, 60
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
         c = np.random.rand(k, l)
         contract = 'ij,jk,kl->il'
         d = np.einsum(contract, a, b, c)
-        bn = bt.Basis(n)
-        bm = bt.Basis(m)
-        bk = bt.Basis(k)
-        bl = bt.Basis(l)
-        aa = tensor_cls_3x[0](a, basis=(bn, bm))
-        ab = tensor_cls_3x[1](b, basis=(bm, bk))
-        ac = tensor_cls_3x[2](c, basis=(bk, bl))
+        bn = Basis(n)
+        bm = Basis(m)
+        bk = Basis(k)
+        bl = Basis(l)
+        aa = Tensor(a, basis=(bn, bm))
+        ab = Tensor(b, basis=(bm, bk))
+        ac = Tensor(c, basis=(bk, bl))
         ad = bt.einsum(contract, aa, ab, ac)
         self.assert_allclose(ad, d)
 
-    def test_trace_of_dot(self, tensor_cls_2x):
+    def test_trace_of_dot(self):
         n, m = 30, 40
         a = np.random.rand(n, m)
         b = np.random.rand(m, n)
         contract = 'ij,ji->'
         c = np.einsum(contract, a, b)
-        bn = bt.Basis(n)
-        bm = bt.Basis(m)
-        aa = tensor_cls_2x[0](a, basis=(bn, bm))
-        ab = tensor_cls_2x[1](b, basis=(bm, bn))
+        bn = Basis(n)
+        bm = Basis(m)
+        aa = Tensor(a, basis=(bn, bm))
+        ab = Tensor(b, basis=(bm, bn))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 
-    def test_ijk_kl_ijl(self, tensor_cls_2x):
+    def test_ijk_kl_ijl(self):
         n, m, k, l = 30, 40, 50, 60
         a = np.random.rand(n, m, k)
         b = np.random.rand(k, l)
         contract = 'ijk,kl->ijl'
         c = np.einsum(contract, a, b)
-        bn = bt.Basis(n)
-        bm = bt.Basis(m)
-        bk = bt.Basis(k)
-        bl = bt.Basis(l)
-        aa = tensor_cls_2x[0](a, basis=(bn, bm, bk))
-        ab = tensor_cls_2x[1](b, basis=(bk, bl))
+        bn = Basis(n)
+        bm = Basis(m)
+        bk = Basis(k)
+        bl = Basis(l)
+        aa = Tensor(a, basis=(bn, bm, bk))
+        ab = Tensor(b, basis=(bk, bl))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 

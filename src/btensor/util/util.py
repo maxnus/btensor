@@ -32,6 +32,8 @@ __all__ = [
         'ndot',
         'expand_axis',
         'replace_attr',
+        'text_enumeration',
+        'check_input',
         ]
 
 
@@ -81,6 +83,21 @@ def expand_axis(a, size, indices=None, axis=-1):
     b = np.zeros_like(a, shape=shape)
     b[mask] = a
     return b
+
+
+def text_enumeration(words: Sequence[Any], conjunction: str = 'and', quotes: bool = False) -> str:
+    if quotes:
+        words = [f"'{word}'" for word in words]
+    return f"{', '.join(words[:-1])} {conjunction} {words[-1]}"
+
+
+T = TypeVar('T')
+
+
+def check_input(value: T, valid_values: Sequence[Any]) -> T:
+    if value not in valid_values:
+        raise ValueError(f"invalid value '{value}' (must be {text_enumeration(valid_values, 'or', quotes=True)})")
+    return value
 
 
 @contextmanager
