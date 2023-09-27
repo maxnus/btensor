@@ -90,17 +90,22 @@
 <h1>Tensor<a class="headerlink" href="#tensor" title="Permalink to this headline"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="btensor.tensor.Tensor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">btensor.tensor.</span></span><span class="sig-name descname"><span class="pre">Tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L58"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">btensor.tensor.</span></span><span class="sig-name descname"><span class="pre">Tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numpy_compatible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L68"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor" title="Permalink to this definition"></a></dt>
 <dd><p>A numerical container class with support for automatic basis transformation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>ArrayLike</em>) – NumPy array containing the representation of the tensor.</p></li>
-<li><p><strong>basis</strong> (<em>NBasis</em><em> | </em><em>None</em>) – Basis object or tuple of Basis objects, representing the Basis along each axis of the input data.
-Default: nobasis along each axis.</p></li>
+<li><p><strong>basis</strong> (<em>NBasis</em><em> | </em><em>None</em>) – Basis object or tuple of Basis objects, representing the Basis along
+each axis of the input data. Default: nobasis along each axis.</p></li>
 <li><p><strong>variance</strong> (<em>Sequence</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>) – Variance along each dimension. Default: -1.</p></li>
-<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of the tensor. Default: ‘Basis&lt;ID&gt;’ where &lt;ID&gt; is the ID of the basis.</p></li>
-<li><p><strong>copy_data</strong> (<em>bool</em>) – If False, no copy of the NumPy data will be created. Default: True.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of the tensor. Default: ‘Basis&lt;ID&gt;’ where &lt;ID&gt; is the ID of the
+basis.</p></li>
+<li><p><strong>numpy_compatible</strong> (<em>bool</em>) – If True, the tensor can be used in standard NumPy function
+calls. The basis of the tensor will however not be taken into consideration
+and no automatic basis transformations will be performed. Default: True.</p></li>
+<li><p><strong>copy_data</strong> (<em>bool</em>) – If False, no copy of the NumPy data will be created.
+Default: True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -150,13 +155,16 @@ Default: nobasis along each axis.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="btensor.tensor.Tensor.replace_variance.html#btensor.tensor.Tensor.replace_variance" title="btensor.tensor.Tensor.replace_variance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">replace_variance</span></code></a></p></td>
 <td><p>Replace variance of tensor without corresponding transformation of the representation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="btensor.tensor.Tensor.to_numpy.html#btensor.tensor.Tensor.to_numpy" title="btensor.tensor.Tensor.to_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_numpy</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.tensor.Tensor.sum.html#btensor.tensor.Tensor.sum" title="btensor.tensor.Tensor.sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum</span></code></a></p></td>
+<td><p>Sum of tensor elements over a given axis or tuple of axes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.tensor.Tensor.to_numpy.html#btensor.tensor.Tensor.to_numpy" title="btensor.tensor.Tensor.to_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_numpy</span></code></a></p></td>
 <td><p>Get representation of tensor as a NumPy ndarray.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="btensor.tensor.Tensor.trace.html#btensor.tensor.Tensor.trace" title="btensor.tensor.Tensor.trace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trace</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="btensor.tensor.Tensor.trace.html#btensor.tensor.Tensor.trace" title="btensor.tensor.Tensor.trace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trace</span></code></a></p></td>
 <td><p>Returns the sum along diagonals of the tensor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="btensor.tensor.Tensor.transpose.html#btensor.tensor.Tensor.transpose" title="btensor.tensor.Tensor.transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="btensor.tensor.Tensor.transpose.html#btensor.tensor.Tensor.transpose" title="btensor.tensor.Tensor.transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code></a></p></td>
 <td><p>Return a tensor with axes transposed.</p></td>
 </tr>
 </tbody>
@@ -177,16 +185,19 @@ Default: nobasis along each axis.</p></li>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cob</span></code></p></td>
 <td><p>Change of basis interface, similar to <cite>change_basis</cite>, but using []-syntax.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_shape</span></code></p></td>
-<td><p>Current shape of the tensor.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></p></td>
 <td><p>NumPy's dtype of the underlying ndarray.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></p></td>
 <td><p>Number of dimensions of the tensor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">variance</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy_compatible</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></p></td>
+<td><p>Current shape of the tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">variance</span></code></p></td>
 <td><p>Tuple with <cite>ndim</cite> elements with value 1 or -1, for covariance and contravariance, respectively.</p></td>
 </tr>
 </tbody>

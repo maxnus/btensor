@@ -90,17 +90,22 @@
 <h1>btensor.tensor.Cotensor<a class="headerlink" href="#btensor-tensor-cotensor" title="Permalink to this headline"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="btensor.tensor.Cotensor">
-<span class="sig-prename descclassname"><span class="pre">btensor.tensor.</span></span><span class="sig-name descname"><span class="pre">Cotensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L589"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Cotensor" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">btensor.tensor.</span></span><span class="sig-name descname"><span class="pre">Cotensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numpy_compatible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L659"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Cotensor" title="Permalink to this definition"></a></dt>
 <dd><p>A helper function to create tensors with default variance 1 (covariant).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>ArrayLike</em>) – NumPy array containing the representation of the cotensor.</p></li>
-<li><p><strong>basis</strong> (<em>NBasis</em><em> | </em><em>None</em>) – Basis object or tuple of Basis objects, representing the Basis along each axis of the input data.
-Default: nobasis along each axis.</p></li>
+<li><p><strong>basis</strong> (<em>NBasis</em><em> | </em><em>None</em>) – Basis object or tuple of Basis objects, representing the Basis along
+each axis of the input data. Default: nobasis along each axis.</p></li>
 <li><p><strong>variance</strong> (<em>Sequence</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>) – Variance along each dimension. Default: 1.</p></li>
-<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of the cotensor. Default: ‘Basis&lt;ID&gt;’ where &lt;ID&gt; is the ID of the basis.</p></li>
-<li><p><strong>copy_data</strong> (<em>bool</em>) – If False, no copy of the NumPy data will be created. Default: True.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of the cotensor. Default: ‘Basis&lt;ID&gt;’ where &lt;ID&gt; is the ID of the
+basis.</p></li>
+<li><p><strong>numpy_compatible</strong> (<em>bool</em>) – If True, the tensor can be used in standard NumPy function
+calls. The basis of the tensor will however not be taken into consideration
+and no automatic basis transformations will be performed. Default: True.</p></li>
+<li><p><strong>copy_data</strong> (<em>bool</em>) – If False, no copy of the NumPy data will be created.
+Default: True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>

@@ -1,0 +1,6 @@
+Tensor.sum
+==========
+
+.. currentmodule:: btensor.tensor
+
+.. automethod:: Tensor.sum

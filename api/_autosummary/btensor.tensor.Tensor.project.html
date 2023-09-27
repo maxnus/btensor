@@ -91,19 +91,19 @@
 <h1>Tensor.project<a class="headerlink" href="#tensor-project" title="Permalink to this headline"></a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="btensor.tensor.Tensor.project">
-<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L252"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.project" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L265"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.project" title="Permalink to this definition"></a></dt>
 <dd><p>Transforms tensor to a different set of basis.</p>
 <p>Slice(None) can be used to indicate no transformation.
 Note that this can reduce the rank of the array, for example when projecting onto an orthogonal space.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>basis</strong> (<em>Union</em><em>[</em><a class="reference internal" href="btensor.basis.Basis.html#btensor.basis.Basis" title="btensor.basis.Basis"><em>Basis</em></a><em>, </em><em>btensor.basis._NoBasis</em><em>, </em><em>Sequence</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="btensor.basis.Basis.html#btensor.basis.Basis" title="btensor.basis.Basis"><em>Basis</em></a><em>, </em><em>btensor.basis._NoBasis</em><em>]</em><em>]</em><em>]</em>) – New basis.</p>
+<dd class="field-odd"><p><strong>basis</strong> (<em>NBasis</em>) – New basis.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Tensor projected onto <cite>basis</cite>.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="btensor.tensor.Tensor.html#btensor.tensor.Tensor" title="btensor.tensor.Tensor">btensor.tensor.Tensor</a></p>
+<dd class="field-odd"><p>Self</p>
 </dd>
 </dl>
 </dd></dl>

@@ -27,6 +27,7 @@ Tensor
       ~Tensor.project
       ~Tensor.replace_basis
       ~Tensor.replace_variance
+      ~Tensor.sum
       ~Tensor.to_numpy
       ~Tensor.trace
       ~Tensor.transpose
@@ -42,9 +43,10 @@ Tensor
       ~Tensor.T
       ~Tensor.basis
       ~Tensor.cob
-      ~Tensor.current_shape
       ~Tensor.dtype
       ~Tensor.ndim
+      ~Tensor.numpy_compatible
+      ~Tensor.shape
       ~Tensor.variance
    
    

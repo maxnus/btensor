@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tensor.change_basis &mdash; BTensor  documentation</title>
+  <title>Tensor.sum &mdash; BTensor  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
@@ -18,8 +18,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Tensor.change_basis_at" href="btensor.tensor.Tensor.change_basis_at.html" />
-    <link rel="prev" title="Tensor.__init__" href="btensor.tensor.Tensor.__init__.html" /> 
+    <link rel="next" title="Tensor.to_numpy" href="btensor.tensor.Tensor.to_numpy.html" />
+    <link rel="prev" title="Tensor.replace_variance" href="btensor.tensor.Tensor.replace_variance.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -77,9 +77,9 @@
           <li class="breadcrumb-item"><a href="../index.html">API Reference</a></li>
           <li class="breadcrumb-item"><a href="btensor.tensor.html">btensor.tensor</a></li>
           <li class="breadcrumb-item"><a href="btensor.tensor.Tensor.html">Tensor</a></li>
-      <li class="breadcrumb-item active">Tensor.change_basis</li>
+      <li class="breadcrumb-item active">Tensor.sum</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/api/_autosummary/btensor.tensor.Tensor.change_basis.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/api/_autosummary/btensor.tensor.Tensor.sum.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -87,24 +87,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="tensor-change-basis">
-<h1>Tensor.change_basis<a class="headerlink" href="#tensor-change-basis" title="Permalink to this headline"></a></h1>
+  <div class="section" id="tensor-sum">
+<h1>Tensor.sum<a class="headerlink" href="#tensor-sum" title="Permalink to this headline"></a></h1>
 <dl class="py method">
-<dt class="sig sig-object py" id="btensor.tensor.Tensor.change_basis">
-<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">change_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L320"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.change_basis" title="Permalink to this definition"></a></dt>
-<dd><p>Change basis of tensor.</p>
-<p>Slice(None) can be used to indicate no transformation.
-In contrast to <cite>project</cite>, this function will first test if the tensor can be fully represented in the new basis
-and raise a <cite>BasisError</cite> otherwise.</p>
+<dt class="sig sig-object py" id="btensor.tensor.Tensor.sum">
+<span class="sig-prename descclassname"><span class="pre">Tensor.</span></span><span class="sig-name descname"><span class="pre">sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/tensor.py#L476"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.tensor.Tensor.sum" title="Permalink to this definition"></a></dt>
+<dd><p>Sum of tensor elements over a given axis or tuple of axes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>basis</strong> (<em>NBasis</em>) – New basis of tensor.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axis</strong> (<em>int</em><em> | </em><em>Tuple</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>) – Axis or axes along which a sum is performed. The default, axis=None, will sum all of the elements of
+the input tensor. If axis is negative it counts from the last to the first axis. If axis is a tuple of
+ints, a sum is performed on all of the axes specified in the tuple instead of a single axis or all the
+axes as before.</p></li>
+<li><p><strong>out</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Alternative output array in which to place the result. It must have the same shape as the expected
+output, but the type of the output values will be cast if necessary. Default: None.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Tensor in new basis.</p>
+<dd class="field-even"><p>A tensor with the specified axis or set of axes removed.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Self</p>
+<dd class="field-odd"><p>Self | Number</p>
 </dd>
 </dl>
 </dd></dl>
@@ -115,8 +119,8 @@ and raise a <cite>BasisError</cite> otherwise.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="btensor.tensor.Tensor.__init__.html" class="btn btn-neutral float-left" title="Tensor.__init__" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="btensor.tensor.Tensor.change_basis_at.html" class="btn btn-neutral float-right" title="Tensor.change_basis_at" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="btensor.tensor.Tensor.replace_variance.html" class="btn btn-neutral float-left" title="Tensor.replace_variance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="btensor.tensor.Tensor.to_numpy.html" class="btn btn-neutral float-right" title="Tensor.to_numpy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
