@@ -260,7 +260,7 @@ which would lead to a loss of information:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">point3</span><span class="o">.</span><span class="n">cob</span><span class="p">[</span><span class="n">basis3</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="gr">btensor.util.util.BasisError</span>: <span class="n">(Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)</span>
+<span class="gr">btensor.exceptions.BasisError</span>: <span class="n">(Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)</span>
 </pre></div>
 </div>
 </div>

@@ -219,7 +219,7 @@ transforming back into the original basis:
       >>> print(point3.cob[basis3].to_numpy())
       Traceback (most recent call last):
       ...
-      btensor.util.util.BasisError: (Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)
+      btensor.exceptions.BasisError: (Basis(id= 3, size= 1, name= Basis3),) does not span (Basis(id= 1, size= 2, name= Basis1),)
 
 
 To check if two bases span the same space or are in a sub- or super-space relationship to each other,
