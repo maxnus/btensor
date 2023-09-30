@@ -31,14 +31,18 @@ if TYPE_CHECKING:
 
 class Einsum:
 
-    def __init__(self, subscripts: str, einsumfunc: Callable = np.einsum, optimize: str | bool = True) -> None:
+    def __init__(self,
+                 subscripts: str,
+                 einsumfunc: Callable = np.einsum,
+                 optimize: str | bool = True,
+                 check_basis_dependent: bool = True) -> None:
         # Setup
         self._labels_per_operand, self._result_labels = self._get_labels_per_operand_and_result(subscripts)
         # List of ordered, unique labels
         labels = [x for idx in self._labels_per_operand for x in idx]
         # Remove duplicates while keeping order (sets do not keep order):
         self._unique_labels = list(dict.fromkeys(labels).keys())
-        if not self._contraction_is_basis_independent():
+        if check_basis_dependent and not self._contraction_is_basis_independent():
             raise BasisDependentOperationError(f"contraction {self.get_contraction()} is basis dependent")
         self.einsumfunc = einsumfunc
         self.optimize = optimize
@@ -65,11 +69,14 @@ class Einsum:
     def noperands(self) -> int:
         return len(self._labels_per_operand)
 
-    def get_contraction(self) -> str:
-        return f"{','.join([''.join(x) for x in self._labels_per_operand])}->{self._result_labels}"
+    def get_contraction(self, separator: str = ',', with_result: bool = True) -> str:
+        contraction = f"{separator.join([''.join(x) for x in self._labels_per_operand])}"
+        if with_result:
+            contraction += f"->{self._result_labels}"
+        return contraction
 
     def _contraction_is_basis_independent(self) -> bool:
-        joined_labels = self.get_contraction().replace(',', '').replace('->', '')
+        joined_labels = self.get_contraction(separator='').replace('->', '')
         for label in self._unique_labels:
             if joined_labels.count(label) != 2:
                 return False
