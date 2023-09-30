@@ -17,6 +17,6 @@ from .core import dot, trace
 from .core import _sum as sum
 from .core import moveaxis
 
-from .einsum import einsum
+from .einsum import einsum, Einsum
 
 from . import linalg
