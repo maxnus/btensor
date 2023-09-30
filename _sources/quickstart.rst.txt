@@ -242,6 +242,15 @@ Furthermore, the ``|``-operator can be used to check if two bases are orthogonal
       >>> print(basis3.space | basis4.space)
       True
 
+Note that these operators will first attempt to find an answer according to trivial constraints.
+For example, if ``basis1.size > basis2.size``, then ``basis1.space < basis2.space`` must be trivially false, as
+the space spanned by a larger basis cannot be the true subspace of a space spanned by a smaller basis.
+However, if no answer can be found based on such simple constraints, BTensor will perform an eigen- or
+singular value decomposition to come to a conclusion.
+These matrix decompositions have a runtime scaling of :math:`\mathcal{O}(N^3)` with respect to the basis size
+:math:`N` (assumed equal for simplicity) and might be slow for large bases.
+
+
 Multidimensional Tensors
 ------------------------
 

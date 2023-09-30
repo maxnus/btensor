@@ -284,6 +284,13 @@ the <code class="docutils literal notranslate"><span class="pre">space</span></c
 </pre></div>
 </div>
 </div></blockquote>
+<p>Note that these operators will first attempt to find an answer according to trivial constraints.
+For example, if <code class="docutils literal notranslate"><span class="pre">basis1.size</span> <span class="pre">&gt;</span> <span class="pre">basis2.size</span></code>, then <code class="docutils literal notranslate"><span class="pre">basis1.space</span> <span class="pre">&lt;</span> <span class="pre">basis2.space</span></code> must be trivially false, as
+the space spanned by a larger basis cannot be the true subspace of a space spanned by a smaller basis.
+However, if no answer can be found based on such simple constraints, BTensor will perform an eigen- or
+singular value decomposition to come to a conclusion.
+These matrix decompositions have a runtime scaling of <span class="math notranslate nohighlight">\(\mathcal{O}(N^3)\)</span> with respect to the basis size
+<span class="math notranslate nohighlight">\(N\)</span> (assumed equal for simplicity) and might be slow for large bases.</p>
 </div>
 <div class="section" id="multidimensional-tensors">
 <h2>Multidimensional Tensors<a class="headerlink" href="#multidimensional-tensors" title="Permalink to this headline"></a></h2>
