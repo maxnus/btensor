@@ -13,7 +13,12 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import *
+try:
+    from functools import cache
+except ImportError:
+    # Python 3.8
+    from functools import lru_cache as cache
 
 import numpy as np
 import scipy
@@ -54,19 +59,25 @@ class Space:
     def __len__(self) -> int:
         return len(self.basis)
 
-    def _singular_values_of_overlap(self, other: Space) -> np.ndarray:
+    def __hash__(self) -> int:
+        """Required for caching."""
+        return self._basis.id
+
+    @cache
+    def _distance_from_zero_singular_value(self, other: Space) -> float:
         ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
-        return sv
+        return abs(sv).max()
 
-    def _eigenvalues_of_projector(self, other: Space) -> np.ndarray:
+    @cache
+    def _distance_from_one_eigenvalue(self, other: Space) -> float:
         ovlp = self.basis.get_overlap(other.basis).to_numpy()
         if other.basis.is_orthonormal:
             proj = np.dot(ovlp, ovlp.T)
         else:
             proj = np.linalg.multi_dot([ovlp, other.basis.metric.inverse.to_numpy(), ovlp.T])
         ev = scipy.linalg.eigh(proj, b=self.basis.metric.to_numpy())[0]
-        return ev
+        return abs(ev - 1).max()
 
     def trivially_equal(self, other: Space) -> bool | None:
         """Check if spaces are trivially equal (without performing SVD)"""
@@ -123,9 +134,8 @@ class Space:
             return eq
         # Perform SVD to determine relationship
         #sv = self._singular_values_of_overlap(other)
-        ev = self._eigenvalues_of_projector(other)
-        rv = np.all(abs(ev-1) < self._tol)
-        return rv
+        dist = self._distance_from_one_eigenvalue(other)
+        return dist < self._tol
 
     def __neq__(self, other: Space) -> bool:
         """True, if self is not the same space as other."""
@@ -137,10 +147,8 @@ class Space:
             return lt
         # Perform SVD to determine relationship
         #sv = self._singular_values_of_overlap(other)
-        ev = self._eigenvalues_of_projector(other)
-        rv = np.all(abs(ev-1) < self._tol)
-        #return np.all(ev > 1-self._tol)
-        return rv
+        dist = self._distance_from_one_eigenvalue(other)
+        return dist < self._tol
 
     def __le__(self, other: Space) -> bool:
         """True, if self a subspace of other or spans the same space."""
@@ -158,5 +166,5 @@ class Space:
         """True, if self is orthogonal to other."""
         if (orth := self.trivially_orthogonal(other)) is not None:
             return orth
-        sv = self._singular_values_of_overlap(other)
-        return np.all(abs(sv) < self._tol)
+        dist = self._distance_from_zero_singular_value(other)
+        return dist < self._tol

@@ -24,10 +24,12 @@ from conftest import get_random_subbasis_definition
 def size_a():
     return 10
 
+
 @pytest.fixture(params=[None, 0, 0.1, 1.0, 3.0],
                 ids=['Orth', 'ZeroNonOrth', 'SmallNonOrth', 'MediumNonOrth', 'LargeNonOrth'])
 def metric_nonorth_factor(request):
     return request.param
+
 
 @pytest.fixture
 def metric_a(metric_nonorth_factor, size_a, rng):
