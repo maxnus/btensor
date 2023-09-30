@@ -149,6 +149,7 @@ class Basis:
         elif isinstance(metric, np.ndarray):
             metric = SymmetricMatrix(metric)
         self._metric = metric
+        self._space = Space(self)
         self._intersect_cache = {}
         self.__basis_by_id[self.id] = self
 
@@ -243,7 +244,7 @@ class Basis:
     @property
     def space(self) -> Space:
         """Space spanned by basis."""
-        return Space(self)
+        return self._space
 
     @property
     def is_orthonormal(self) -> bool:

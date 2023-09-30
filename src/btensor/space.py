@@ -73,42 +73,36 @@ class Space:
         if not isinstance(other, Space):
             raise TypeError(type(other))
         if len(self) != len(other):
-            rv = False
-        elif not self.basis.same_root(other.basis):
-            rv = False
-        elif len(self.basis.get_common_parent(other.basis)) == len(self):
-            rv = True
-        else:
-            rv = None
-        return rv
+            return False
+        if not self.basis.same_root(other.basis):
+            return False
+        if len(self.basis.get_common_parent(other.basis)) == len(self):
+            return True
+        return None
 
     def trivially_less_than(self, other: Space) -> bool | None:
         """Check if space is trivially a true subspace (without performing SVD)"""
         if not isinstance(other, Space):
             raise TypeError(type(other))
         if len(self) >= len(other):
-            rv = False
-        elif not self.basis.same_root(other.basis):
-            rv = False
-        elif self.basis.is_derived_from(other.basis):
-            rv = True
-        else:
-            rv = None
-        return rv
+            return False
+        if not self.basis.same_root(other.basis):
+            return False
+        if self.basis.is_derived_from(other.basis):
+            return True
+        return None
 
     def trivially_less_or_equal_than(self, other: Space) -> bool | None:
         """Check if space is trivially a subspace (without performing SVD)"""
         if not isinstance(other, Space):
             raise TypeError(type(other))
         if len(self) > len(other):
-            rv = False
-        elif not self.basis.same_root(other.basis):
-            rv = False
-        elif self.basis.is_derived_from(other.basis, inclusive=True):
-            rv = True
-        else:
-            rv = None
-        return rv
+            return False
+        if not self.basis.same_root(other.basis):
+            return False
+        if self.basis.is_derived_from(other.basis, inclusive=True):
+            return True
+        return None
 
     def trivially_orthogonal(self, other: Space) -> bool | None:
         """Check if spaces are trivially orthogonal (without performing SVD)"""
