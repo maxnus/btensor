@@ -174,7 +174,11 @@ to replace the basis while keeping the representation fixed:
    >>> print(point4.to_numpy())
    [0.70710678 0.70710678]
 
-Chaning the basis using ``replace_basis`` is an **active** transformation and consequently ``point4`` describes a
+The ``replace_basis`` method can only be used with a basis, that has exactly the same size as the current basis of the
+tensor (otherwise it would be impossible to reinterpret the existing representation as referring to the new basis).
+For multidimensional tensors, this requirement needs to hold for each dimensions individually.
+
+Changing the basis using ``replace_basis`` is an **active** transformation and consequently ``point4`` describes a
 different point in space than ``point3``.
 
 

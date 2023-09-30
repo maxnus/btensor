@@ -225,7 +225,10 @@ to replace the basis while keeping the representation fixed:</p>
 <span class="go">[0.70710678 0.70710678]</span>
 </pre></div>
 </div>
-<p>Chaning the basis using <code class="docutils literal notranslate"><span class="pre">replace_basis</span></code> is an <strong>active</strong> transformation and consequently <code class="docutils literal notranslate"><span class="pre">point4</span></code> describes a
+<p>The <code class="docutils literal notranslate"><span class="pre">replace_basis</span></code> method can only be used with a basis, that has exactly the same size as the current basis of the
+tensor (otherwise it would be impossible to reinterpret the existing representation as referring to the new basis).
+For multidimensional tensors, this requirement needs to hold for each dimensions individually.</p>
+<p>Changing the basis using <code class="docutils literal notranslate"><span class="pre">replace_basis</span></code> is an <strong>active</strong> transformation and consequently <code class="docutils literal notranslate"><span class="pre">point4</span></code> describes a
 different point in space than <code class="docutils literal notranslate"><span class="pre">point3</span></code>.</p>
 </div>
 <div class="section" id="projection-and-spaces">
