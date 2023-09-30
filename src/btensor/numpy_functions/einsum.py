@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 class Einsum:
 
-    def __init__(self, subscripts: str, einsumfunc: Callable = np.einsum) -> None:
+    def __init__(self, subscripts: str, einsumfunc: Callable = np.einsum, optimize: str | bool = True) -> None:
         # Setup
         self._labels_per_operand, self._result_labels = self._get_labels_per_operand_and_result(subscripts)
         # List of ordered, unique labels
@@ -41,6 +41,7 @@ class Einsum:
         if not self._contraction_is_basis_independent():
             raise BasisDependentOperationError(f"contraction {self.get_contraction()} is basis dependent")
         self.einsumfunc = einsumfunc
+        self.optimize = optimize
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.get_contraction()})"
@@ -138,14 +139,23 @@ class Einsum:
         return positions
 
     @overload
-    def __call__(self, *operands: Tensor, **kwargs: Any) -> Tensor | Number: ...
+    def __call__(self,
+                 *operands: Tensor,
+                 intersect_tol: Number | None = None,
+                 optimize: str | bool | None = None,
+                 **kwargs: Any) -> Tensor | Number: ...
 
     def __call__(self,
                  *operands: EinsumOperandT,
                  intersect_tol: Number | None = None,
+                 optimize: str | bool | None = None,
                  **kwargs: Any) -> EinsumOperandT | Number:
         if len(operands) != self.noperands:
             raise ValueError(f"{len(operands)} operands provided, but {self.noperands} specified in subscript string")
+
+        if optimize is None:
+            optimize = self.optimize
+        kwargs['optimize'] = optimize
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
