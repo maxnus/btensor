@@ -430,8 +430,11 @@ class Basis:
             True if all bases have the same root-basis, False otherwise.
 
         """
-        roots = np.asarray([basis.root or basis for basis in [self, *other]])
-        return np.all(roots == roots[0])
+        if len(other) == 1:
+            return (self.root or self) == (other[0].root or other[0])
+
+        roots = np.asarray([basis.root or basis for basis in other])
+        return np.all(roots == (self.root or self))
 
     def _check_same_root(self, *other: Basis) -> None:
         """Check if all bases have the same root and raise a BasisError if not."""
