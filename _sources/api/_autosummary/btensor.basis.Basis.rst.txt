@@ -40,6 +40,7 @@ Basis
 
    .. autosummary::
    
+      ~Basis.T
       ~Basis.id
       ~Basis.is_orthonormal
       ~Basis.metric

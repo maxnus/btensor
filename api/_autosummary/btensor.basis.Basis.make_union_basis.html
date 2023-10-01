@@ -92,7 +92,7 @@
 <h1>Basis.make_union_basis<a class="headerlink" href="#basis-make-union-basis" title="Permalink to this headline"></a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="btensor.basis.Basis.make_union_basis">
-<span class="sig-prename descclassname"><span class="pre">Basis.</span></span><span class="sig-name descname"><span class="pre">make_union_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/basis.py#L276"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.basis.Basis.make_union_basis" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">Basis.</span></span><span class="sig-name descname"><span class="pre">make_union_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/basis.py#L274"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.basis.Basis.make_union_basis" title="Permalink to this definition"></a></dt>
 <dd><p>Make the smallest orthonormal basis, which spans both the basis and one or more other bases.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -101,6 +101,7 @@
 <li><p><strong>tol</strong> (<em>float</em>) – Tolerance used to construct the union basis via the eigendecomposition of a projection matrix.
 Default: 1e-12.</p></li>
 <li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – Name of union basis. Default: None.</p></li>
+<li><p><strong>cache</strong> (<em>bool</em>) – Cache resulting intersection basis, for future use. Default: True.</p></li>
 <li><p><strong>other</strong> (<a class="reference internal" href="btensor.basis.Basis.html#btensor.basis.Basis" title="btensor.basis.Basis"><em>Basis</em></a>) – </p></li>
 </ul>
 </dd>

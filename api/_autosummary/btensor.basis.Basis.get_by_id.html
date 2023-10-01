@@ -92,21 +92,21 @@
 <h1>Basis.get_by_id<a class="headerlink" href="#basis-get-by-id" title="Permalink to this headline"></a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="btensor.basis.Basis.get_by_id">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">Basis.</span></span><span class="sig-name descname"><span class="pre">get_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/basis.py#L156"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.basis.Basis.get_by_id" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">Basis.</span></span><span class="sig-name descname"><span class="pre">get_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/maxnus/btensor/blob/main/src/btensor/basis.py#L156"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#btensor.basis.Basis.get_by_id" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a previously defined basis based on its ID, if it exists.</p>
 <p>Note that the basis may not be found because it has been garbage collected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>id</strong> (<em>int</em>) – The ID of the basis.</p></li>
-<li><p><strong>default</strong> (<em>None</em>) – If the basis does not exist, default will be returned instead.</p></li>
+<li><p><strong>default</strong> (<em>T</em>) – If the basis does not exist, default will be returned instead.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Existing basis or default.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="btensor.basis.Basis.html#btensor.basis.Basis" title="btensor.basis.Basis">Basis</a> | None</p>
+<dd class="field-odd"><p><a class="reference internal" href="btensor.basis.Basis.html#btensor.basis.Basis" title="btensor.basis.Basis">Basis</a> | T</p>
 </dd>
 </dl>
 </dd></dl>
