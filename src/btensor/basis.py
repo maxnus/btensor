@@ -66,7 +66,6 @@ def compatible_basis(basis1: IBasis, basis2: IBasis):
 
     Returns:
         True if both bases are compatible, False otherwise.
-
     """
     if not (_is_basis_or_nobasis(basis1) and _is_basis_or_nobasis(basis2)):
         raise TypeError(f"{Basis} or {nobasis} required")
@@ -84,7 +83,6 @@ def get_common_parent(basis1: IBasis, basis2: IBasis) -> IBasis:
 
     Returns:
         Common parent of `basis1` and `basis2`. Returns `nobasis` if both bases are equal `nobasis`.
-
     """
     if _is_nobasis(basis2):
         return basis1
@@ -107,7 +105,6 @@ class Basis:
             the basis is assumed orthonormal if a) it is a root basis without metric or b) it is a derived basis
             with an orthonormal parent basis, defined in terms of a permutation + selection (slice or 1D sequence).
             Default: None.
-
     """
     # Private (inheriting classes will have their own version)
     # ID used for next created Basis object:
@@ -150,11 +147,14 @@ class Basis:
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._space = Space(self)
-        self._intersect_cache: Dict[Tuple[int, float], Basis] = {}
+        self._union_cache: Dict[Tuple[float | int, ...], int] = {}
+        self._intersect_cache: Dict[Tuple[float | int, ...], int] = {}
         self.__basis_by_id[self.id] = self
 
+    T = TypeVar('T')
+
     @classmethod
-    def get_by_id(cls, id: int, default: None) -> Basis | None:
+    def get_by_id(cls, id: int, default: T = None) -> Basis | T:
         """Returns a previously defined basis based on its ID, if it exists.
 
         Note that the basis may not be found because it has been garbage collected.
@@ -165,7 +165,6 @@ class Basis:
 
         Returns:
             Existing basis or default.
-
         """
         return cls.__basis_by_id.get(id, default)
 
@@ -269,11 +268,14 @@ class Basis:
 
         Returns:
             Sub-basis of parent.
-
         """
         return type(self)(argument, parent=self, metric=metric, name=name, orthonormal=orthonormal)
 
-    def make_union_basis(self, *other: Basis, tol: float = 1e-12, name: str | None = None) -> Basis:
+    def make_union_basis(self,
+                         *other: Basis,
+                         tol: float = 1e-12,
+                         name: str | None = None,
+                         cache: bool = True) -> Basis:
         """Make the smallest orthonormal basis, which spans both the basis and one or more other bases.
 
         Args:
@@ -281,11 +283,19 @@ class Basis:
             tol: Tolerance used to construct the union basis via the eigendecomposition of a projection matrix.
                 Default: 1e-12.
             name: Name of union basis. Default: None.
+            cache: Cache resulting intersection basis, for future use. Default: True.
 
         Returns:
             Union basis, spanning joined space of all input bases.
-
         """
+        # Caching
+        cache_key = (tol, *(x.id for x in other))
+        try:
+            if (cached := self.get_by_id(self._union_cache[cache_key])) is not None:
+                return cached
+        except KeyError:
+            pass
+
         common_parent = self.get_common_parent(*other)
         if common_parent in [self, *other]:
             return common_parent
@@ -297,12 +307,17 @@ class Basis:
         # metric should not be here?
         e, v = np.linalg.eigh(m)
         v = v[:, e >= tol]
-        return common_parent.make_subbasis(v, name=name, orthonormal=common_parent.is_orthonormal)
+
+        union = common_parent.make_subbasis(v, name=name, orthonormal=common_parent.is_orthonormal)
+        if cache:
+            self._union_cache[cache_key] = union.id
+        return union
 
     def make_intersect_basis(self,
                              *other: Basis,
                              tol: float = 1e-12,
                              name: str | None = None,
+                             use_svd: bool = True,
                              cache: bool = True) -> Basis:
         """Make the smallest orthonormal basis, which spans the intersecting space of both the basis and another basis.
 
@@ -310,40 +325,46 @@ class Basis:
             *other: One other basis.
             tol: Tolerance used to construct the intersection basis via the eigendecomposition of a projection matrix.
                 Default: 1e-12.
+            use_svd: Perform singular-value decomposition (SVD) instead of eigendecompostion, if possible.
+                Default: True.
             name: Name of intersection basis. Default: None.
+            cache: Cache resulting intersection basis, for future use. Default: True.
 
         Returns:
             Intersection basis, spanning intersecting space of all input bases.
-
         """
+        # Caching
+        cache_key = (tol, *(x.id for x in other))
+        try:
+            if (cached := self.get_by_id(self._intersect_cache[cache_key])) is not None:
+                return cached
+        except KeyError:
+            pass
+
         if len(other) > 1:
             # TODO
             raise NotImplementedError
         other = other[0]
 
-        # Caching
-        cache_key = (other.id, tol)
-        try:
-            return self._intersect_cache[cache_key]
-        except KeyError:
-            pass
-
-        # Alternative method (works only for orthonormal basis?)
-        #m = parent.get_transformation_to(non_parent).to_numpy()
-        #u, s, vh = scipy.linalg.svd(m, full_matrices=False)
-        #u = u[:, s >= 1-tol]
-        #return parent.make_basis(u, name=name, orthonormal=parent.is_orthonormal)
-
-        s = self.get_overlap(other).to_numpy()
-        if other.is_orthonormal:
-            p = np.dot(s, s.T)
+        # Via SVD (works only if bases are orthonormal? It might only require one basis to be orthonormal):
+        if use_svd and (self.is_orthonormal and other.is_orthonormal):
+            m = self.get_transformation_to(other).to_numpy()
+            vl, s, vr = scipy.linalg.svd(m, full_matrices=False)
+            v = vl[:, s**2 >= tol]
+        # Via eigendecomposition:
         else:
-            p = np.linalg.multi_dot([s, other.metric.inverse.to_numpy(), s.T])
-        e, v = scipy.linalg.eigh(p, b=self.metric.to_numpy())
-        v = v[:, e >= tol]
+            s = self.get_overlap(other).to_numpy()
+            if other.is_orthonormal:
+                p = np.dot(s, s.T)
+            else:
+                p = np.linalg.multi_dot([s, other.metric.inverse.to_numpy(), s.T])
+            b = self.metric.to_numpy() if not self.is_orthonormal else None
+            e, v = scipy.linalg.eigh(p, b=b)
+            v = v[:, e >= tol]
+
         intersect = self.make_subbasis(v, name=name, orthonormal=self.is_orthonormal)
         if cache:
-            self._intersect_cache[cache_key] = intersect
+            self._intersect_cache[cache_key] = intersect.id
         return intersect
 
     def _projector_in_basis(self, basis: Basis) -> np.ndarray:
@@ -365,7 +386,6 @@ class Basis:
 
         Returns:
             List of parent bases.
-
         """
         parents = [self] if include_self else []
         current = self
@@ -386,7 +406,6 @@ class Basis:
 
         Returns:
             True if `other` is derived from the basis, False otherwise.
-
         """
         if not self.same_root(other):
             return False
@@ -402,7 +421,6 @@ class Basis:
 
         Returns:
             True if `other` is a parent of the basis, False otherwise.
-
         """
         return other.is_derived_from(self, inclusive=inclusive)
 
@@ -418,7 +436,6 @@ class Basis:
 
         Returns:
             True if both bases are compatible, False otherwise.
-
         """
         return _is_nobasis(other) or self.same_root(other)
 
@@ -430,7 +447,6 @@ class Basis:
 
         Returns:
             True if all bases have the same root-basis, False otherwise.
-
         """
         if len(other) == 1:
             return (self.root or self) == (other[0].root or other[0])
@@ -452,7 +468,6 @@ class Basis:
 
         Returns:
             Basis which is the first common parent between all bases.
-
         """
         # support multiple bases via recursion
         if len(other) > 1:
@@ -524,7 +539,6 @@ class Basis:
 
         Returns:
             Transformation matrix.
-
         """
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
         return Tensor(values, basis=(self, other), variance=variance, copy_data=False)
@@ -537,7 +551,6 @@ class Basis:
 
         Returns:
             Overlap matrix.
-
         """
         return self.get_transformation(other)
 
@@ -549,7 +562,6 @@ class Basis:
 
         Returns:
             Transformation matrix with variance (-1, 1).
-
         """
         return self.get_transformation(other, variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
 
@@ -561,7 +573,6 @@ class Basis:
 
         Returns:
             Transformation matrix with variance (-1, 1).
-
         """
         return other.get_transformation(self, variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
 
