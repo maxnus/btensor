@@ -69,8 +69,9 @@ class TestTimings:
         print()
         print(header)
         print(len(header)*'=')
+        key_width = max(map(len, self._timings.keys()))
         for key, (count, time) in self._timings.items():
-            print(f"{key + ':':10s} {count:4d} calls  in  {time:.3f} s")
+            print(f"{key + ':':{key_width + 1}} {count:4d} calls  in  {time:.3f} s")
 
 
 class TestCase:

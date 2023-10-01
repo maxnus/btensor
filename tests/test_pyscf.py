@@ -28,10 +28,9 @@ scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'nvir', 'mo_coeff', 'mo
 cc_data = namedtuple('cc_data', ('mf', 'dm', 't1', 't2', 'l1', 'l2'))
 
 
-def make_scf_data(nonorth):
+def make_scf_data(nao: int, nocc: int, nonorth: float):
     np.random.seed(0)
-    nmo = nao = 30
-    nocc = 10
+    nmo = nao
     nvir = nmo - nocc
     mo_coeff = rand_orth_mat(nao) + nonorth * np.random.random((nao, nmo))
     mo_energy = np.random.uniform(-10.0, 10.0, nmo)
@@ -62,7 +61,7 @@ def make_cc_data(scf):
 
 @pytest.fixture(params=[0, 0.1], ids=['Orthogonal', 'NonOrthogonal'], scope='module')
 def mf(request):
-    return make_scf_data(request.param)
+    return make_scf_data(nao=30, nocc=10, nonorth=request.param)
 
 
 @pytest.fixture(scope='module')
@@ -347,7 +346,7 @@ class TestCluster(TestCase):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
             expected = self.np_einsum('ijab,KJAB,jJ,aA,bB->iK', cx.t2, cy.t2, s_occ, s_vir, s_vir)
         with timings('BTensor'):
-            result = self.bt_einsum('ijab,kjab->ik', t2x, t2y, intersect_tol=intersect_tol).to_numpy()
+           result = self.bt_einsum('ijab,kjab->ik', t2x, t2y, intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_contraction_t2_ac(self, ao, cc, sizes, get_cluster, in_ao_basis, intersect_tol, timings):

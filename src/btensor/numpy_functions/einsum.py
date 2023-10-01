@@ -34,16 +34,13 @@ class Einsum:
     def __init__(self,
                  subscripts: str,
                  einsumfunc: Callable = np.einsum,
-                 optimize: str | bool = True,
-                 check_basis_dependent: bool = True) -> None:
+                 optimize: str | bool = True) -> None:
         # Setup
         self._labels_per_operand, self._result_labels = self._get_labels_per_operand_and_result(subscripts)
         # List of ordered, unique labels
         labels = [x for idx in self._labels_per_operand for x in idx]
         # Remove duplicates while keeping order (sets do not keep order):
         self._unique_labels = list(dict.fromkeys(labels).keys())
-        if check_basis_dependent and not self._contraction_is_basis_independent():
-            raise BasisDependentOperationError(f"contraction {self.get_contraction()} is basis dependent")
         self.einsumfunc = einsumfunc
         self.optimize = optimize
 
@@ -86,34 +83,6 @@ class Einsum:
     def _get_free_labels(used_labels: List[str]) -> List[str]:
         return sorted(set(string.ascii_letters).difference(set(used_labels)))
 
-    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
-                             intersect_tol: Number | None = None) -> Dict[str, IBasis]:
-        basis_per_label = {}
-        for unique_label in self._unique_labels:
-            basis: IBasis | None = None
-            is_output = unique_label in self._result_labels
-            for operand, operand_labels in zip(operands, self._labels_per_operand):
-                # The index might appear multiple times per label -> loop over positions
-                positions: List[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
-                for position in positions:
-                    current_basis = operand.basis[position]
-                    if basis is None:
-                        basis = current_basis
-                    elif is_output:
-                        # Label is in output: find spanning basis
-                        basis = basis.get_common_parent(current_basis)
-                    else:
-                        # Label is contracted
-                        if intersect_tol is not None:
-                            # Use intersect basis
-                            basis = current_basis.make_intersect_basis(basis, tol=intersect_tol)
-                        elif current_basis.size < basis.size:
-                            # Use smallest basis
-                            basis = current_basis
-            assert (basis is not None)
-            basis_per_label[unique_label] = basis
-        return basis_per_label
-
     def _resolve_tensorsums(self,
                             operands: Tuple[EinsumOperandT, ...],
                             tensorsums: List[Tuple[int, List[Tensor]]],
@@ -130,8 +99,6 @@ class Einsum:
         return TensorSum(result)
 
     def _label_is_contracted(self, label: str) -> bool:
-        if label not in self._unique_labels:
-            raise ValueError(f"label {label} not in subscripts")
         return label in self._result_labels
 
     def _get_unique_contracted_labels(self) -> List[str]:
@@ -180,6 +147,8 @@ class Einsum:
         for label in self._unique_labels:
             is_contracted = self._label_is_contracted(label)
             positions = self._get_positions_of_label(label)
+            if len(positions) > 2:
+                raise BasisDependentOperationError(f"contraction {self.get_contraction()} is basis dependent")
 
             if is_contracted:
                 assert len(positions) == 1
@@ -240,6 +209,34 @@ class Einsum:
         assert (None not in variance_out)
         cls = type(operands[0])
         return cls(values, basis=tuple(basis_out), variance=tuple(variance_out), copy_data=False)
+
+    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
+                             intersect_tol: Number | None = None) -> Dict[str, IBasis]:
+        basis_per_label = {}
+        for unique_label in self._unique_labels:
+            basis: IBasis | None = None
+            is_output = unique_label in self._result_labels
+            for operand, operand_labels in zip(operands, self._labels_per_operand):
+                # The index might appear multiple times per label -> loop over positions
+                positions: List[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
+                for position in positions:
+                    current_basis = operand.basis[position]
+                    if basis is None:
+                        basis = current_basis
+                    elif is_output:
+                        # Label is in output: find spanning basis
+                        basis = basis.get_common_parent(current_basis)
+                    else:
+                        # Label is contracted
+                        if intersect_tol is not None:
+                            # Use intersect basis
+                            basis = current_basis.make_intersect_basis(basis, tol=intersect_tol)
+                        elif current_basis.size < basis.size:
+                            # Use smallest basis
+                            basis = current_basis
+            assert (basis is not None)
+            basis_per_label[unique_label] = basis
+        return basis_per_label
 
     def __kernel_general(self,
                  *operands: EinsumOperandT,

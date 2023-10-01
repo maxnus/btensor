@@ -150,7 +150,7 @@ class Basis:
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._space = Space(self)
-        self._intersect_cache = {}
+        self._intersect_cache: Dict[Tuple[int, float], Basis] = {}
         self.__basis_by_id[self.id] = self
 
     @classmethod
@@ -323,8 +323,10 @@ class Basis:
 
         # Caching
         cache_key = (other.id, tol)
-        if (cached := self._intersect_cache.get(cache_key, None)) is not None:
-            return cached
+        try:
+            return self._intersect_cache[cache_key]
+        except KeyError:
+            pass
 
         # Alternative method (works only for orthonormal basis?)
         #m = parent.get_transformation_to(non_parent).to_numpy()
@@ -508,7 +510,7 @@ class Basis:
             mpl += [other.metric.inverse]
         return mpl
 
-    _transformation_cache_size = 100
+    _transformation_cache_size = 128
 
     @lru_cache(_transformation_cache_size)
     def get_transformation(self,
@@ -525,7 +527,7 @@ class Basis:
 
         """
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
-        return Tensor(values, basis=(self, other), variance=variance)
+        return Tensor(values, basis=(self, other), variance=variance, copy_data=False)
 
     def get_overlap(self, other: Basis) -> Tensor:
         """Get overlap matrix with another basis as a Tensor.
