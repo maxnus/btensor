@@ -170,28 +170,31 @@ class Einsum:
                 if bas1 == bas2 and (bas1.is_orthonormal or (var1 + var2 == 0)):
                     continue
                 # Find basis for contraction
-                if intersect_tol is None:
-                    new_label = free_labels.pop(0)
-                    if bas1.size <= bas2.size:
-                        trafo = bas2.get_transformation(bas1, variance=(-var2, -var1))
-                        labels_out[iop2][idim2] = new_label
-                    else:
-                        trafo = bas1.get_transformation(bas2, variance=(-var1, -var2))
-                        labels_out[iop1][idim1] = new_label
-                    labels_out.append([new_label, label])
-                    transformations.append(trafo.to_numpy(copy=False))
-                else:
+                if intersect_tol is not None:
                     bas_contract = bas1.make_intersect_basis(bas2, tol=intersect_tol)
-                    trafo1 = bas1.get_transformation(bas_contract, variance=(-var1, -var2))
-                    trafo2 = bas2.get_transformation(bas_contract, variance=(-var2, -var1))
-                    new_label1 = free_labels.pop(0)
-                    new_label2 = free_labels.pop(0)
-                    labels_out[iop1][idim1] = new_label1
-                    labels_out[iop2][idim2] = new_label2
-                    labels_out.append([new_label1, label])
-                    labels_out.append([new_label2, label])
-                    transformations.append(trafo1.to_numpy(copy=False))
-                    transformations.append(trafo2.to_numpy(copy=False))
+                    # Perform contraction in intersection basis:
+                    if bas_contract.size < min(bas1.size, bas2.size):
+                        trafo1 = bas1.get_transformation(bas_contract, variance=(-var1, -var2))
+                        trafo2 = bas2.get_transformation(bas_contract, variance=(-var2, -var1))
+                        new_label1 = free_labels.pop(0)
+                        new_label2 = free_labels.pop(0)
+                        labels_out[iop1][idim1] = new_label1
+                        labels_out[iop2][idim2] = new_label2
+                        labels_out.append([new_label1, label])
+                        labels_out.append([new_label2, label])
+                        transformations.append(trafo1.to_numpy(copy=False))
+                        transformations.append(trafo2.to_numpy(copy=False))
+                        continue
+                # Perform contraction in smaller of bas1, bas2:
+                new_label = free_labels.pop(0)
+                if bas1.size <= bas2.size:
+                    trafo = bas2.get_transformation(bas1, variance=(-var2, -var1))
+                    labels_out[iop2][idim2] = new_label
+                else:
+                    trafo = bas1.get_transformation(bas2, variance=(-var1, -var2))
+                    labels_out[iop1][idim1] = new_label
+                labels_out.append([new_label, label])
+                transformations.append(trafo.to_numpy(copy=False))
 
         # Return
         subscripts_out = ','.join([''.join(label) for label in labels_out])
