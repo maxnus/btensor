@@ -31,19 +31,17 @@ from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
 
 
-if TYPE_CHECKING:
-    T = TypeVar('T')
-
-
 class _ChangeBasisInterface:
 
-    def __init__(self, obj: T) -> None:
+    _T = TypeVar('_T')
+
+    def __init__(self, obj: _T) -> None:
         self._obj = obj
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._obj})"
 
-    def __getitem__(self, key: NBasis) -> T:
+    def __getitem__(self, key: NBasis) -> _T:
         return self._obj.change_basis(key)
 
 

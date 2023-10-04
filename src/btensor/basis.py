@@ -151,10 +151,10 @@ class Basis:
         self._intersect_cache: Dict[Tuple[float | int, ...], int] = {}
         self.__basis_by_id[self.id] = self
 
-    T = TypeVar('T')
+    _T = TypeVar('T')
 
     @classmethod
-    def get_by_id(cls, id: int, default: T = None) -> Basis | T:
+    def get_by_id(cls, id: int, default: _T = None) -> Basis | _T:
         """Returns a previously defined basis based on its ID, if it exists.
 
         Note that the basis may not be found because it has been garbage collected.
