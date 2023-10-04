@@ -61,7 +61,6 @@ DOCSTRING_TEMPLATE = \
             and no automatic basis transformations will be performed. Default: True.
         copy_data: If False, no copy of the NumPy data will be created.
             Default: True.
-    
     """
 
 
@@ -116,7 +115,6 @@ class Tensor:
 
         Returns:
             Copy of tensor.
-
         """
         return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data,
                           numpy_compatible=self.numpy_compatible)
@@ -149,7 +147,6 @@ class Tensor:
 
         Returns:
             Tensor with replaced basis.
-
         """
         tensor = self if inplace else self.copy()
         if isinstance(basis, Basis) or basis is None:
@@ -182,7 +179,6 @@ class Tensor:
 
         Returns:
             Tensor with variance changed.
-
         """
         self._check_variance(variance)
         changed_axes = [i for (i, v, w) in enumerate(zip(self.variance, variance)) if v != w]
@@ -200,7 +196,6 @@ class Tensor:
 
         Returns:
             Tensor with variance changed.
-
         """
         if variance not in {-1, 1}:
             raise ValueError(f"variance can only be -1 and 1 (not {variance})")
@@ -233,7 +228,6 @@ class Tensor:
 
         Returns:
             Tensor with replaced variance.
-
         """
         tensor = self if inplace else self.copy()
         tensor._check_variance(variance)
@@ -273,7 +267,6 @@ class Tensor:
 
         Returns:
             Tensor projected onto `basis`.
-
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if basis == self.basis:
@@ -329,7 +322,6 @@ class Tensor:
 
         Returns:
             Tensor in new basis.
-
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
@@ -358,7 +350,6 @@ class Tensor:
 
         Returns:
             Tensor in new basis.
-
         """
         # Single axis
         if not is_sequence(axis):
@@ -381,7 +372,6 @@ class Tensor:
 
         Returns:
             True if the bases are compatible along each axis, False otherwise.
-
         """
         return all(self._compatible_axes(other))
 
@@ -402,7 +392,6 @@ class Tensor:
 
         Returns:
             A tuple, where each element is the common basis between the two tensors along the respective axis.
-
         """
         return self.basis.get_common_basistuple(other.basis)
 
@@ -434,7 +423,6 @@ class Tensor:
 
         Returns:
             NumPy array representation of the tensor in the specified basis.
-
         """
         if basis is None:
             if copy:
@@ -454,7 +442,6 @@ class Tensor:
 
         Returns:
             Tensor with it axes permuted.
-
         """
         value = self._data.transpose(axes)
         if axes is None:
@@ -469,7 +456,6 @@ class Tensor:
         """Transposed tensor.
 
         Same as ``self.transpose()``.
-
         """
         return self.transpose()
 
@@ -485,7 +471,6 @@ class Tensor:
                 output, but the type of the output values will be cast if necessary. Default: None.
         Returns:
             A tensor with the specified axis or set of axes removed.
-
         """
         return numpy_functions.sum(self, axis=axis, out=out)
 
@@ -499,7 +484,6 @@ class Tensor:
         Returns:
             If the tensor is 2-D, the sum along along the diagonal is returned. If the tensor is `N`-D,
             with `N > 2`, then a `(N-2)-D` tensor of sums along diagonals is returned.
-
         """
         return numpy_functions.trace(self, axis1=axis1, axis2=axis2)
 
@@ -511,7 +495,6 @@ class Tensor:
 
         Returns:
             A tensor representing the result of the dot product.
-
         """
         return numpy_functions.dot(self, other)
 

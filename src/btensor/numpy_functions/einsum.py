@@ -327,6 +327,5 @@ def einsum(subscripts: str,
 
     Returns:
         Result of the Einstein summation as a tensor or number.
-
     """
     return Einsum(subscripts, einsumfunc)(*operands, intersect_tol=intersect_tol, **kwargs)
