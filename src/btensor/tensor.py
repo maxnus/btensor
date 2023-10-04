@@ -522,6 +522,7 @@ class Tensor:
 
     @property
     def numpy_compatible(self) -> bool:
+        """Bool which indicates if the tensor is compatible with regular numpy functions."""
         return self._numpy_compatible
 
     @staticmethod
