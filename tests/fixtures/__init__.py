@@ -12,17 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import pytest
 
-from helper import TestCase
-from btensor import decomp
-
-
-class TestDecomp(TestCase):
-
-    @pytest.mark.parametrize('dim', [3, 4, 5])
-    def test_hosvd(self, get_tensor, dim):
-        tensor, nparray = get_tensor(ndim=dim)
-        hosvd = decomp.hosvd(tensor)
-        delta = (hosvd - tensor).to_numpy()
-        self.assert_allclose(delta, 0)
+from .basic_fixtures import *
+from .basis_fixtures import *
+from .tensor_fixtures import *

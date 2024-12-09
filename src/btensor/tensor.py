@@ -96,8 +96,9 @@ class Tensor:
         self._numpy_compatible = self._check_numpy_compatible_input(numpy_compatible)
 
     def __repr__(self) -> str:
-        basis_names = f"({', '.join([bas.name for bas in self.basis]) + (',' if self.ndim == 1 else '')})"
-        attrs = dict(basis=basis_names, variance=self.variance, dtype=self.dtype)
+        basis_names = (', '.join([bas.name if not _is_nobasis(bas) else 'None' for bas in self.basis])
+                       + (',' if self.ndim == 1 else ''))
+        attrs = dict(basis=f"({basis_names})", variance=self.variance, dtype=self.dtype)
         if self.name is not None:
             attrs['name'] = self.name
         attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])

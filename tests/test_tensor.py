@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import itertools
 import operator
 
 import pytest
@@ -103,40 +104,39 @@ operators_div_mod_pow = {
 
 class TestArithmetic(TestCase):
 
-    @pytest.mark.parametrize('unary_operator', [operator.pos, operator.neg, operator.abs])
-    def test_unary_operator(self, unary_operator, tensor):
-        tensor, np_array = tensor
-        self.assert_allclose(unary_operator(tensor), unary_operator(np_array))
+    @pytest.mark.parametrize('op', [operator.pos, operator.neg, operator.abs])
+    def test_unary_operator(self, op, test_tensor):
+        result = op(test_tensor.tensor)
+        expected = op(test_tensor.array)
+        self.assert_allclose(result.to_numpy(), expected)
 
     @pytest.mark.parametrize('op', [operator.add, operator.sub])
-    def test_add_sub_operator(self, ndim, op, get_tensor_data):
-        a, b = get_tensor_data(ndim=ndim, number=2)
-        result = op(a.tensor, b.tensor)
-        expected = op(a.array, b.array)
+    def test_add_sub_operator(self, op, test_tensor, test_tensor_2):
+        result = op(test_tensor.tensor, test_tensor_2.tensor)
+        expected = op(test_tensor.array, test_tensor_2.array)
         self.assert_allclose(result.to_numpy(), expected)
 
     scalars = [-2.1, 0.0, 0.2, 1.0, 3.2]
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', [operator.add, operator.sub, operator.mul, operator.truediv])
-    def test_scalar_add_sub_mul_truediv_operator(self, scalar, ndim, op, tensor_data):
-        result = op(tensor_data.tensor, scalar)
-        expected = op(tensor_data.array, scalar)
+    def test_scalar_add_sub_mul_truediv_operator(self, scalar, op, test_tensor):
+        result = op(test_tensor.tensor, scalar)
+        expected = op(test_tensor.array, scalar)
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', [operator.add, operator.sub, operator.mul])
-    def test_scalar_add_sub_mul_reverse(self, scalar, ndim, op, tensor_data):
-        result = op(scalar, tensor_data.tensor)
-        expected = op(scalar, tensor_data.array)
+    def test_scalar_add_sub_mul_reverse(self, scalar, op, test_tensor):
+        result = op(scalar, test_tensor.tensor)
+        expected = op(scalar, test_tensor.array)
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', operators_div_mod_pow.values(), ids=operators_div_mod_pow.keys())
-    def test_scalar_div_mod_pow_reverse(self, scalar, op, get_tensor_data, ndim, numpy_compatible):
-        tensor_data = get_tensor_data(ndim=ndim, numpy_compatible=numpy_compatible)
-        result = op(scalar, tensor_data.tensor)
-        expected = op(scalar, tensor_data.array)
+    def test_scalar_div_mod_pow_reverse(self, scalar, op, test_tensor):
+        result = op(scalar, test_tensor.tensor)
+        expected = op(scalar, test_tensor.array)
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('subsize1', [1, 5, 10])
@@ -191,8 +191,26 @@ class TestArithmetic(TestCase):
 #        a2 = self.a1.proj(self.a2.basis)
 #        self.assert_allclose(self.a2._data, a2._data)
 
+def iterate_slices():
+    starts = [None, 0, 1, -3]
+    stops = [None, 0, 1, 5, -1]
+    steps = [None, 1, -1, 2]
+    for (start, stop, step) in itertools.product(starts, stops, steps):
+        yield slice(start, stop, step)
+
+
+slices_list = list(iterate_slices())
+
 
 class TestGetitem(TestCase):
+
+    @pytest.fixture(params=slices_list, ids=str)
+    def slice_key(self, request):
+        return request.param
+
+    @pytest.fixture(params=slices_list, ids=str)
+    def slice_key2(self, request):
+        return request.param
 
     @pytest.mark.parametrize('subsize', [6, 3, 1])
     def test_getitem(self, subsize, subbasis_type, get_rootbasis_subbasis, ndim):
@@ -212,9 +230,67 @@ class TestGetitem(TestCase):
         tensor, np_array = tensor
         self.assert_allclose(tensor[...], np_array[...])
 
-    @pytest.mark.parametrize('key', [0, slice(0, 100), [0], [True]], ids=lambda x: str(x))
-    def test_getitem_raises(self, key, tensor):
-        tensor = tensor[0]
-        with pytest.raises(TypeError):
-            assert tensor[key]
+    @pytest.mark.parametrize('key', [0, 1, 3, -1])
+    def test_getitem_int(self, key, get_test_tensor, basis_large, ndim):
+        data = get_test_tensor(basis=ndim * (basis_large,))
+        self._test_getitem(key, data)
+        # As tuple
+        for dim in range(ndim):
+            tuple_key = dim*(slice(None),) + (key,)
+            self._test_getitem(tuple_key, data)
 
+    @pytest.mark.parametrize('index1', [0, 1, -1])
+    @pytest.mark.parametrize('index2', [0, 1, -1])
+    def test_getitem_2int(self, index1, index2, get_test_tensor, basis_large, ndim_atleast2):
+        data = get_test_tensor(basis=ndim_atleast2 * (basis_large,))
+        key = (index1, index2)
+        self._test_getitem(key, data)
+
+    def test_getitem_slice(self, slice_key, get_test_tensor, ndim, basis_large):
+        data = get_test_tensor(basis=ndim * (basis_large,))
+        self._test_getitem(slice_key, data)
+        # As tuple
+        for dim in range(ndim):
+            tuple_key = dim*(slice(None),) + (slice_key,)
+            self._test_getitem(tuple_key, data)
+
+    def test_getitem_2slices(self, slice_key, get_test_tensor, ndim_atleast2, basis_large):
+        data = get_test_tensor(basis=ndim_atleast2 * (basis_large,))
+        key = (slice_key, slice_key)
+        self._test_getitem(key, data)
+        # Test caching of newly created basis
+        subtensor = data.tensor[key]
+        b1 = subtensor.basis[0]
+        b2 = subtensor.basis[1]
+        assert b1 is b2
+
+    @pytest.mark.parametrize('pos', [0, 1, 2], ids=lambda x: f'pos{x}')
+    def test_getitem_2slices_2(self, pos, slice_key, slice_key2, get_test_tensor, ndim_atleast3, basis_large):
+        data = get_test_tensor(basis=ndim_atleast3 * (basis_large,))
+        if pos == 0:
+            key = (slice(None), slice_key, slice_key2)
+        elif pos == 1:
+            key = (slice_key, slice(None), slice_key2)
+        else:
+            key = (slice_key, slice_key2, slice(None))
+        self._test_getitem(key, data)
+        # Test caching of newly created basis
+        #subtensor = data.tensor[key]
+        #b1 = subtensor.basis[0]
+        #b2 = subtensor.basis[1]
+        #assert b1 is b2
+
+    def _test_getitem(self, key, data):
+        expected = data.array[key]
+        result = data.tensor[key].to_numpy()
+        self.assert_allclose(result, expected)
+
+    def test_loop(self, test_tensor):
+        expected = test_tensor.array
+        result = np.asarray([x.to_numpy() for x in test_tensor.tensor])
+        assert np.all(result == expected)
+
+    def test_setitem_raises(self, test_tensor):
+        tensor = test_tensor.tensor.copy()
+        with pytest.raises(TypeError):
+            tensor[0] = 0

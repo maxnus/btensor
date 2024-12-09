@@ -12,17 +12,28 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from __future__ import annotations
+
 import pytest
 
-from helper import TestCase
-from btensor import decomp
+from btensor import Basis
 
 
-class TestDecomp(TestCase):
+@pytest.fixture(params=[1, 5], scope='module')
+def basis_size(request):
+    return request.param
 
-    @pytest.mark.parametrize('dim', [3, 4, 5])
-    def test_hosvd(self, get_tensor, dim):
-        tensor, nparray = get_tensor(ndim=dim)
-        hosvd = decomp.hosvd(tensor)
-        delta = (hosvd - tensor).to_numpy()
-        self.assert_allclose(delta, 0)
+
+@pytest.fixture(params=[10], scope='module')
+def basis_size_large(request):
+    return request.param
+
+
+@pytest.fixture(scope='module')
+def basis(basis_size):
+    return Basis(basis_size)
+
+
+@pytest.fixture(scope='module')
+def basis_large(basis_size_large):
+    return Basis(basis_size_large)

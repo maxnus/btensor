@@ -13,16 +13,27 @@
 #     limitations under the License.
 
 import pytest
-
-from helper import TestCase
-from btensor import decomp
+import numpy as np
 
 
-class TestDecomp(TestCase):
+MAX_NDIM = 4
 
-    @pytest.mark.parametrize('dim', [3, 4, 5])
-    def test_hosvd(self, get_tensor, dim):
-        tensor, nparray = get_tensor(ndim=dim)
-        hosvd = decomp.hosvd(tensor)
-        delta = (hosvd - tensor).to_numpy()
-        self.assert_allclose(delta, 0)
+
+@pytest.fixture(params=range(1, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+def ndim(request):
+    return request.param
+
+
+@pytest.fixture(params=range(2, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+def ndim_atleast2(request):
+    return request.param
+
+
+@pytest.fixture(params=range(3, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+def ndim_atleast3(request):
+    return request.param
+
+
+@pytest.fixture(params=range(3), scope='module', ids=lambda x: f'seed{x}')
+def rng(request):
+    return np.random.default_rng(request.param)

@@ -18,11 +18,11 @@ from typing import *
 
 import pytest
 import itertools
-import numpy as np
 import scipy
 
 import btensor
-from btensor import Basis, Tensor, TensorSum
+from btensor import TensorSum
+from fixtures import *
 
 
 class UserSlice:
@@ -103,21 +103,6 @@ def get_ndims_and_axis12(mindim=1, maxdim=4):
 
 # --- Root fixtures
 
-@pytest.fixture(params=range(3), scope='module', ids=lambda x: f'seed{x}')
-def rng(request):
-    return np.random.default_rng(request.param)
-
-
-@pytest.fixture(params=[1, 2, 3, 4], scope='module', ids=lambda x: f'ndim{x}')
-def ndim(request):
-    return request.param
-
-
-@pytest.fixture(params=[2, 3, 4], scope='module', ids=lambda x: f'ndim{x}')
-def ndim_atleast2(request):
-    return request.param
-
-
 @pytest.fixture(params=get_ndims_and_axes(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
 def ndim_and_axis(request):
     return request.param
@@ -133,16 +118,6 @@ def ndim_axis1_axis2(request):
     return request.param
 
 
-@pytest.fixture(params=[1, 4], scope='module', ids=lambda x: f'size{x}')
-def basis_size(request):
-    return request.param
-
-
-#@pytest.fixture(params=[4], scope='module', ids=lambda x: f'size{x}')
-#def basis_size_large(request):
-#    return request.param
-
-
 @pytest.fixture(params=[operator.add, operator.sub, operator.mul, operator.truediv, operator.floordiv, operator.pow],
                 scope='module')
 def binary_operator(request):
@@ -151,30 +126,19 @@ def binary_operator(request):
 
 # --- Derived fixtures
 
-
-@pytest.fixture(scope='module')
-def rootbasis(basis_size):
-    return Basis(basis_size)
-
-
-#@pytest.fixture(scope='module')
-#def rootbasis_large(basis_size_large):
-#    return Basis(basis_size_large)
-
-
 @pytest.fixture(params=[0, -1], scope='module')
-def subbasis(request, rootbasis):
-    size = max(rootbasis.size + request.param, 1)
-    return rootbasis.make_subbasis(random_orthogonal_matrix(rootbasis.size, ncolumn=size))
+def subbasis(request, basis_large):
+    size = max(basis_large.size + request.param, 1)
+    return basis_large.make_subbasis(random_orthogonal_matrix(basis_large.size, ncolumn=size))
 
 
 @pytest.fixture(params=[(0, 0), (-1, 0), (0, -1), (-1, -1)], scope='module')
-def subbasis_2x(request, rootbasis):
-    n = rootbasis.size
+def subbasis_2x(request, basis_large):
+    n = basis_large.size
     size1 = n + request.param[0]
     size2 = n + request.param[1]
-    basis1 = rootbasis.make_subbasis(random_orthogonal_matrix(n, ncolumn=size1))
-    basis2 = rootbasis.make_subbasis(random_orthogonal_matrix(n, ncolumn=size2))
+    basis1 = basis_large.make_subbasis(random_orthogonal_matrix(n, ncolumn=size1))
+    basis2 = basis_large.make_subbasis(random_orthogonal_matrix(n, ncolumn=size2))
     return basis1, basis2
 
 
@@ -285,48 +249,11 @@ def basis_for_shape_large_atleast2d(shape_large_atleast2d):
 
 # --- Tensor
 
-
-class TensorDataForTesting:
-
-    def __init__(self, array: np.ndarray, basis: Basis | Tuple[Basis, ...], variance: Tuple[int] | None = None,
-                 numpy_compatible: bool = True):
-        self.array = array
-        self.basis = basis
-        self.variance = variance
-        self.numpy_compatible = numpy_compatible
-        self.tensor = Tensor(array, basis=basis, variance=variance, numpy_compatible=numpy_compatible)
-
-
 @pytest.fixture(scope='module')
-def get_tensor_data(rootbasis):
-    def get_tensor_data(ndim: int,
-                        number: int = 1,
-                        hermitian: bool = False,
-                        numpy_compatible: bool = True) -> TensorDataForTesting | List[TensorDataForTesting]:
-        np.random.seed(0)
-        basis = tuple(ndim * [rootbasis])
-        result = []
-        for n in range(number):
-            data = np.random.random(tuple([b.size for b in basis]))
-            if hermitian:
-                data = (data + data.T)/2
-            result.append(TensorDataForTesting(data, basis=basis, numpy_compatible=numpy_compatible))
-        if number == 1:
-            return result[0]
-        return result
-    return get_tensor_data
-
-
-@pytest.fixture(params=[True, False], scope='module')
-def numpy_compatible(request):
-    return request.param
-
-
-@pytest.fixture(scope='module')
-def get_tensor(rootbasis):
+def get_tensor(basis_large):
     def get_tensor(ndim: int, number: int = 1, hermitian: bool = False) -> list[tuple] | tuple:
         np.random.seed(0)
-        basis = tuple(ndim * [rootbasis])
+        basis = tuple(ndim * [basis_large])
         result = []
         for n in range(number):
             data = np.random.random(tuple([b.size for b in basis]))
@@ -346,15 +273,10 @@ def tensor(ndim, get_tensor):
 
 
 @pytest.fixture(scope='module')
-def tensor_data(ndim, get_tensor_data):
-    return get_tensor_data(ndim=ndim)
-
-
-@pytest.fixture(scope='module')
-def tensor_2x(tensor_cls_2x, ndim, rootbasis):
+def tensor_2x(tensor_cls_2x, ndim, basis_large):
     np.random.seed(0)
     tensor_cls1, tensor_cls2 = tensor_cls_2x
-    basis = tuple(ndim * [rootbasis])
+    basis = tuple(ndim * [basis_large])
     data1 = np.random.random(tuple([b.size for b in basis]))
     data2 = np.random.random(tuple([b.size for b in basis]))
     tensor1 = tensor_cls1(data1, basis=basis)

@@ -32,7 +32,7 @@ class BasisTuple(tuple):
         for arg in args:
             if not _is_basis_or_nobasis(arg):
                 raise TypeError(f"{type(self).__name__} can only contain elements of type {Basis.__name__} or {nobasis}"
-                                f"(not {arg})")
+                                f" (not {arg})")
 
     @classmethod
     def create(cls, basis: NBasis) -> BasisTuple:
@@ -54,8 +54,7 @@ class BasisTuple(tuple):
         if not isinstance(basis, tuple):
             basis = (basis,)
 
-        nmissing = len(default) - len(basis)
-        if nmissing < 0:
+        if (nmissing := len(default) - len(basis)) < 0:
             raise ValueError(f"basis tuple with size {len(basis)} is larger than default with size {len(default)}")
         if nmissing > 0 and Ellipsis not in basis:
             if leftpad:
@@ -75,7 +74,7 @@ class BasisTuple(tuple):
         return cls(basis)
 
     @property
-    def shape(self) -> tuple[Optional[int], ...]:
+    def shape(self) -> tuple[int | None, ...]:
         return tuple(getattr(basis, 'size', None) for basis in self)
 
     @overload
@@ -108,7 +107,7 @@ class BasisTuple(tuple):
                                for (basis_self, basis_other) in zip(self, other))
         return type(self)(common_parents)
 
-    def update_with(self, update: tuple[Optional[IBasis]], check_size: bool = True) -> BasisTuple:
+    def update_with(self, update: tuple[IBasis | None], check_size: bool = True) -> BasisTuple:
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError
