@@ -19,15 +19,10 @@ import pytest
 
 example_path = Path(__file__).parent.parent / 'examples'
 examples_files = [f for f in example_path.glob('*.py') if 'pyscf' not in f.name]
-timings = {}
-
-
-@pytest.fixture(params=examples_files, ids=lambda x: x.name)
-def example_file(request):
-    return request.param
 
 
 @pytest.mark.timeout(300)
+@pytest.mark.parametrize('example_file', examples_files, ids=lambda x: x.name)
 def test_example(example_file):
     spec = importlib.util.spec_from_file_location(example_file.name, str(example_file))
     example = importlib.util.module_from_spec(spec)
