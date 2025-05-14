@@ -22,7 +22,7 @@ from helper import TestCase
 from conftest import subbasis_definition_to_matrix
 
 from btensor import Tensor
-from btensor.exceptions import BTensorError, BasisDependentOperationError
+from btensor.exceptions import BTensorError
 
 
 class TestTensor(TestCase):

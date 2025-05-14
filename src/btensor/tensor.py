@@ -245,8 +245,7 @@ class Tensor:
             key = (key,)
 
         type_error_msg = (f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
-                          f'{type(self).__name__} class. '
-                          f'Use Array class to index using integers, slices, and integer or boolean arrays')
+                          f'{type(self).__name__} class.')
         if not isinstance(key, tuple):
             raise TypeError(type_error_msg)
         for bas in key:
@@ -323,7 +322,7 @@ class Tensor:
             basis: New basis of tensor.
 
         Returns:
-            Tensor in new basis.
+            Tensor in the new basis.
         """
         basis = BasisTuple.create_from_default(basis, default=self.basis)
         if not basis.is_spanning(self._basis):
@@ -340,7 +339,7 @@ class Tensor:
         return self._cob
 
     def change_basis_at(self, basis: IBasis | Sequence[IBasis], axis: int | Sequence[int]) -> Self:
-        """Change basis of tensor along one or more selected axes.
+        """Change the basis of tensor along one or more selected axes.
 
         Slice(None) can be used to indicate no transformation.
         In contrast to `project`, this function will first test if the tensor can be fully represented in the new basis
@@ -351,7 +350,7 @@ class Tensor:
             axis: One or more axes, along which the basis will be replaced.
 
         Returns:
-            Tensor in new basis.
+            Tensor in the new basis.
         """
         # Single axis
         if not is_sequence(axis):

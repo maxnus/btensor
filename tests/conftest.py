@@ -14,9 +14,7 @@
 
 from __future__ import annotations
 import operator
-from typing import *
 
-import pytest
 import itertools
 import scipy
 
