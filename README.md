@@ -1,4 +1,5 @@
 [![CI](https://github.com/maxnus/btensor/actions/workflows/ci.yml/badge.svg)](https://github.com/maxnus/btensor/actions/workflows/ci.yml)
+[![Sphinx: Render docs](https://github.com/maxnus/btensor/actions/workflows/sphinx.yml/badge.svg)](https://github.com/maxnus/btensor/actions/workflows/sphinx.yml)
 
 BTensor
 =======
