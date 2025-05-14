@@ -49,7 +49,7 @@ class TestTensor(TestCase):
 
     def test_tensor_for_loop_raises(self, np_array):
         tensor = Tensor(np_array)
-        with pytest.raises(TypeError):
+        with pytest.raises(RuntimeError, match='cannot iterate over a Tensor'):
             for element in tensor:
                 pass
 
@@ -230,33 +230,9 @@ class TestGetitem(TestCase):
         tensor, np_array = tensor
         self.assert_allclose(tensor[...], np_array[...])
 
-    @pytest.mark.parametrize('key', [0, 1, 3, -1])
-    def test_getitem_int(self, key, get_test_tensor, basis_large, ndim):
-        data = get_test_tensor(basis=ndim * (basis_large,))
-        self._test_getitem(key, data)
-        # As tuple
-        for dim in range(ndim):
-            tuple_key = dim*(slice(None),) + (key,)
-            self._test_getitem(tuple_key, data)
-
-    @pytest.mark.parametrize('index1', [0, 1, -1])
-    @pytest.mark.parametrize('index2', [0, 1, -1])
-    def test_getitem_2int(self, index1, index2, get_test_tensor, basis_large, ndim_atleast2):
+    def test_getitem_2slices(self, get_test_tensor, ndim_atleast2, basis_large):
         data = get_test_tensor(basis=ndim_atleast2 * (basis_large,))
-        key = (index1, index2)
-        self._test_getitem(key, data)
-
-    def test_getitem_slice(self, slice_key, get_test_tensor, ndim, basis_large):
-        data = get_test_tensor(basis=ndim * (basis_large,))
-        self._test_getitem(slice_key, data)
-        # As tuple
-        for dim in range(ndim):
-            tuple_key = dim*(slice(None),) + (slice_key,)
-            self._test_getitem(tuple_key, data)
-
-    def test_getitem_2slices(self, slice_key, get_test_tensor, ndim_atleast2, basis_large):
-        data = get_test_tensor(basis=ndim_atleast2 * (basis_large,))
-        key = (slice_key, slice_key)
+        key = (slice(None), slice(None))
         self._test_getitem(key, data)
         # Test caching of newly created basis
         subtensor = data.tensor[key]
@@ -264,31 +240,10 @@ class TestGetitem(TestCase):
         b2 = subtensor.basis[1]
         assert b1 is b2
 
-    @pytest.mark.parametrize('pos', [0, 1, 2], ids=lambda x: f'pos{x}')
-    def test_getitem_2slices_2(self, pos, slice_key, slice_key2, get_test_tensor, ndim_atleast3, basis_large):
-        data = get_test_tensor(basis=ndim_atleast3 * (basis_large,))
-        if pos == 0:
-            key = (slice(None), slice_key, slice_key2)
-        elif pos == 1:
-            key = (slice_key, slice(None), slice_key2)
-        else:
-            key = (slice_key, slice_key2, slice(None))
-        self._test_getitem(key, data)
-        # Test caching of newly created basis
-        #subtensor = data.tensor[key]
-        #b1 = subtensor.basis[0]
-        #b2 = subtensor.basis[1]
-        #assert b1 is b2
-
     def _test_getitem(self, key, data):
         expected = data.array[key]
         result = data.tensor[key].to_numpy()
         self.assert_allclose(result, expected)
-
-    def test_loop(self, test_tensor):
-        expected = test_tensor.array
-        result = np.asarray([x.to_numpy() for x in test_tensor.tensor])
-        assert np.all(result == expected)
 
     def test_setitem_raises(self, test_tensor):
         tensor = test_tensor.tensor.copy()

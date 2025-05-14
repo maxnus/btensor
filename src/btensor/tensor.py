@@ -255,6 +255,9 @@ class Tensor:
 
         return self.project(key)
 
+    def __iter__(self) -> NoReturn:
+        raise RuntimeError(f"cannot iterate over a {type(self).__name__}")
+
     def project(self, basis: NBasis) -> Self:
         """Transforms tensor to a different set of basis.
 
