@@ -12,10 +12,4 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from .basis import IBasis, Basis, nobasis
-from .space import Space
-from .tensor import Tensor, Cotensor
-
-from .numpy_functions import *
-
-from .tensorsum import TensorSum
+__version__ = '1.1.2'

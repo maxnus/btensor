@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "BTensor"
-version = "1.1.2"
 authors = [
   { name="Max Nusspickel", email="max.nusspickel@gmail.com" },
 ]
@@ -20,23 +19,20 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
+dynamic = ["version"]
 dependencies = [
-    "numpy>=1.19.0",
-    "scipy>=1.1.0",
+    "numpy",
+    "scipy",
 ]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
 
 [project.urls]
 source = "https://github.com/maxnus/btensor"
 
-[tools.setuptools]
-package-dir = {"" = "src"}
-license-files = ["LICENSE"]
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tools.setuptools.dynamic]
-version = {attr = "btensor.__version__"}
+[tool.hatch.version]
+path = "src/btensor/__about__.py"
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
