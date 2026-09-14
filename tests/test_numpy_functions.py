@@ -114,7 +114,7 @@ class TestNumpyFunctions(TestCase):
         self.assert_allclose(tensor.trace(axis1=axis1, axis2=axis2), np_array.trace(axis1=axis1, axis2=axis2))
 
     def test_trace_subspace(self, ndim_atleast2, subbasis, get_tensor):
-        tensor, np_array = get_tensor(ndim_atleast2)
+        tensor, _np_array = get_tensor(ndim_atleast2)
         tr1 = tensor.project((subbasis, subbasis)).trace()
         tr2 = tensor.project((subbasis, subbasis)).change_basis(tensor.basis).trace()
         self.assert_allclose(tr1, tr2, atol=1e-14, rtol=0)
@@ -183,9 +183,9 @@ class TestDot(TestCase):
         self.assert_allclose(ac, c)
 
     def test_dot_32(self):
-        n, m, k, l = 30, 40, 50, 60
+        n, m, k, nl = 30, 40, 50, 60
         a = np.random.rand(n, m, k)
-        b = np.random.rand(k, l)
+        b = np.random.rand(k, nl)
         c = np.dot(a, b)
         aa = Tensor(a, basis=(btensor.nobasis, btensor.nobasis, btensor.nobasis))
         ab = Tensor(b, basis=(btensor.nobasis, btensor.nobasis))

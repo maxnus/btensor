@@ -101,10 +101,7 @@ class BasisTuple(tuple):
     def is_compatible_with(self, other: BasisTuple) -> bool:
         if len(self) != len(other):
             return False
-        for bas_self, bas_other in zip(self, other):
-            if not compatible_basis(bas_self, bas_other):
-                return False
-        return True
+        return all(compatible_basis(bas_self, bas_other) for bas_self, bas_other in zip(self, other))
 
     def get_root_basistuple(self) -> BasisTuple:
         return type(self)(basis.root for basis in self)
@@ -120,7 +117,7 @@ class BasisTuple(tuple):
         new_basis = list(self)
         if len(update) > len(self):
             raise ValueError
-        for axis, (size, b0, b1) in enumerate(zip(self.shape, self, update)):
+        for axis, (size, _b0, b1) in enumerate(zip(self.shape, self, update)):
             if b1 is None:
                 continue
             if check_size and not _is_nobasis(b1) and b1.size != size:

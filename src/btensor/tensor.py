@@ -20,7 +20,7 @@ import operator
 import string
 from collections.abc import Callable, Sequence
 from numbers import Number
-from typing import Any, NoReturn, Self, TypeVar
+from typing import Any, ClassVar, NoReturn, Self, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -77,8 +77,8 @@ class Tensor:
     __doc__ = \
         """A numerical container class with support for automatic basis transformation.
         """ + DOCSTRING_TEMPLATE.format(name="tensor", default_variance=_Variance.CONTRAVARIANT)
-    _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
-                        np.float16, np.float32, np.float64]
+    _SUPPORTED_DTYPE: ClassVar[list[type]] = [np.int8, np.int16, np.int32, np.int64,
+                                              np.float16, np.float32, np.float64]
 
     def __init__(self,
                  data: ArrayLike,
@@ -225,7 +225,13 @@ class Tensor:
                 metric = metric.inverse
             values = np.einsum(contraction, self._data, metric.to_numpy())
         variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
-        return type(self)(values, basis=self.basis, variance=variance_tuple, numpy_compatible=self.numpy_compatible, copy_data=False)
+        return type(self)(
+            values,
+            basis=self.basis,
+            variance=variance_tuple,
+            numpy_compatible=self.numpy_compatible,
+            copy_data=False,
+        )
 
     def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Self:
         """Replace variance of tensor without corresponding transformation of the representation.
@@ -317,7 +323,13 @@ class Tensor:
         basis_out = tuple(basis_out)
         subscripts += '->' + (''.join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
-        return type(self)(value, basis=basis_out, variance=self.variance, numpy_compatible=self.numpy_compatible, copy_data=False)
+        return type(self)(
+            value,
+            basis=basis_out,
+            variance=self.variance,
+            numpy_compatible=self.numpy_compatible,
+            copy_data=False,
+        )
 
     # --- Change of basis
 
@@ -389,7 +401,7 @@ class Tensor:
     def _compatible_axes(self, other: Tensor) -> list[bool]:
         """Returns a boolean array, indicating for each axis whether the bases are compatible."""
         axes = []
-        for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
+        for _i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
             axes.append(bool(compatible_basis(b1, b2)))
         if self.ndim > other.ndim:
             axes += (self.ndim-other.ndim)*[False]

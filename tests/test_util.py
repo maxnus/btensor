@@ -103,7 +103,7 @@ class TestMatrixProduct(TestCase):
                     'r': util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
                     }
         matrices = [(k, v) for (k, v) in matrices.items()]
-        for i, args in enumerate(powerset(matrices, include_empty=False)):
+        for _i, args in enumerate(powerset(matrices, include_empty=False)):
             for perm in itertools.permutations(args):
                 name = ''.join([p[0] for p in perm])
                 mats = [p[1] for p in perm]
@@ -124,5 +124,4 @@ class TestMatrixProduct(TestCase):
         else:
             ref = np.linalg.multi_dot(args_ref)
         mpl = util.MatrixProductList(matrices)
-        result = mpl.evaluate(simplify=bool(matrix_product_simplify))
         self.assert_allclose(mpl.evaluate(simplify=bool(matrix_product_simplify)), ref, atol=atol, rtol=0)

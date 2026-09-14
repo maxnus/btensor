@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import itertools
 from collections.abc import MutableSequence, Sequence
 from typing import overload
 
@@ -47,7 +48,7 @@ class Matrix:
         self._inverse = None
 
     def __repr__(self) -> str:
-        return '%s%r' % (type(self).__name__, self.shape)
+        return f'{type(self).__name__}{self.shape!r}'
 
     @property
     def ndim(self) -> int:
@@ -208,16 +209,19 @@ class RowPermutationMatrix(PermutationMatrix):
 
 def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, remove_permutation=True):
     if a.shape[1] != b.shape[0]:
-        raise RuntimeError("Cannot take matrix product between matrices with shape: %r x %r" % (a.shape, b.shape))
+        raise RuntimeError(
+            f"Cannot take matrix product between matrices with shape: {a.shape!r} x {b.shape!r}"
+        )
     if remove_identity:
         if isinstance(a, IdentityMatrix):
             return [b]
         if isinstance(b, IdentityMatrix):
             return [a]
-    if remove_inverse:
-        if (isinstance(a, InverseMatrix) and a.inverse is b) or (isinstance(b, InverseMatrix) and b.inverse is a):
-            assert(a.shape[0] == b.shape[1])
-            return [IdentityMatrix(a.shape[0])]
+    if remove_inverse and (
+        (isinstance(a, InverseMatrix) and a.inverse is b) or (isinstance(b, InverseMatrix) and b.inverse is a)
+    ):
+        assert a.shape[0] == b.shape[1]
+        return [IdentityMatrix(a.shape[0])]
     if remove_permutation:
         # Combine permutation matrices
         if isinstance(a, ColumnPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
@@ -285,7 +289,7 @@ class MatrixProductList(list):
                 raise TypeError(f"only type {Matrix.__name__} allowed in {type(self).__name__} (not {matrix})")
 
     def check_valid_shapes(self, matrices: MutableSequence[Matrix]) -> None:
-        for m1, m2 in zip(matrices[:-1], matrices[1:]):
+        for m1, m2 in itertools.pairwise(matrices):
             if m1.shape[1] != m2.shape[0]:
                 raise ValueError(f"Invalid matrix product in {self}: {m1.shape} x {m2.shape}")
 

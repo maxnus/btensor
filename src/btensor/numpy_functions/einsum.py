@@ -76,10 +76,7 @@ class Einsum:
 
     def _contraction_is_basis_independent(self) -> bool:
         joined_labels = self.get_contraction(separator='').replace('->', '')
-        for label in self._unique_labels:
-            if joined_labels.count(label) != 2:
-                return False
-        return True
+        return all(joined_labels.count(label) == 2 for label in self._unique_labels)
 
     @staticmethod
     def _get_free_labels(used_labels: list[str]) -> list[str]:

@@ -34,7 +34,7 @@ class TestTensorsum(TestCase):
         self.assert_allclose(lhs, 4*np.dot(np_array, np_array))
 
     def test_to_list(self, get_tensor):
-        tensor, np_array = get_tensor(ndim=2)
+        tensor, _np_array = get_tensor(ndim=2)
         tensor2 = tensor.copy()
         tensor_sum = TensorSum([tensor, tensor2])
         expected = tensor_sum.tensors

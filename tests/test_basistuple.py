@@ -20,7 +20,7 @@ from btensor.basistuple import BasisTuple
 
 @pytest.fixture
 def basistuple(shape_and_basis):
-    shape, basis = shape_and_basis
+    _shape, basis = shape_and_basis
     return BasisTuple(basis)
 
 

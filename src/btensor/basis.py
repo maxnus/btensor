@@ -153,7 +153,9 @@ class Basis:
             if orthonormal:
                 metric = IdentityMatrix(self.size)
             else:
-                metric = SymmetricMatrix(MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate())
+                metric = SymmetricMatrix(
+                    MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate()
+                )
         elif orthonormal:
             raise ValueError("orthonormal basis cannot have a metric")
         elif isinstance(metric, np.ndarray):
@@ -362,7 +364,7 @@ class Basis:
         # Via SVD (works only if bases are orthonormal? It might only require one basis to be orthonormal):
         if use_svd and (self.is_orthonormal and other.is_orthonormal):
             m = self.get_transformation_to(other).to_numpy()
-            vl, s, vr = scipy.linalg.svd(m, full_matrices=False)
+            vl, s, _vr = scipy.linalg.svd(m, full_matrices=False)
             v = vl[:, s**2 >= tol]
         # Via eigendecomposition:
         else:
@@ -528,10 +530,7 @@ class Basis:
             variance = (_Variance.COVARIANT, _Variance.COVARIANT)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.get_common_parent(other)
-        if variance[0] == _Variance.CONTRAVARIANT:
-            mpl = [self.metric.inverse]
-        else:
-            mpl = []
+        mpl = [self.metric.inverse] if variance[0] == _Variance.CONTRAVARIANT else []
         mpl = MatrixProductList(mpl)
         mpl += self._coeff_in_basis(parent).T + [parent.metric] + other._coeff_in_basis(parent)
         if variance[1] == _Variance.CONTRAVARIANT:
@@ -540,7 +539,10 @@ class Basis:
 
     _transformation_cache_size = 128
 
-    @lru_cache(_transformation_cache_size)
+    # B019: lru_cache on a method keeps `self` alive for as long as the entry is
+    # cached. That is accepted here: the cache is bounded and Basis objects are
+    # long-lived by design (they are identified by a process-wide ID).
+    @lru_cache(_transformation_cache_size)  # noqa: B019
     def get_transformation(self,
                            other: Basis,
                            variance: tuple[int, int] = (_Variance.COVARIANT, _Variance.COVARIANT)) -> Tensor:

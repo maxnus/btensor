@@ -65,13 +65,13 @@ class Space:
         """Required for caching."""
         return self._basis.id
 
-    @cache
+    @cache  # noqa: B019
     def _distance_from_zero_singular_value(self, other: Space) -> float:
         ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return abs(sv).max()
 
-    @cache
+    @cache  # noqa: B019
     def _distance_from_one_eigenvalue(self, other: Space) -> float:
         ovlp = self.basis.get_overlap(other.basis).to_numpy()
         if other.basis.is_orthonormal:
@@ -139,7 +139,7 @@ class Space:
         dist = self._distance_from_one_eigenvalue(other)
         return dist < self._tol
 
-    def __neq__(self, other: Space) -> bool:
+    def __ne__(self, other: Space) -> bool:
         """True, if self is not the same space as other."""
         return not (self == other)
 

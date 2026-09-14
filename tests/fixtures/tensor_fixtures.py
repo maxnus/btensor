@@ -51,7 +51,7 @@ def get_test_tensor():
                        numpy_compatible: bool = True) -> TestTensor | list[TestTensor]:
         np.random.seed(0)
         result = []
-        for n in range(number):
+        for _n in range(number):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
                 data = (data + data.T)/2

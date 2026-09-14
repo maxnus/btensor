@@ -14,6 +14,7 @@
 
 import itertools
 import operator
+from typing import ClassVar
 
 import numpy as np
 import pytest
@@ -49,7 +50,7 @@ class TestTensor(TestCase):
     def test_tensor_for_loop_raises(self, np_array):
         tensor = Tensor(np_array)
         with pytest.raises(RuntimeError, match='cannot iterate over a Tensor'):
-            for element in tensor:
+            for _element in tensor:
                 pass
 
     @pytest.mark.parametrize('inplace', [True, False])
@@ -63,7 +64,7 @@ class TestTensor(TestCase):
         assert tensor_out.basis == tensor.basis
 
     def test_array_interface(self, tensor):
-        tensor, np_array = tensor
+        tensor, _np_array = tensor
         tensor.numpy_compatible = False
         with pytest.raises(BTensorError):
             np.asarray(tensor)
@@ -115,7 +116,7 @@ class TestArithmetic(TestCase):
         expected = op(test_tensor.array, test_tensor_2.array)
         self.assert_allclose(result.to_numpy(), expected)
 
-    scalars = [-2.1, 0.0, 0.2, 1.0, 3.2]
+    scalars: ClassVar[list[float]] = [-2.1, 0.0, 0.2, 1.0, 3.2]
 
     @pytest.mark.parametrize('scalar', scalars)
     @pytest.mark.parametrize('op', [operator.add, operator.sub, operator.mul, operator.truediv])
@@ -155,10 +156,7 @@ class TestArithmetic(TestCase):
         subarg2 = subbasis_definition_to_matrix(subarg2, rootbasis.size)
         expected = binary_operator(np.einsum('xab,ia,jb->xij', np_array1, subarg1, subarg1),
                                    np.einsum('xab,ia,jb->xij', np_array2, subarg2, subarg2))
-        if binary_operator in {operator.truediv, operator.pow}:
-            rtol = 1e-10
-        else:
-            rtol = self.allclose_rtol
+        rtol = 1e-10 if binary_operator in {operator.truediv, operator.pow} else self.allclose_rtol
         self.assert_allclose(binary_operator(tensor1, tensor2), expected, rtol=rtol)
 
 
@@ -214,7 +212,7 @@ class TestGetitem(TestCase):
     @pytest.mark.parametrize('subsize', [6, 3, 1])
     def test_getitem(self, subsize, subbasis_type, get_rootbasis_subbasis, ndim):
         rootsize = 6
-        rootbasis, (subbasis, subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
+        rootbasis, (subbasis, _subarg) = get_rootbasis_subbasis(rootsize, subsize, subbasis_type)
         rootbasis = ndim*(rootbasis,)
         subbasis = ndim*(subbasis,)
         np_array = np.random.random(ndim*(rootsize,))

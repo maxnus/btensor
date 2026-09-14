@@ -239,8 +239,8 @@ class TestBasis(TestCase):
         cls.metric_a = metric(cls.size_a)
         cls.metric_b = metric(cls.size_b)
 
-        cls.rootbasis_a = ba = btensor.Basis(cls.size_a, metric=cls.metric_a)
-        cls.rootbasis_b = bb = btensor.Basis(cls.size_b, metric=cls.metric_b)
+        cls.rootbasis_a = btensor.Basis(cls.size_a, metric=cls.metric_a)
+        cls.rootbasis_b = btensor.Basis(cls.size_b, metric=cls.metric_b)
 
         # Subbasis
 
@@ -286,7 +286,7 @@ class TestBasis(TestCase):
 
     def test_same_space_2(self):
         for bas in (self.basis_a, self.basis_b):
-            for i, b in enumerate(bas):
+            for _i, b in enumerate(bas):
                 b1 = btensor.Basis(rand_orth_mat(b.size), parent=b)
                 b2 = btensor.Basis(rand_orth_mat(b.size), parent=b)
                 assert (b1.space == b2.space)
@@ -304,7 +304,7 @@ class TestBasis(TestCase):
 
     def test_svd_same_space(self):
         for bas in (self.basis_a, self.basis_b):
-            for i, b in enumerate(bas[:-1]):
+            for _i, b in enumerate(bas[:-1]):
                 r = rand_orth_mat(b.size, b.size-1)
                 b1 = btensor.Basis(r, parent=b)
                 b2 = btensor.Basis(r, parent=b)
@@ -323,7 +323,7 @@ class TestBasis(TestCase):
 
     def test_svd_different_space_same_size(self):
         for bas in (self.basis_a, self.basis_b):
-            for i, b in enumerate(bas[:-1]):
+            for _i, b in enumerate(bas[:-1]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 1)
                 b1 = btensor.Basis(r1, parent=b)
@@ -343,7 +343,7 @@ class TestBasis(TestCase):
 
     def test_svd_different_space_different_size(self):
         for bas in (self.basis_a, self.basis_b):
-            for i, b in enumerate(bas[:-2]):
+            for _i, b in enumerate(bas[:-2]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = rand_orth_mat(b.size, b.size - 2)
                 b1 = btensor.Basis(r1, parent=b)
@@ -363,7 +363,7 @@ class TestBasis(TestCase):
 
     def test_svd_subspace(self):
         for bas in (self.basis_a, self.basis_b):
-            for i, b in enumerate(bas[:-2]):
+            for _i, b in enumerate(bas[:-2]):
                 r1 = rand_orth_mat(b.size, b.size - 1)
                 r2 = r1[:, :-1]
                 # b2 is subspace of b1
@@ -401,11 +401,11 @@ class TestBasis(TestCase):
     def test_space_orthogonal(self):
         for b1 in self.basis_a:
             assert not (b1.space | b1.space)
-        for i, b1 in enumerate(self.basis_a):
-            for j, b2 in enumerate(self.basis_a):
+        for _i, b1 in enumerate(self.basis_a):
+            for _j, b2 in enumerate(self.basis_a):
                 assert not (b1.space | b2.space)
-        for i, b1 in enumerate(self.basis_a):
-            for j, b2 in enumerate(self.basis_b):
+        for _i, b1 in enumerate(self.basis_a):
+            for _j, b2 in enumerate(self.basis_b):
                 assert (b1.space | b2.space)
 
     def test_matrices_for_coeff_in_basis(self):
@@ -429,10 +429,7 @@ class TestBasis(TestCase):
                     expected = np.identity(b1.size)
                 else:
                     mats = self.trafos_a[j:i]
-                    if len(mats) == 1:
-                        expected = mats[0]
-                    else:
-                        expected = np.linalg.multi_dot(mats)
+                    expected = mats[0] if len(mats) == 1 else np.linalg.multi_dot(mats)
                 test(b1, b2, expected)
 
         for i, b1 in enumerate(self.basis_b): # Subbasis
@@ -441,10 +438,7 @@ class TestBasis(TestCase):
                     expected = np.identity(b1.size)
                 else:
                     mats = self.trafos_b[j:i]
-                    if len(mats) == 1:
-                        expected = mats[0]
-                    else:
-                        expected = np.linalg.multi_dot(mats)
+                    expected = mats[0] if len(mats) == 1 else np.linalg.multi_dot(mats)
                 test(b1, b2, expected)
 
 

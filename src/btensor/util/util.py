@@ -52,9 +52,11 @@ def is_sequence(obj: Any) -> bool:
     return True
 
 def array_like(obj):
+    # The attribute and item accesses below are probes: they raise for objects
+    # that do not look like arrays, which is exactly what is being tested.
     try:
-        obj.shape
-        obj.ndim
+        obj.shape  # noqa: B018
+        obj.ndim  # noqa: B018
         obj[()]
         return True
     except (AttributeError, TypeError):

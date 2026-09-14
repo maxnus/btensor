@@ -38,11 +38,11 @@ class TensorSum:
         return f"{type(self).__name__}(size= {self.size})"
 
     def info(self) -> str:
-        info = f"{repr(self)} ["
+        info = f"{self!r} ["
         if len(self.tensors):
             info += "\n"
         for tensor in self.tensors:
-            info += f"    {repr(tensor)},\n"
+            info += f"    {tensor!r},\n"
         info += "]\n"
         return info
 
@@ -57,9 +57,8 @@ class TensorSum:
     def append(self, tensor: Tensor, allow_combine: bool | None = None) -> None:
         if allow_combine is None:
             allow_combine = self._allow_combine
-        if self.size:
-            if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
-                raise ValueError
+        if self.size and self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
+            raise ValueError
         if allow_combine:
             for idx, tensor_super in enumerate(self.tensors):
                 if tensor_super.basis.is_spanning(tensor.basis):

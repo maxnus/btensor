@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import itertools
 import string
 
@@ -39,10 +40,7 @@ def generate_einsum_summation(maxdim: int):
     for ndim in range(1, maxdim+1):
         for sub in loop_einsum_subscripts(ndim):
             for include_result in [True, False]:
-                if include_result:
-                    summation = sub + '->' + sub.replace('X', '')
-                else:
-                    summation = sub
+                summation = sub + '->' + sub.replace('X', '') if include_result else sub
                 yield summation
 
 
@@ -54,10 +52,7 @@ def generate_einsum_contraction(maxdim: int):
                     for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2-nsum1):
                         sub = ','.join([sub1, sub2])
                         for include_result in [True, False]:
-                            if include_result:
-                                contraction = sub + '->' + (sub1 + sub2).replace('X', '')
-                            else:
-                                contraction = sub
+                            contraction = sub + '->' + (sub1 + sub2).replace('X', '') if include_result else sub
                             yield contraction
 
 
@@ -86,10 +81,8 @@ class TestEinsum(TestCase):
             expected = np.einsum(einsum_summation, data, optimize=optimize)
         with timings('BTensor'):
             result = bt.einsum(einsum_summation, array, optimize=optimize, intersect_tol=intersect_tol)
-            try:
+            with contextlib.suppress(AttributeError):
                 result = result.to_numpy()
-            except AttributeError:
-                pass
         self.assert_allclose(result, expected)
 
     @pytest.mark.parametrize('optimize', [False])
@@ -101,10 +94,8 @@ class TestEinsum(TestCase):
             expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
         with timings('BTensor'):
             result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize, intersect_tol=intersect_tol)
-            try:
+            with contextlib.suppress(AttributeError):
                 result = result.to_numpy()
-            except AttributeError:
-                pass
         self.assert_allclose(result, expected)
 
     def test_matmul(self):
@@ -122,16 +113,16 @@ class TestEinsum(TestCase):
         self.assert_allclose(ac, c)
 
     def test_double_matmul(self):
-        n, m, k, l = 30, 40, 50, 60
+        n, m, k, nl = 30, 40, 50, 60
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
-        c = np.random.rand(k, l)
+        c = np.random.rand(k, nl)
         contract = 'ij,jk,kl->il'
         d = np.einsum(contract, a, b, c)
         bn = Basis(n)
         bm = Basis(m)
         bk = Basis(k)
-        bl = Basis(l)
+        bl = Basis(nl)
         aa = Tensor(a, basis=(bn, bm))
         ab = Tensor(b, basis=(bm, bk))
         ac = Tensor(c, basis=(bk, bl))
@@ -152,22 +143,22 @@ class TestEinsum(TestCase):
         self.assert_allclose(ac, c)
 
     def test_ijk_kl_ijl(self):
-        n, m, k, l = 30, 40, 50, 60
+        n, m, k, nl = 30, 40, 50, 60
         a = np.random.rand(n, m, k)
-        b = np.random.rand(k, l)
+        b = np.random.rand(k, nl)
         contract = 'ijk,kl->ijl'
         c = np.einsum(contract, a, b)
         bn = Basis(n)
         bm = Basis(m)
         bk = Basis(k)
-        bl = Basis(l)
+        bl = Basis(nl)
         aa = Tensor(a, basis=(bn, bm, bk))
         ab = Tensor(b, basis=(bk, bl))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 
     def test_tensorsum_2x1(self, get_tensor, timings):
-        tensors, arrays = zip(*get_tensor(ndim=2, number=3))
+        tensors, _arrays = zip(*get_tensor(ndim=2, number=3))
         ts1 = TensorSum(tensors[:2])
         t2 = tensors[2]
         subscripts = 'ij,jk->ik'
@@ -178,7 +169,7 @@ class TestEinsum(TestCase):
         self.assert_allclose(result, expected)
 
     def test_tensorsum_2x2(self, get_tensor, timings):
-        tensors, arrays = zip(*get_tensor(ndim=2, number=4))
+        tensors, _arrays = zip(*get_tensor(ndim=2, number=4))
         for i, t in enumerate(tensors):
             t.name = f'Tensor{i}'
         ts1 = TensorSum(tensors[:2])

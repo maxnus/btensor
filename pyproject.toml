@@ -77,3 +77,26 @@ select = [
     "RUF",  # Ruff-specific rules
     "NPY",  # NumPy-specific rules
 ]
+ignore = [
+    # `not (a == b)` -> `a != b` is not equivalence-preserving here: Tensor.__eq__
+    # and Tensor.__ne__ are elementwise and return a Tensor, not a bool. The basis
+    # and space comparison tests also assert on each operator deliberately, so
+    # rewriting them would change what is under test.
+    "SIM201",
+    "SIM202",
+    # `a + [x] + b` -> `[*a, x, *b]` silently changes the type where `a` is a
+    # MatrixProductList, whose __add__ returns a MatrixProductList while a list
+    # literal does not. The result no longer has .evaluate().
+    "RUF005",
+    # TODO: add an explicit strict= to each zip(). Whether the operands are
+    # guaranteed to be the same length needs deciding per call site, so this is
+    # left for a separate change rather than applied wholesale.
+    "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# TODO: migrate to numpy's Generator API. The legacy np.random functions draw
+# from a different stream, so this changes the generated test data and has to be
+# revalidated rather than applied mechanically.
+"tests/**" = ["NPY002"]
+"examples/**" = ["NPY002"]

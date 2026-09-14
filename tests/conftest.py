@@ -32,6 +32,11 @@ pytest_plugins = [
     "fixtures.tensor_fixtures",
 ]
 
+# Shared default generator for helpers that accept an optional rng. Built once
+# here rather than in each signature's default, which would be evaluated at
+# import time and shared implicitly.
+_DEFAULT_RNG = np.random.default_rng()
+
 
 class UserSlice:
 
@@ -66,7 +71,7 @@ def variable_sized_product(values, minsize=1, maxsize=None):
     return output
 
 
-def random_orthogonal_matrix(n, ncolumn=None, rng=np.random.default_rng()):
+def random_orthogonal_matrix(n, ncolumn=None, rng=_DEFAULT_RNG):
     if n == 1:
         return np.asarray([[1.0]])[:, :ncolumn]
     m = scipy.stats.ortho_group.rvs(n, random_state=rng)
@@ -160,7 +165,7 @@ def subbasis_type_2x(request, subbasis_type):
     return request.param, subbasis_type
 
 
-def get_random_subbasis_definition(rootsize, subsize, subtype, rng=np.random.default_rng()):
+def get_random_subbasis_definition(rootsize, subsize, subtype, rng=_DEFAULT_RNG):
     if subtype == 'rotation':
         return random_orthogonal_matrix(rootsize, ncolumn=subsize, rng=rng)
     if subtype in ('indices', 'mask'):
@@ -263,7 +268,7 @@ def get_tensor(basis_large):
         np.random.seed(0)
         basis = tuple(ndim * [basis_large])
         result = []
-        for n in range(number):
+        for _n in range(number):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
                 data = (data + data.T)/2
@@ -283,7 +288,7 @@ def tensor(ndim, get_tensor):
 @pytest.fixture(scope='module')
 def tensor_2x(tensor_cls_2x, ndim, basis_large):
     np.random.seed(0)
-    tensor_cls1, tensor_cls2 = tensor_cls_2x
+    tensor_cls1, _tensor_cls2 = tensor_cls_2x
     basis = tuple(ndim * [basis_large])
     data1 = np.random.random(tuple([b.size for b in basis]))
     data2 = np.random.random(tuple([b.size for b in basis]))
