@@ -21,8 +21,11 @@ import inspect
 import os
 import sys
 from operator import attrgetter
+from pathlib import Path
 
-sys.path.insert(1, os.path.abspath("../../src"))
+# Resolved relative to this file rather than the working directory sphinx-build
+# happens to be invoked from, so the path is correct however the build starts.
+sys.path.insert(1, str(Path(__file__).resolve().parents[2] / "src"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
