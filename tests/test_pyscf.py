@@ -265,8 +265,11 @@ class TestCC(TestCase):
 class TestCluster(TestCase):
     allclose_atol = 1e-10
 
-    np_einsum = functools.partial(np.einsum, optimize=True)
-    bt_einsum = functools.partial(btensor.einsum, optimize=True)
+    # staticmethod is required from Python 3.14 on, where a bare functools.partial
+    # stored on a class becomes a method descriptor and would receive self as its
+    # first positional argument.
+    np_einsum = staticmethod(functools.partial(np.einsum, optimize=True))
+    bt_einsum = staticmethod(functools.partial(btensor.einsum, optimize=True))
 
     @pytest.fixture(params=[[5, 10, 6, 9]], ids=str)
     def sizes(self, request):
