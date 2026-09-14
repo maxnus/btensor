@@ -12,10 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from pathlib import Path
 import importlib.util
-import pytest
+from pathlib import Path
 
+import pytest
 
 example_path = Path(__file__).parent.parent / 'examples'
 examples_files = [f for f in example_path.glob('*.py') if 'pyscf' not in f.name]

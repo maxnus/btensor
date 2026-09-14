@@ -15,17 +15,27 @@
 """Module defining the Basis class and related functions."""
 
 from __future__ import annotations
-from functools import lru_cache
+
 import weakref
-from typing import *
+from collections.abc import Sequence
+from functools import lru_cache
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, Union
 
 import numpy as np
 import scipy
 
-from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermutationMatrix, GeneralMatrix,
-                          MatrixProductList, is_int, array_like)
 from btensor.exceptions import BasisError
 from btensor.space import Space
+from btensor.util import (
+    ColumnPermutationMatrix,
+    GeneralMatrix,
+    IdentityMatrix,
+    Matrix,
+    MatrixProductList,
+    SymmetricMatrix,
+    array_like,
+    is_int,
+)
 
 if TYPE_CHECKING:
     from btensor.tensor import Tensor
@@ -55,8 +65,8 @@ class _NoBasis:
 nobasis = _NoBasis()
 
 IBasis: TypeAlias = Union['Basis', _NoBasis]
-NBasis: TypeAlias = Union[IBasis, Sequence[IBasis]]
-BasisArgument: TypeAlias = Union[Sequence[int], Sequence[bool], slice, np.ndarray]
+NBasis: TypeAlias = IBasis | Sequence[IBasis]
+BasisArgument: TypeAlias = Sequence[int] | Sequence[bool] | slice | np.ndarray
 
 
 def compatible_basis(basis1: IBasis, basis2: IBasis):
@@ -145,13 +155,13 @@ class Basis:
             else:
                 metric = SymmetricMatrix(MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate())
         elif orthonormal:
-            raise ValueError(f"orthonormal basis cannot have a metric")
+            raise ValueError("orthonormal basis cannot have a metric")
         elif isinstance(metric, np.ndarray):
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._space = Space(self)
-        self._union_cache: Dict[Tuple[float | int, ...], int] = {}
-        self._intersect_cache: Dict[Tuple[float | int, ...], int] = {}
+        self._union_cache: dict[tuple[float | int, ...], int] = {}
+        self._intersect_cache: dict[tuple[float | int, ...], int] = {}
         self.__basis_by_id[self.id] = self
 
     _T = TypeVar('T')

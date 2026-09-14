@@ -13,8 +13,8 @@
 #     limitations under the License.
 
 import numpy as np
-from btensor import Basis
 
+from btensor import Basis
 
 rootbasis = Basis(3)
 

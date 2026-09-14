@@ -14,8 +14,8 @@
 
 import scipy
 
-from btensor.exceptions import BasisError, VarianceError
 from btensor.basis import _Variance
+from btensor.exceptions import BasisError, VarianceError
 
 
 def eigh(a):
@@ -24,7 +24,7 @@ def eigh(a):
     if a.basis[-2].root != basis.root:
         raise BasisError
     if a.variance[-2] != variance:
-        raise VarianceError(f"variance needs to match between the last two axes")
+        raise VarianceError("variance needs to match between the last two axes")
     if basis.is_orthonormal:
         type_ = 1
         metric = None

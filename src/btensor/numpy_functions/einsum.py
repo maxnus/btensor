@@ -13,20 +13,22 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
 import copy
-import string
 import itertools
+import string
+from collections.abc import Callable
 from numbers import Number
-from typing import *
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import numpy as np
 
-from btensor.tensorsum import TensorSum
 from btensor.exceptions import BasisDependentOperationError
+from btensor.tensorsum import TensorSum
 
 if TYPE_CHECKING:
-    from btensor import Tensor, IBasis
-    EinsumOperandT: TypeAlias = Union[Tensor, TensorSum]
+    from btensor import IBasis, Tensor
+    EinsumOperandT: TypeAlias = Tensor | TensorSum
 
 
 class Einsum:
@@ -48,7 +50,7 @@ class Einsum:
         return f"{type(self).__name__}({self.get_contraction()})"
 
     @staticmethod
-    def _get_labels_per_operand_and_result(subscripts: str) -> Tuple[List[List[str]], str]:
+    def _get_labels_per_operand_and_result(subscripts: str) -> tuple[list[list[str]], str]:
         # TODO
         if '...' in subscripts:
             raise NotImplementedError("'...' in subscripts not yet supported")
@@ -80,12 +82,12 @@ class Einsum:
         return True
 
     @staticmethod
-    def _get_free_labels(used_labels: List[str]) -> List[str]:
+    def _get_free_labels(used_labels: list[str]) -> list[str]:
         return sorted(set(string.ascii_letters).difference(set(used_labels)))
 
     def _resolve_tensorsums(self,
-                            operands: Tuple[EinsumOperandT, ...],
-                            tensorsums: List[Tuple[int, List[Tensor]]],
+                            operands: tuple[EinsumOperandT, ...],
+                            tensorsums: list[tuple[int, list[Tensor]]],
                             intersect_tol: Number | None = None,
                             **kwargs: Any) -> TensorSum:
         tensorsums_positions, tensor_lists = zip(*tensorsums)
@@ -101,10 +103,10 @@ class Einsum:
     def _label_is_contracted(self, label: str) -> bool:
         return label in self._result_labels
 
-    def _get_unique_contracted_labels(self) -> List[str]:
+    def _get_unique_contracted_labels(self) -> list[str]:
         return [label for label in self._unique_labels if self._label_is_contracted(label)]
 
-    def _get_positions_of_label(self, label: str) -> List[Tuple[int, int]]:
+    def _get_positions_of_label(self, label: str) -> list[tuple[int, int]]:
         positions = []
         for iop, labels in enumerate(self._labels_per_operand):
             for ilab, loop_label in enumerate(labels):
@@ -213,15 +215,15 @@ class Einsum:
         cls = type(operands[0])
         return cls(values, basis=tuple(basis_out), variance=tuple(variance_out), copy_data=False)
 
-    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
-                             intersect_tol: Number | None = None) -> Dict[str, IBasis]:
+    def _get_basis_per_label(self, operands: tuple[EinsumOperandT, ...],
+                             intersect_tol: Number | None = None) -> dict[str, IBasis]:
         basis_per_label = {}
         for unique_label in self._unique_labels:
             basis: IBasis | None = None
             is_output = unique_label in self._result_labels
             for operand, operand_labels in zip(operands, self._labels_per_operand):
                 # The index might appear multiple times per label -> loop over positions
-                positions: List[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
+                positions: list[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
                 for position in positions:
                     current_basis = operand.basis[position]
                     if basis is None:

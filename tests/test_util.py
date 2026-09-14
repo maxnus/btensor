@@ -13,11 +13,12 @@
 #     limitations under the License.
 
 import itertools
-import pytest
+
 import numpy as np
+import pytest
+from helper import TestCase, powerset
 
 from btensor import util
-from helper import TestCase, powerset
 
 
 class TestPermutationMatrix(TestCase):

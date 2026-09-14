@@ -13,17 +13,26 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
+
+from typing import TypeAlias, overload
+
 try:
     from types import EllipsisType
 except ImportError:
     EllipsisType = type(Ellipsis)
 
-from btensor.basis import (IBasis, compatible_basis, _is_nobasis, get_common_parent, NBasis, Basis, nobasis,
-                           _is_basis_or_nobasis)
+from btensor.basis import (
+    Basis,
+    IBasis,
+    NBasis,
+    _is_basis_or_nobasis,
+    _is_nobasis,
+    compatible_basis,
+    get_common_parent,
+    nobasis,
+)
 
-
-KeyLike: TypeAlias = Union[IBasis, slice, EllipsisType]
+KeyLike: TypeAlias = IBasis | slice | EllipsisType
 
 
 class BasisTuple(tuple):

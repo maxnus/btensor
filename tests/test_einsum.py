@@ -13,14 +13,16 @@
 #     limitations under the License.
 
 from __future__ import annotations
-import pytest
+
 import itertools
 import string
+
 import numpy as np
+import pytest
+from helper import TestCase
 
 import btensor as bt
 from btensor import Basis, Tensor, TensorSum
-from helper import TestCase
 
 
 def loop_einsum_subscripts(ndim: int, nsum: int = 2, start_label: int = 0):

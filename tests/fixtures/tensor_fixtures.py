@@ -13,10 +13,11 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
 
-import pytest
+from typing import TYPE_CHECKING
+
 import numpy as np
+import pytest
 
 from btensor import Tensor
 
@@ -28,8 +29,8 @@ if TYPE_CHECKING:
 class TestTensor:
 
     def __init__(self,
-                 array: np.ndarray, basis: Basis | Tuple[Basis, ...],
-                 variance: Tuple[int, ...] | None = None,
+                 array: np.ndarray, basis: Basis | tuple[Basis, ...],
+                 variance: tuple[int, ...] | None = None,
                  numpy_compatible: bool = True) -> None:
         self.array = array
         self.basis = basis
@@ -38,7 +39,7 @@ class TestTensor:
         self.tensor = Tensor(array, basis=basis, variance=variance, numpy_compatible=numpy_compatible)
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.array.shape
 
 
@@ -47,7 +48,7 @@ def get_test_tensor():
     def tensor_factory(basis: NBasis,
                        number: int = 1,
                        hermitian: bool = False,
-                       numpy_compatible: bool = True) -> TestTensor | List[TestTensor]:
+                       numpy_compatible: bool = True) -> TestTensor | list[TestTensor]:
         np.random.seed(0)
         result = []
         for n in range(number):

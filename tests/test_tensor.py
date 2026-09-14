@@ -15,11 +15,10 @@
 import itertools
 import operator
 
-import pytest
 import numpy as np
-
-from helper import TestCase
+import pytest
 from conftest import subbasis_definition_to_matrix
+from helper import TestCase
 
 from btensor import Tensor
 from btensor.exceptions import BTensorError

@@ -13,8 +13,8 @@
 #     limitations under the License.
 
 import numpy as np
-from btensor import Basis, Tensor
 
+from btensor import Basis, Tensor
 
 # The standard euclidian 2D basis:
 basis1 = Basis(2)

@@ -11,17 +11,17 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import functools
 import itertools
 from collections import namedtuple
-import functools
 
-import pytest
 import numpy as np
+import pytest
+from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix
+from helper import TestCase, rand_orth_mat
 
 import btensor
-from btensor import Tensor, Cotensor
-from helper import TestCase, rand_orth_mat
-from conftest import get_random_subbasis_definition, subbasis_definition_to_matrix
+from btensor import Cotensor, Tensor
 
 scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'nvir', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock',
                                    'dm'))
@@ -34,7 +34,7 @@ def make_scf_data(nao: int, nocc: int, nonorth: float):
     nvir = nmo - nocc
     mo_coeff = rand_orth_mat(nao) + nonorth * np.random.random((nao, nmo))
     mo_energy = np.random.uniform(-10.0, 10.0, nmo)
-    mo_occ = np.asarray((nocc * [2] + nvir * [0]))
+    mo_occ = np.asarray(nocc * [2] + nvir * [0])
     sinv = np.dot(mo_coeff, mo_coeff.T)
     ovlp = np.linalg.inv(sinv)
     # Test biorthogonality

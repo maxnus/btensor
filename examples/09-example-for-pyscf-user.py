@@ -1,13 +1,12 @@
 import numpy as np
+
+# PySCF scenario:
+import pyscf
+import pyscf.cc
 import scipy
 import scipy.stats
 
 import btensor
-
-# PySCF scenario:
-
-import pyscf
-import pyscf.cc
 
 mol = pyscf.gto.Mole()
 mol.atom = 'H 0 0 0; H 0 0 0.7'

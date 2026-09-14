@@ -12,5 +12,49 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from .matrix import *
-from .util import *
+
+from .matrix import (
+    ColumnPermutationMatrix,
+    GeneralMatrix,
+    IdentityMatrix,
+    InverseMatrix,
+    Matrix,
+    MatrixProductList,
+    PermutationMatrix,
+    RowPermutationMatrix,
+    SymmetricMatrix,
+    to_numpy,
+)
+from .util import (
+    array_like,
+    atleast_1d,
+    check_input,
+    expand_axis,
+    is_int,
+    is_sequence,
+    ndot,
+    replace_attr,
+    text_enumeration,
+)
+
+__all__ = [
+    "ColumnPermutationMatrix",
+    "GeneralMatrix",
+    "IdentityMatrix",
+    "InverseMatrix",
+    "Matrix",
+    "MatrixProductList",
+    "PermutationMatrix",
+    "RowPermutationMatrix",
+    "SymmetricMatrix",
+    "array_like",
+    "atleast_1d",
+    "check_input",
+    "expand_axis",
+    "is_int",
+    "is_sequence",
+    "ndot",
+    "replace_attr",
+    "text_enumeration",
+    "to_numpy",
+]

@@ -13,19 +13,22 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.lib.array_utils import normalize_axis_tuple
 from numpy.typing import ArrayLike
 
 import btensor
-from btensor.util import ndot, IdentityMatrix
-from btensor.exceptions import BasisError
 from btensor.basis import _is_nobasis
+from btensor.exceptions import BasisError
+from btensor.util import IdentityMatrix, ndot
 
 if TYPE_CHECKING:
     from numbers import Number
+
     from btensor import Tensor
 
 
@@ -63,7 +66,7 @@ empty_like = _empty_like_factory(empty)
 ones_like = _empty_like_factory(ones)
 
 
-def _sum(a: ArrayLike | Tensor, axis: int | Tuple[int, ...] | None = None,
+def _sum(a: ArrayLike | Tensor, axis: int | tuple[int, ...] | None = None,
          out: np.ndarray | None = None) -> Tensor | Number:
     a = _to_tensor(a)
     value = a.to_numpy(copy=False).sum(axis=axis, out=out)

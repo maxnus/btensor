@@ -13,14 +13,16 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
 import itertools
+from collections.abc import Collection
 from contextlib import contextmanager
 from numbers import Number
 from time import perf_counter
-from typing import *
+from typing import Any
 
-import pytest
 import numpy as np
+import pytest
 import scipy
 import scipy.stats
 

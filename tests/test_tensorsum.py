@@ -13,9 +13,9 @@
 #     limitations under the License.
 
 import numpy as np
+from helper import TestCase
 
 from btensor import TensorSum
-from helper import TestCase
 
 
 class TestTensorsum(TestCase):

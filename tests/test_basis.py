@@ -14,10 +14,10 @@
 
 import numpy as np
 import pytest
+from conftest import get_random_subbasis_definition
+from helper import TestCase, rand_orth_mat
 
 import btensor
-from helper import TestCase, rand_orth_mat
-from conftest import get_random_subbasis_definition
 
 
 @pytest.fixture

@@ -15,20 +15,30 @@
 """Module defining the Tensor class and related functions."""
 
 from __future__ import annotations
-from numbers import Number
-import string
+
 import operator
-from typing import *
+import string
+from collections.abc import Callable, Sequence
+from numbers import Number
+from typing import Any, NoReturn, Self, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from btensor.util import (expand_axis, is_sequence, IdentityMatrix, PermutationMatrix, ColumnPermutationMatrix,
-                          RowPermutationMatrix, MatrixProductList, check_input)
-from btensor.exceptions import BasisError, BasisDependentOperationError
-from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
-from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
+from btensor.basis import Basis, IBasis, NBasis, _is_basis_or_nobasis, _is_nobasis, _Variance, compatible_basis, nobasis
+from btensor.basistuple import BasisTuple
+from btensor.exceptions import BasisDependentOperationError, BasisError
+from btensor.util import (
+    ColumnPermutationMatrix,
+    IdentityMatrix,
+    MatrixProductList,
+    PermutationMatrix,
+    RowPermutationMatrix,
+    check_input,
+    expand_axis,
+    is_sequence,
+)
 
 
 class _ChangeBasisInterface:
@@ -460,7 +470,7 @@ class Tensor:
         """
         return self.transpose()
 
-    def sum(self, axis: int | Tuple[int] | None = None, out: np.ndarray | None = None) -> Self | Number:
+    def sum(self, axis: int | tuple[int] | None = None, out: np.ndarray | None = None) -> Self | Number:
         """Sum of tensor elements over a given axis or tuple of axes.
 
         Args:
@@ -548,7 +558,7 @@ class Tensor:
         return self._operator(op, other, reverse=reverse)
 
     @property
-    def __array_interface__(self) -> Dict[str, Any]:
+    def __array_interface__(self) -> dict[str, Any]:
         if not self.numpy_compatible:
             raise BasisDependentOperationError("not allowed, if numpy_compatible is set to False")
         return self._data.__array_interface__

@@ -13,8 +13,10 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import *
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -25,16 +27,16 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-        'is_int',
-        'is_sequence',
-        'array_like',
-        'atleast_1d',
-        'ndot',
-        'expand_axis',
-        'replace_attr',
-        'text_enumeration',
-        'check_input',
-        ]
+    'array_like',
+    'atleast_1d',
+    'check_input',
+    'expand_axis',
+    'is_int',
+    'is_sequence',
+    'ndot',
+    'replace_attr',
+    'text_enumeration',
+]
 
 
 def is_int(obj):

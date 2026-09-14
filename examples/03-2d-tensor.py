@@ -13,8 +13,8 @@
 #     limitations under the License.
 
 import numpy as np
-from btensor import Basis, Tensor
 
+from btensor import Basis, Tensor
 
 basis1 = (Basis(2), Basis(3))
 basis2 = (basis1[0].make_subbasis([1, 0]),

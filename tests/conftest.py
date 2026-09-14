@@ -13,14 +13,24 @@
 #     limitations under the License.
 
 from __future__ import annotations
-import operator
 
 import itertools
+import operator
+
+import numpy as np
+import pytest
 import scipy
 
 import btensor
-from btensor import TensorSum
-from fixtures import *
+from btensor import Basis, Tensor, TensorSum
+
+# Fixtures are shared through pytest's plugin mechanism rather than a star
+# import, so the names conftest itself uses stay explicit.
+pytest_plugins = [
+    "fixtures.basic_fixtures",
+    "fixtures.basis_fixtures",
+    "fixtures.tensor_fixtures",
+]
 
 
 class UserSlice:
@@ -190,25 +200,25 @@ def get_rootbasis_subbasis():
 
 
 @pytest.fixture(params=variable_sized_product([0, 1, 3]), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+                ids=lambda x: 'shape' + ''.join([str(y) for y in x]))
 def shape_incl_empty(request):
     return request.param
 
 
 @pytest.fixture(params=variable_sized_product([1, 3], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+                ids=lambda x: 'shape' + ''.join([str(y) for y in x]))
 def shape(request):
     return request.param
 
 
 @pytest.fixture(params=variable_sized_product([4, 5], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+                ids=lambda x: 'shape' + ''.join([str(y) for y in x]))
 def shape_large(request):
     return request.param
 
 
 @pytest.fixture(params=variable_sized_product([4, 5], minsize=2, maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+                ids=lambda x: 'shape' + ''.join([str(y) for y in x]))
 def shape_large_atleast2d(request):
     return request.param
 
@@ -234,7 +244,7 @@ def basis_for_shape(shape):
 
 
 @pytest.fixture(params=variable_sized_product([1, 3, -1, -3], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+                ids=lambda x: 'shape' + ''.join([str(y) for y in x]))
 def shape_and_basis(request):
     shape = tuple(abs(size) for size in request.param)
     basis = tuple(Basis(size) if size > 0 else btensor.nobasis for size in request.param)

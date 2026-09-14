@@ -13,12 +13,12 @@
 #     limitations under the License.
 import itertools
 
-import pytest
 import numpy as np
+import pytest
+from helper import TestCase
 
 import btensor
 from btensor import Tensor
-from helper import TestCase
 
 
 @pytest.fixture(params=['with-shape', ''], scope='module')

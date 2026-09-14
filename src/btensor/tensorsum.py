@@ -14,8 +14,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from numbers import Number
-from typing import *
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -46,7 +47,7 @@ class TensorSum:
         return info
 
     @property
-    def tensors(self) -> List[Tensor]:
+    def tensors(self) -> list[Tensor]:
         return self._tensors
 
     @property
@@ -86,7 +87,7 @@ class TensorSum:
             raise RuntimeError(f"{type(self).__name__} is empty")
         return self.evaluate().to_numpy()
 
-    def to_list(self) -> List[Tensor]:
+    def to_list(self) -> list[Tensor]:
         return self.tensors.copy()
 
     def dot(self, other: Tensor | TensorSum) -> TensorSum:

@@ -13,25 +13,24 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
-from collections import UserList
-from collections.abc import MutableSequence
+
+from collections.abc import MutableSequence, Sequence
+from typing import overload
 
 import numpy as np
 import scipy
 import scipy.linalg
 
-
 __all__ = [
-    'Matrix',
+    'ColumnPermutationMatrix',
     'GeneralMatrix',
-    'SymmetricMatrix',
-    'InverseMatrix',
     'IdentityMatrix',
+    'InverseMatrix',
+    'Matrix',
+    'MatrixProductList',
     'PermutationMatrix',
     'RowPermutationMatrix',
-    'ColumnPermutationMatrix',
-    'MatrixProductList',
+    'SymmetricMatrix',
     'to_numpy',
 ]
 
