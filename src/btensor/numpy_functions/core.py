@@ -46,6 +46,7 @@ def _empty_factory(numpy_func):
                 raise ValueError("cannot deduce size of nobasis. Specify shape explicitly")
             shape = tuple(b.size for b in basis)
         return btensor.Tensor(numpy_func(shape, *args, **kwargs), basis=basis)
+
     return func
 
 
@@ -58,6 +59,7 @@ def _empty_like_factory(func):
     def func_like(a, *args, **kwargs):
         a = _to_tensor(a)
         return func(a.basis, *args, shape=a.shape, **kwargs)
+
     return func_like
 
 
@@ -66,8 +68,9 @@ empty_like = _empty_like_factory(empty)
 ones_like = _empty_like_factory(ones)
 
 
-def _sum(a: ArrayLike | Tensor, axis: int | tuple[int, ...] | None = None,
-         out: np.ndarray | None = None) -> Tensor | Number:
+def _sum(
+    a: ArrayLike | Tensor, axis: int | tuple[int, ...] | None = None, out: np.ndarray | None = None
+) -> Tensor | Number:
     a = _to_tensor(a)
     value = a.to_numpy(copy=False).sum(axis=axis, out=out)
     if value.ndim == 0:
@@ -149,13 +152,12 @@ def trace(a: ArrayLike | Tensor, axis1: int = 0, axis2: int = 1) -> Tensor | Num
     return type(a)(value, basis=basis_new, variance=variance, numpy_compatible=a.numpy_compatible, copy_data=False)
 
 
-def moveaxis(a: ArrayLike | Tensor,
-             source: int | Sequence[int],
-             destination: int | Sequence[int],
-             name: str | None = None) -> Tensor:
+def moveaxis(
+    a: ArrayLike | Tensor, source: int | Sequence[int], destination: int | Sequence[int], name: str | None = None
+) -> Tensor:
     a = _to_tensor(a)
-    source = normalize_axis_tuple(source, a.ndim, 'source')
-    destination = normalize_axis_tuple(destination, a.ndim, 'destination')
+    source = normalize_axis_tuple(source, a.ndim, "source")
+    destination = normalize_axis_tuple(destination, a.ndim, "destination")
     values_orig = a.to_numpy(copy=False)
     values = np.moveaxis(values_orig, source=source, destination=destination)
     order = [n for n in range(a.ndim) if n not in source]

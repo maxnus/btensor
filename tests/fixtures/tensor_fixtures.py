@@ -27,11 +27,13 @@ if TYPE_CHECKING:
 
 
 class TestTensor:
-
-    def __init__(self,
-                 array: np.ndarray, basis: Basis | tuple[Basis, ...],
-                 variance: tuple[int, ...] | None = None,
-                 numpy_compatible: bool = True) -> None:
+    def __init__(
+        self,
+        array: np.ndarray,
+        basis: Basis | tuple[Basis, ...],
+        variance: tuple[int, ...] | None = None,
+        numpy_compatible: bool = True,
+    ) -> None:
         self.array = array
         self.basis = basis
         self.variance = variance
@@ -43,35 +45,35 @@ class TestTensor:
         return self.array.shape
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def get_test_tensor():
-    def tensor_factory(basis: NBasis,
-                       number: int = 1,
-                       hermitian: bool = False,
-                       numpy_compatible: bool = True) -> TestTensor | list[TestTensor]:
+    def tensor_factory(
+        basis: NBasis, number: int = 1, hermitian: bool = False, numpy_compatible: bool = True
+    ) -> TestTensor | list[TestTensor]:
         np.random.seed(0)
         result = []
         for _n in range(number):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
-                data = (data + data.T)/2
+                data = (data + data.T) / 2
             result.append(TestTensor(data, basis=basis, numpy_compatible=numpy_compatible))
         if number == 1:
             return result[0]
         return result
+
     return tensor_factory
 
 
-@pytest.fixture(params=[True, False], ids=['npc', 'nnpc'], scope='module')
+@pytest.fixture(params=[True, False], ids=["npc", "nnpc"], scope="module")
 def numpy_compatible(request):
     return request.param
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def test_tensor(get_test_tensor, basis_large, ndim, numpy_compatible):
     return get_test_tensor(basis=ndim * (basis_large,), numpy_compatible=numpy_compatible)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def test_tensor_2(get_test_tensor, basis_large, ndim, numpy_compatible):
     return get_test_tensor(basis=ndim * (basis_large,), numpy_compatible=numpy_compatible)

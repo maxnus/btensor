@@ -18,21 +18,21 @@ import pytest
 MAX_NDIM = 4
 
 
-@pytest.fixture(params=range(1, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+@pytest.fixture(params=range(1, MAX_NDIM + 1), scope="module", ids=lambda x: f"ndim{x}")
 def ndim(request):
     return request.param
 
 
-@pytest.fixture(params=range(2, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+@pytest.fixture(params=range(2, MAX_NDIM + 1), scope="module", ids=lambda x: f"ndim{x}")
 def ndim_atleast2(request):
     return request.param
 
 
-@pytest.fixture(params=range(3, MAX_NDIM+1), scope='module', ids=lambda x: f'ndim{x}')
+@pytest.fixture(params=range(3, MAX_NDIM + 1), scope="module", ids=lambda x: f"ndim{x}")
 def ndim_atleast3(request):
     return request.param
 
 
-@pytest.fixture(params=range(3), scope='module', ids=lambda x: f'seed{x}')
+@pytest.fixture(params=range(3), scope="module", ids=lambda x: f"seed{x}")
 def rng(request):
     return np.random.default_rng(request.param)

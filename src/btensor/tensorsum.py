@@ -62,7 +62,7 @@ class TensorSum:
         if allow_combine:
             for idx, tensor_super in enumerate(self.tensors):
                 if tensor_super.basis.is_spanning(tensor.basis):
-                    self.tensors[idx] = (tensor_super + tensor)
+                    self.tensors[idx] = tensor_super + tensor
                     return
         self.tensors.append(tensor)
 
@@ -112,9 +112,9 @@ class TensorSum:
     def __mul__(self, other: Number) -> TensorSum:
         if not isinstance(other, Number):
             return NotImplemented
-        return TensorSum([t*other for t in self.tensors])
+        return TensorSum([t * other for t in self.tensors])
 
     def __truediv__(self, other: Number) -> TensorSum:
         if not isinstance(other, Number):
             return NotImplemented
-        return TensorSum([t/other for t in self.tensors])
+        return TensorSum([t / other for t in self.tensors])

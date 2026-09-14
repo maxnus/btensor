@@ -36,12 +36,12 @@ KeyLike: TypeAlias = IBasis | slice | EllipsisType
 
 
 class BasisTuple(tuple):
-
     def __init__(self, args: NBasis) -> None:
         for arg in args:
             if not _is_basis_or_nobasis(arg):
-                raise TypeError(f"{type(self).__name__} can only contain elements of type {Basis.__name__} or {nobasis}"
-                                f" (not {arg})")
+                raise TypeError(
+                    f"{type(self).__name__} can only contain elements of type {Basis.__name__} or {nobasis} (not {arg})"
+                )
 
     @classmethod
     def create(cls, basis: NBasis) -> BasisTuple:
@@ -52,10 +52,9 @@ class BasisTuple(tuple):
         return cls(basis)
 
     @classmethod
-    def create_from_default(cls,
-                            basis: KeyLike | tuple[KeyLike, ...],
-                            default: BasisTuple,
-                            leftpad: bool = False) -> BasisTuple:
+    def create_from_default(
+        cls, basis: KeyLike | tuple[KeyLike, ...], default: BasisTuple, leftpad: bool = False
+    ) -> BasisTuple:
         if basis == slice(None) or basis == Ellipsis:
             return default
         if isinstance(basis, slice):
@@ -72,19 +71,19 @@ class BasisTuple(tuple):
                 basis += (Ellipsis,)
         if Ellipsis in basis:
             idx = basis.index(Ellipsis)
-            basis = basis[:idx] + nmissing*(slice(None),) + basis[idx+1:]
+            basis = basis[:idx] + nmissing * (slice(None),) + basis[idx + 1 :]
         if len(basis) != len(default):
             raise RuntimeError
 
         basis = [b1 if b1 != slice(None) else b0 for b1, b0 in zip(basis, default)]
-        #for bas in basis:
+        # for bas in basis:
         #    if not isinstance(bas, BasisInterface):
         #        raise TypeError(f"type {BasisInterface} required, not {type(bas)}")
         return cls(basis)
 
     @property
     def shape(self) -> tuple[int | None, ...]:
-        return tuple(getattr(basis, 'size', None) for basis in self)
+        return tuple(getattr(basis, "size", None) for basis in self)
 
     @overload
     def __getitem__(self, key: int) -> IBasis: ...
@@ -109,8 +108,9 @@ class BasisTuple(tuple):
     def get_common_basistuple(self, other: BasisTuple) -> BasisTuple:
         if not self.is_compatible_with(other):
             raise ValueError(f"Basistuple with shape {self.shape} is not compatible with shape {other.shape}")
-        common_parents = tuple(get_common_parent(basis_self, basis_other)
-                               for (basis_self, basis_other) in zip(self, other))
+        common_parents = tuple(
+            get_common_parent(basis_self, basis_other) for (basis_self, basis_other) in zip(self, other)
+        )
         return type(self)(common_parents)
 
     def update_with(self, update: tuple[IBasis | None], check_size: bool = True) -> BasisTuple:
@@ -134,4 +134,3 @@ class BasisTuple(tuple):
             if basis_other.space > basis_self.space:
                 return False
         return True
-

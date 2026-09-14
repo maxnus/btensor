@@ -19,8 +19,7 @@ from btensor import decomp
 
 
 class TestDecomp(TestCase):
-
-    @pytest.mark.parametrize('dim', [3, 4, 5])
+    @pytest.mark.parametrize("dim", [3, 4, 5])
     def test_hosvd(self, get_tensor, dim):
         tensor, _nparray = get_tensor(ndim=dim)
         hosvd = decomp.hosvd(tensor)

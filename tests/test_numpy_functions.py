@@ -21,7 +21,7 @@ import btensor
 from btensor import Tensor
 
 
-@pytest.fixture(params=['with-shape', ''], scope='module')
+@pytest.fixture(params=["with-shape", ""], scope="module")
 def with_shape(request, shape_and_basis):
     if request.param:
         return shape_and_basis[0]
@@ -29,9 +29,11 @@ def with_shape(request, shape_and_basis):
 
 
 class TestNumpyFunctions(TestCase):
-
-    @pytest.mark.parametrize('funcs', [(btensor.empty, np.empty), (btensor.zeros, np.zeros), (btensor.ones, np.ones)],
-                             ids=['empty', 'zeros', 'ones'])
+    @pytest.mark.parametrize(
+        "funcs",
+        [(btensor.empty, np.empty), (btensor.zeros, np.zeros), (btensor.ones, np.ones)],
+        ids=["empty", "zeros", "ones"],
+    )
     def test_empty_zeros_ones(self, funcs, shape_and_basis, with_shape):
         bt_func, np_func = funcs
         shape, basis = shape_and_basis
@@ -47,8 +49,11 @@ class TestNumpyFunctions(TestCase):
             return
         self.assert_allclose(tensor, expected)
 
-    @pytest.mark.parametrize('funcs', [(btensor.empty_like, np.empty_like), (btensor.zeros_like, np.zeros_like),
-                                       (btensor.ones_like, np.ones_like)], ids=['empty', 'zeros', 'ones'])
+    @pytest.mark.parametrize(
+        "funcs",
+        [(btensor.empty_like, np.empty_like), (btensor.zeros_like, np.zeros_like), (btensor.ones_like, np.ones_like)],
+        ids=["empty", "zeros", "ones"],
+    )
     def test_empty_zeros_ones_like(self, funcs, shape_and_basis):
         bt_func, np_func = funcs
         shape, basis = shape_and_basis
@@ -105,7 +110,7 @@ class TestNumpyFunctions(TestCase):
         basis_nonorth = basis_orth.make_subbasis(rng.random((n, n)))
         tensor = btensor.Tensor(rng.random((n, n)), basis=(basis_orth, basis_orth))
         expected = tensor.trace()
-        result = btensor.einsum('ii->', tensor[basis_nonorth, basis_nonorth])
+        result = btensor.einsum("ii->", tensor[basis_nonorth, basis_nonorth])
         self.assert_allclose(expected, result, atol=1e-12, rtol=0)
 
     def test_trace_with_axis(self, ndim_axis1_axis2, get_tensor):
@@ -124,10 +129,10 @@ class TestNumpyFunctions(TestCase):
         eig_expected = np.linalg.eigh(np_array)[0]
         eig, eigv = btensor.linalg.eigh(tensor)
         self.assert_allclose(eig, eig_expected)
-        eigmat = btensor.Tensor(np.diag(eig.to_numpy()), basis=2*eig.basis)
-        self.assert_allclose(btensor.einsum('ai,ij,bj->ab', eigv, eigmat, eigv), np_array)
+        eigmat = btensor.Tensor(np.diag(eig.to_numpy()), basis=2 * eig.basis)
+        self.assert_allclose(btensor.einsum("ai,ij,bj->ab", eigv, eigmat, eigv), np_array)
 
-    @pytest.mark.parametrize('dest', list(itertools.permutations([0, 1, 2])), ids=str)
+    @pytest.mark.parametrize("dest", list(itertools.permutations([0, 1, 2])), ids=str)
     def test_moveaxis_3d(self, dest, get_tensor, ndim_atleast2):
         tensor, np_array = get_tensor(ndim=3)
         # Remove a bit along the first axis, to make array non-square:
@@ -141,7 +146,6 @@ class TestNumpyFunctions(TestCase):
 
 
 class TestDot(TestCase):
-
     def test_dot_11(self):
         n = 30
         a = np.random.rand(n)

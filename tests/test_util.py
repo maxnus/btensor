@@ -22,7 +22,6 @@ from btensor import util
 
 
 class TestPermutationMatrix(TestCase):
-
     def test_combine_permutation_matrices(self):
         n, m, k = 10, 8, 6
         # Column-column
@@ -34,8 +33,8 @@ class TestPermutationMatrix(TestCase):
         # Row-row
         pr1 = np.random.permutation(range(n))[:m]
         pr2 = np.random.permutation(range(m))[:k]
-        r1 = util.RowPermutationMatrix(permutation=pr1, size=n)     # m x n
-        r2 = util.RowPermutationMatrix(permutation=pr2, size=m)     # k x m
+        r1 = util.RowPermutationMatrix(permutation=pr1, size=n)  # m x n
+        r2 = util.RowPermutationMatrix(permutation=pr2, size=m)  # k x m
         self.assert_allclose(util.MatrixProductList((r2, r1)).evaluate(), np.dot(r2.to_numpy(), r1.to_numpy()))
         # Column-row
         self.assert_allclose(util.MatrixProductList((c1, r1)).evaluate(), np.dot(c1.to_numpy(), r1.to_numpy()))
@@ -49,16 +48,25 @@ class TestPermutationMatrix(TestCase):
         np.random.seed(0)
         size = 5
         return [
-            [], [0], [4],
-            np.arange(size), np.arange(5), np.random.permutation(range(size))[:5],
-            slice(None), slice(0, 5), slice(5, size), slice(None, None, 2), slice(None, None, -2), slice(3, 8)
+            [],
+            [0],
+            [4],
+            np.arange(size),
+            np.arange(5),
+            np.random.permutation(range(size))[:5],
+            slice(None),
+            slice(0, 5),
+            slice(5, size),
+            slice(None, None, 2),
+            slice(None, None, -2),
+            slice(3, 8),
         ]
 
     @pytest.fixture(params=get_permutation_matrix_input.__func__(), ids=str)
     def permutation_matrix_input(self, request):
         return request.param
 
-    @pytest.fixture(params=['row', 'column'])
+    @pytest.fixture(params=["row", "column"])
     def permtuation_matrix_type(self, request):
         return request.param
 
@@ -66,10 +74,10 @@ class TestPermutationMatrix(TestCase):
         perm = permutation_matrix_input
         n = 5
         m = len(np.arange(n)[perm])
-        if permtuation_matrix_type == 'column':
+        if permtuation_matrix_type == "column":
             p = util.ColumnPermutationMatrix(permutation=perm, size=n)
             pt = p.T
-        elif permtuation_matrix_type == 'row':
+        elif permtuation_matrix_type == "row":
             pt = util.RowPermutationMatrix(permutation=perm, size=n)
             p = pt.T
         # Test transpose
@@ -87,8 +95,7 @@ class TestPermutationMatrix(TestCase):
 
 
 class TestMatrixProduct(TestCase):
-
-    @pytest.fixture(params=['', 'simplify'])
+    @pytest.fixture(params=["", "simplify"])
     def matrix_product_simplify(self, request):
         return request.param
 
@@ -96,16 +103,17 @@ class TestMatrixProduct(TestCase):
     def get_matrices():
         n = 10
         a = util.GeneralMatrix(np.random.rand(n, n))
-        matrices = {'i': util.IdentityMatrix(n),
-                    'a': a,
-                    'b': a.inverse,
-                    'c': util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n),
-                    'r': util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
-                    }
+        matrices = {
+            "i": util.IdentityMatrix(n),
+            "a": a,
+            "b": a.inverse,
+            "c": util.ColumnPermutationMatrix(permutation=np.random.permutation(n), size=n),
+            "r": util.RowPermutationMatrix(permutation=np.random.permutation(n), size=n),
+        }
         matrices = [(k, v) for (k, v) in matrices.items()]
         for _i, args in enumerate(powerset(matrices, include_empty=False)):
             for perm in itertools.permutations(args):
-                name = ''.join([p[0] for p in perm])
+                name = "".join([p[0] for p in perm])
                 mats = [p[1] for p in perm]
                 yield name, mats
 
@@ -116,7 +124,7 @@ class TestMatrixProduct(TestCase):
     def test_chained_dot(self, matrices, matrix_product_simplify, atol=1e-10):
         matrices = matrices[1]
         args_ref = [x for x in matrices if x is not None]
-        args_ref = [(x.to_numpy() if hasattr(x, 'to_numpy') else x) for x in args_ref]
+        args_ref = [(x.to_numpy() if hasattr(x, "to_numpy") else x) for x in args_ref]
         if len(args_ref) == 0:
             ref = None
         elif len(args_ref) == 1:

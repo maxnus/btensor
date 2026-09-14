@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class Space:
-
     #: Default tolerance applied to eigendecompositions
     DEFAULT_TOL = 1e-12
 
@@ -135,7 +134,7 @@ class Space:
         if (eq := self.trivially_equal(other)) is not None:
             return eq
         # Perform SVD to determine relationship
-        #sv = self._singular_values_of_overlap(other)
+        # sv = self._singular_values_of_overlap(other)
         dist = self._distance_from_one_eigenvalue(other)
         return dist < self._tol
 
@@ -148,7 +147,7 @@ class Space:
         if (lt := self.trivially_less_than(other)) is not None:
             return lt
         # Perform SVD to determine relationship
-        #sv = self._singular_values_of_overlap(other)
+        # sv = self._singular_values_of_overlap(other)
         dist = self._distance_from_one_eigenvalue(other)
         return dist < self._tol
 

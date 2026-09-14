@@ -22,45 +22,46 @@ import os
 import sys
 from operator import attrgetter
 
-sys.path.insert(1, os.path.abspath('../../src'))
+sys.path.insert(1, os.path.abspath("../../src"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BTensor'
-copyright = '2023, Max Nusspickel'
-author = 'Max Nusspickel'
+project = "BTensor"
+copyright = "2023, Max Nusspickel"
+author = "Max Nusspickel"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.coverage',
-              'sphinx.ext.napoleon',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.autosectionlabel',
-              'sphinx.ext.linkcode',
-              ]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.linkcode",
+]
 
-templates_path = ['_templates']
-exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
-html_css_files = ['css/custom.css']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
 
 # Autodoc
 
 autodoc_default_options = {
-    'undoc-members': True,
+    "undoc-members": True,
 }
 
-autodoc_member_order = 'groupwise'
-autodoc_typehints = 'description'
+autodoc_member_order = "groupwise"
+autodoc_typehints = "description"
 
 # Autosummary
 
@@ -72,8 +73,9 @@ autosectionlabel_prefix_document = True
 
 # Linkcode
 
+
 def linkcode_resolve(domain, info):
-    package = 'btensor'
+    package = "btensor"
     if domain not in ("py", "pyx"):
         return
     if not info.get("module") or not info.get("fullname"):
@@ -100,10 +102,10 @@ def linkcode_resolve(domain, info):
         return
 
     fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
-    url_fmt = 'https://github.com/maxnus/btensor/blob/main/src/{package}/{path}'
+    url_fmt = "https://github.com/maxnus/btensor/blob/main/src/{package}/{path}"
     try:
         lineno = inspect.getsourcelines(obj)[1]
-        url_fmt += '#L{lineno}'
+        url_fmt += "#L{lineno}"
         return url_fmt.format(package=package, path=fn, lineno=lineno)
     except OSError:
         return url_fmt.format(package=package, path=fn)

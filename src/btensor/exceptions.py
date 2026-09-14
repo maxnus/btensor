@@ -26,6 +26,5 @@ class VarianceError(BTensorError):
 
 
 class BasisDependentOperationError(BasisError):
-
     def __init__(self, msg: str = "basis dependent operation not allowed for mode 'tensor'", *args) -> None:
         super().__init__(msg, *args)

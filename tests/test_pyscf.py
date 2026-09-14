@@ -23,9 +23,10 @@ from helper import TestCase, rand_orth_mat
 import btensor
 from btensor import Cotensor, Tensor
 
-scf_data = namedtuple('scf_data', ('nao', 'nmo', 'nocc', 'nvir', 'mo_coeff', 'mo_energy', 'mo_occ', 'ovlp', 'fock',
-                                   'dm'))
-cc_data = namedtuple('cc_data', ('mf', 'dm', 't1', 't2', 'l1', 'l2'))
+scf_data = namedtuple(
+    "scf_data", ("nao", "nmo", "nocc", "nvir", "mo_coeff", "mo_energy", "mo_occ", "ovlp", "fock", "dm")
+)
+cc_data = namedtuple("cc_data", ("mf", "dm", "t1", "t2", "l1", "l2"))
 
 
 def make_scf_data(nao: int, nocc: int, nonorth: float):
@@ -39,7 +40,7 @@ def make_scf_data(nao: int, nocc: int, nonorth: float):
     ovlp = np.linalg.inv(sinv)
     # Test biorthogonality
     csc = np.linalg.multi_dot((mo_coeff.T, ovlp, mo_coeff))
-    assert np.allclose(csc-np.identity(nao), 0)
+    assert np.allclose(csc - np.identity(nao), 0)
     fock = np.linalg.multi_dot((ovlp, mo_coeff, np.diag(mo_energy), mo_coeff.T, ovlp))
     dm = np.dot(mo_coeff * mo_occ[None], mo_coeff.T)
     return scf_data(nao, nmo, nocc, nvir, mo_coeff, mo_energy, mo_occ, ovlp, fock, dm)
@@ -50,7 +51,7 @@ def make_cc_data(scf):
     dm = np.diag(scf.mo_occ) + np.random.uniform(-0.1, 0.1, (scf.nmo, scf.nmo))
     e, v = np.linalg.eigh(dm)
     e = np.clip(e, 0.0, 2.0)
-    dm = np.dot(v*e[None], v.T)
+    dm = np.dot(v * e[None], v.T)
     nvir = scf.nmo - scf.nocc
     t1 = np.random.random((scf.nocc, nvir))
     l1 = np.random.random((scf.nocc, nvir))
@@ -59,75 +60,75 @@ def make_cc_data(scf):
     return cc_data(scf, dm, t1=t1, t2=t2, l1=l1, l2=l2)
 
 
-@pytest.fixture(params=[0, 0.1], ids=['Orthogonal', 'NonOrthogonal'], scope='module')
+@pytest.fixture(params=[0, 0.1], ids=["Orthogonal", "NonOrthogonal"], scope="module")
 def mf(request):
     return make_scf_data(nao=30, nocc=10, nonorth=request.param)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def cc(mf):
     return make_cc_data(mf)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def ao(mf):
     return btensor.Basis(mf.nao, metric=mf.ovlp)
 
 
-@pytest.fixture(params=[True, False], ids=['OrthKw', ''], scope='module')
+@pytest.fixture(params=[True, False], ids=["OrthKw", ""], scope="module")
 def mo_orthonormal_keyword(request):
     return request.param
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def mo(mf, ao, mo_orthonormal_keyword):
     return btensor.Basis(mf.mo_coeff, parent=ao, orthonormal=mo_orthonormal_keyword)
 
 
 def get_subbasis_definition(subtype, start, stop, size):
-    if subtype == 'slice':
+    if subtype == "slice":
         return slice(start, stop)
-    if subtype == 'indices':
+    if subtype == "indices":
         return list(range(start, stop))
-    if subtype == 'mask':
+    if subtype == "mask":
         indices = np.arange(size)
         return (np.logical_and(indices >= start, indices < stop)).tolist()
-    if subtype == 'rotation':
+    if subtype == "rotation":
         return np.eye(size)[:, start:stop]
     raise ValueError(subtype)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def mo_occ(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, 0, mf.nocc, mf.nmo)
     return mo.make_subbasis(definition, orthonormal=mo_orthonormal_keyword)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def mo_vir(mf, mo, subbasis_type, mo_orthonormal_keyword):
     definition = get_subbasis_definition(subbasis_type, mf.nocc, mf.nmo, mf.nmo)
     return mo.make_subbasis(definition, orthonormal=mo_orthonormal_keyword)
 
 
-@pytest.fixture(params=['ao', 'ao_from_mo'], scope='module')
+@pytest.fixture(params=["ao", "ao_from_mo"], scope="module")
 def ao2(request, mf, ao, mo):
-    if request.param == 'ao':
+    if request.param == "ao":
         return ao
     r = np.dot(mf.mo_coeff.T, mf.ovlp)
     return btensor.Basis(r, parent=mo)
 
 
-@pytest.fixture(params=['left', 'right'], scope='module')
+@pytest.fixture(params=["left", "right"], scope="module")
 def double_or(request):
     def op(x, y, z):
-        if request.param == 'left':
+        if request.param == "left":
             return (x | y) | z
         return x | (y | z)
+
     return op
 
 
 class TestSCF(TestCase):
-
     def test_overlap(self, mf, ao2, mo):
         c = mf.mo_coeff
         s = mf.ovlp
@@ -200,7 +201,6 @@ class TestSCF(TestCase):
 
 
 class TestCC(TestCase):
-
     def test_dm_mo(self, mf, cc):
         nocc = mf.nocc
         occ = np.s_[:nocc]
@@ -217,15 +217,15 @@ class TestCC(TestCase):
         bdm_ov = btensor.Tensor(dm_ov, basis=(bo, bv))
         bdm_vo = btensor.Tensor(dm_vo, basis=(bv, bo))
         bdm_vv = btensor.Tensor(dm_vv, basis=(bv, bv))
-        bdm = (bdm_oo + bdm_ov + bdm_vo + bdm_vv)
+        bdm = bdm_oo + bdm_ov + bdm_vo + bdm_vv
         self.assert_allclose(bdm._data, dm)
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     @staticmethod
     def t2s(cc, mo_occ, mo_vir):
         return btensor.Tensor(cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     @staticmethod
     def t2b(t2s, mo):
         return t2s[mo, mo, mo, mo]
@@ -239,11 +239,11 @@ class TestCC(TestCase):
         self.assert_allclose(t2b - t2s, 0)
 
     def test_multiplication(self, t2s, t2b, mo):
-        self.assert_allclose((t2s*2).cob[mo, mo, mo, mo], t2b*2)
-        self.assert_allclose((2*t2s).cob[mo, mo, mo, mo], 2*t2b)
+        self.assert_allclose((t2s * 2).cob[mo, mo, mo, mo], t2b * 2)
+        self.assert_allclose((2 * t2s).cob[mo, mo, mo, mo], 2 * t2b)
 
     def test_division(self, t2s, t2b, mo):
-        self.assert_allclose((t2s/2).cob[mo, mo, mo, mo], t2b/2)
+        self.assert_allclose((t2s / 2).cob[mo, mo, mo, mo], t2b / 2)
 
     def test_trace(self, t2s, t2b, mo):
         self.assert_allclose(t2s.trace().trace(), t2s[mo, mo].trace().trace())
@@ -263,7 +263,6 @@ class TestCC(TestCase):
 
 
 class TestCluster(TestCase):
-
     allclose_atol = 1e-10
 
     np_einsum = functools.partial(np.einsum, optimize=True)
@@ -283,12 +282,13 @@ class TestCluster(TestCase):
             b_vir = mo_vir.make_subbasis(d_vir, orthonormal=mo_orthonormal_keyword)
             r_occ = subbasis_definition_to_matrix(d_occ, cc.mf.nocc)
             r_vir = subbasis_definition_to_matrix(d_vir, cc.mf.nvir)
-            t1 = self.np_einsum('ia,iI,aA->IA', cc.t1, r_occ, r_vir)
-            t2 = self.np_einsum('ijab,iI,jJ,aA,bB->IJAB', cc.t2, r_occ, r_occ, r_vir, r_vir)
+            t1 = self.np_einsum("ia,iI,aA->IA", cc.t1, r_occ, r_vir)
+            t2 = self.np_einsum("ijab,iI,jJ,aA,bB->IJAB", cc.t2, r_occ, r_occ, r_vir, r_vir)
             tensor_t1 = Tensor(t1, basis=(b_occ, b_vir))
             tensor_t2 = Tensor(t2, basis=(b_occ, b_occ, b_vir, b_vir))
-            cluster = namedtuple('cluster', ('r_occ', 'r_vir', 't1', 't2', 'tensor_t1', 'tensor_t2'))
+            cluster = namedtuple("cluster", ("r_occ", "r_vir", "t1", "t2", "tensor_t1", "tensor_t2"))
             return cluster(r_occ, r_vir, t1, t2, tensor_t1, tensor_t2)
+
         return make_cluster
 
     @pytest.fixture(params=[None, 1e-14])
@@ -309,11 +309,11 @@ class TestCluster(TestCase):
             t1x = t1x[:, ao]
         if in_ao_basis[1]:
             t1y = t1y[:, ao]
-        with timings('PySCF'):
+        with timings("PySCF"):
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
-            expected = self.np_einsum('ia,JB,aB->iJ', cx.t1, cy.t1, s_vir)
-        with timings('BTensor'):
-            result = self.bt_einsum('ia,ja->ij', t1x, t1y, intersect_tol=intersect_tol).to_numpy()
+            expected = self.np_einsum("ia,JB,aB->iJ", cx.t1, cy.t1, s_vir)
+        with timings("BTensor"):
+            result = self.bt_einsum("ia,ja->ij", t1x, t1y, intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_contraction_t1_ab(self, ao, cc, sizes, get_cluster, in_ao_basis, intersect_tol, timings):
@@ -326,11 +326,11 @@ class TestCluster(TestCase):
             t1x = t1x[ao]
         if in_ao_basis[1]:
             t1y = t1y[ao]
-        with timings('PySCF'):
+        with timings("PySCF"):
             s_occ = np.dot(cx.r_occ.T, cy.r_occ)
-            expected = self.np_einsum('ia,JB,iJ->aB', cx.t1, cy.t1, s_occ)
-        with timings('BTensor'):
-            result = self.bt_einsum('ia,ib->ab', t1x, t1y, intersect_tol=intersect_tol).to_numpy()
+            expected = self.np_einsum("ia,JB,iJ->aB", cx.t1, cy.t1, s_occ)
+        with timings("BTensor"):
+            result = self.bt_einsum("ia,ib->ab", t1x, t1y, intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_contraction_t2_ik(self, ao, cc, sizes, get_cluster, in_ao_basis, intersect_tol, timings):
@@ -343,12 +343,12 @@ class TestCluster(TestCase):
             t2x = t2x[:, ao, ao, ao]
         if in_ao_basis[1]:
             t2y = t2y[:, ao, ao, ao]
-        with timings('PySCF'):
+        with timings("PySCF"):
             s_occ = np.dot(cx.r_occ.T, cy.r_occ)
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
-            expected = self.np_einsum('ijab,KJAB,jJ,aA,bB->iK', cx.t2, cy.t2, s_occ, s_vir, s_vir)
-        with timings('BTensor'):
-           result = self.bt_einsum('ijab,kjab->ik', t2x, t2y, intersect_tol=intersect_tol).to_numpy()
+            expected = self.np_einsum("ijab,KJAB,jJ,aA,bB->iK", cx.t2, cy.t2, s_occ, s_vir, s_vir)
+        with timings("BTensor"):
+            result = self.bt_einsum("ijab,kjab->ik", t2x, t2y, intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_contraction_t2_ac(self, ao, cc, sizes, get_cluster, in_ao_basis, intersect_tol, timings):
@@ -361,12 +361,12 @@ class TestCluster(TestCase):
             t2x = t2x[ao, ao, :, ao]
         if in_ao_basis[1]:
             t2y = t2y[ao, ao, :, ao]
-        with timings('PySCF'):
+        with timings("PySCF"):
             s_occ = np.dot(cx.r_occ.T, cy.r_occ)
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
-            expected = self.np_einsum('ijab,IJCB,iI,jJ,bB->aC', cx.t2, cy.t2, s_occ, s_occ, s_vir)
-        with timings('BTensor'):
-            result = self.bt_einsum('ijab,ijcb->ac', t2x, t2y, intersect_tol=intersect_tol).to_numpy()
+            expected = self.np_einsum("ijab,IJCB,iI,jJ,bB->aC", cx.t2, cy.t2, s_occ, s_occ, s_vir)
+        with timings("BTensor"):
+            result = self.bt_einsum("ijab,ijcb->ac", t2x, t2y, intersect_tol=intersect_tol).to_numpy()
         self.assert_allclose(result, expected)
 
     @pytest.mark.skip("Basis dependent operation")
@@ -374,12 +374,12 @@ class TestCluster(TestCase):
         size_occ_x, size_vir_x, size_occ_y, size_vir_y = sizes
         cx = get_cluster(size_occ_x, size_vir_x)
         cy = get_cluster(size_occ_y, size_vir_y)
-        with timings('PySCF'):
+        with timings("PySCF"):
             s_occ = np.dot(cx.r_occ.T, cy.r_occ)
             s_vir = np.dot(cx.r_vir.T, cy.r_vir)
-            expected = self.np_einsum('ijab,KJAB,jJ,bB,xa,xA->iKx', cx.t2, cy.t2, s_occ, s_vir, cx.r_vir, cy.r_vir)
-        with timings('BTensor'):
-            result = self.bt_einsum('ijab,kjab->ika', cx.tensor_t2, cy.tensor_t2,
-                                    intersect_tol=intersect_tol).to_numpy()
+            expected = self.np_einsum("ijab,KJAB,jJ,bB,xa,xA->iKx", cx.t2, cy.t2, s_occ, s_vir, cx.r_vir, cy.r_vir)
+        with timings("BTensor"):
+            result = self.bt_einsum(
+                "ijab,kjab->ika", cx.tensor_t2, cy.tensor_t2, intersect_tol=intersect_tol
+            ).to_numpy()
         self.assert_allclose(result, expected)
-

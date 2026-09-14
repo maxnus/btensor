@@ -64,7 +64,7 @@ class _NoBasis:
 
 nobasis = _NoBasis()
 
-IBasis: TypeAlias = Union['Basis', _NoBasis]
+IBasis: TypeAlias = Union["Basis", _NoBasis]
 NBasis: TypeAlias = IBasis | Sequence[IBasis]
 BasisArgument: TypeAlias = Sequence[int] | Sequence[bool] | slice | np.ndarray
 
@@ -119,19 +119,22 @@ class Basis:
             with an orthonormal parent basis, defined in terms of a permutation + selection (slice or 1D sequence).
             Default: None.
     """
+
     # Private (inheriting classes will have their own version)
     # ID used for next created Basis object:
     __next_id = 1
     # Keep a weak reference of all created bases:
     __basis_by_id = weakref.WeakValueDictionary()
 
-    def __init__(self,
-                 argument: int | BasisArgument,
-                 *,
-                 parent: Basis | None = None,
-                 metric: np.ndarray | None = None,
-                 name: str | None = None,
-                 orthonormal: bool | None = None) -> None:
+    def __init__(
+        self,
+        argument: int | BasisArgument,
+        *,
+        parent: Basis | None = None,
+        metric: np.ndarray | None = None,
+        name: str | None = None,
+        orthonormal: bool | None = None,
+    ) -> None:
         """Initialize new Basis object."""
         super().__init__()
         self._parent = parent
@@ -143,12 +146,13 @@ class Basis:
             self._root = parent.root
         self._id = self._get_next_id()
         if name is None:
-            name = f'Basis{self._id}'
+            name = f"Basis{self._id}"
         self._name = name
         self._matrix = self._argument_to_matrix(argument)
         if orthonormal is None:
-            orthonormal = (self.is_root() and metric is None) or (not self.is_root() and self.parent.is_orthonormal
-                                                                  and isinstance(self._matrix, ColumnPermutationMatrix))
+            orthonormal = (self.is_root() and metric is None) or (
+                not self.is_root() and self.parent.is_orthonormal and isinstance(self._matrix, ColumnPermutationMatrix)
+            )
         if metric is None:
             if orthonormal:
                 metric = IdentityMatrix(self.size)
@@ -166,7 +170,7 @@ class Basis:
         self._intersect_cache: dict[tuple[float | int, ...], int] = {}
         self.__basis_by_id[self.id] = self
 
-    _T = TypeVar('T')
+    _T = TypeVar("T")
 
     @classmethod
     def get_by_id(cls, id: int, default: _T = None) -> Basis | _T:
@@ -190,8 +194,9 @@ class Basis:
         # Permutation + selection
         elif isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
             # Convert boolean iterable to indices:
-            if ((isinstance(argument, (tuple, list)) or array_like(argument)) and
-                    any([isinstance(x, (bool, np.bool_)) for x in argument])):
+            if (isinstance(argument, (tuple, list)) or array_like(argument)) and any(
+                [isinstance(x, (bool, np.bool_)) for x in argument]
+            ):
                 argument = np.arange(self.parent.size)[argument]
             matrix = ColumnPermutationMatrix(self.parent.size, argument)
         elif array_like(argument) and argument.ndim == 2:
@@ -225,7 +230,7 @@ class Basis:
         return next_id
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
+        return f"{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})"
 
     @property
     def name(self) -> str:
@@ -267,12 +272,14 @@ class Basis:
 
     # --- Make new basis
 
-    def make_subbasis(self,
-                      argument: BasisArgument,
-                      *,
-                      metric: np.ndarray | None = None,
-                      name: str | None = None,
-                      orthonormal: bool = False) -> Basis:
+    def make_subbasis(
+        self,
+        argument: BasisArgument,
+        *,
+        metric: np.ndarray | None = None,
+        name: str | None = None,
+        orthonormal: bool = False,
+    ) -> Basis:
         """Make a new basis with coefficients or indices in reference to the current basis.
 
         Args:
@@ -286,11 +293,7 @@ class Basis:
         """
         return type(self)(argument, parent=self, metric=metric, name=name, orthonormal=orthonormal)
 
-    def make_union_basis(self,
-                         *other: Basis,
-                         tol: float = 1e-12,
-                         name: str | None = None,
-                         cache: bool = True) -> Basis:
+    def make_union_basis(self, *other: Basis, tol: float = 1e-12, name: str | None = None, cache: bool = True) -> Basis:
         """Make the smallest orthonormal basis, which spans both the basis and one or more other bases.
 
         Args:
@@ -317,8 +320,8 @@ class Basis:
         m = self._projector_in_basis(common_parent)
         for other_basis in other:
             m += other_basis._projector_in_basis(common_parent)
-        #metric = common_parent.metric.to_numpy() if not common_parent.is_orthonormal else None
-        #e, v = scipy.linalg.eigh(m, b=metric)
+        # metric = common_parent.metric.to_numpy() if not common_parent.is_orthonormal else None
+        # e, v = scipy.linalg.eigh(m, b=metric)
         # metric should not be here?
         e, v = np.linalg.eigh(m)
         v = v[:, e >= tol]
@@ -328,12 +331,9 @@ class Basis:
             self._union_cache[cache_key] = union.id
         return union
 
-    def make_intersect_basis(self,
-                             *other: Basis,
-                             tol: float = 1e-12,
-                             name: str | None = None,
-                             use_svd: bool = True,
-                             cache: bool = True) -> Basis:
+    def make_intersect_basis(
+        self, *other: Basis, tol: float = 1e-12, name: str | None = None, use_svd: bool = True, cache: bool = True
+    ) -> Basis:
         """Make the smallest orthonormal basis, which spans the intersecting space of both the basis and another basis.
 
         Args:
@@ -488,15 +488,15 @@ class Basis:
         if len(other) > 1:
             parent = self.get_common_parent(other[0])
             return parent.get_common_parent(*other[1:])
-            #common_parent = other[-2].get_common_parent(other[-1])
-            #return self.get_common_parent(*(other[:-2] + (common_parent,)))
+            # common_parent = other[-2].get_common_parent(other[-1])
+            # return self.get_common_parent(*(other[:-2] + (common_parent,)))
         if len(other) != 1:
             raise ValueError
         other = other[0]
         self._check_same_root(other)
         parents_self = self.get_parents(include_self=True)[::-1]
         parents_other = other.get_parents(include_self=True)[::-1]
-        assert (parents_self[0] is parents_other[0])
+        assert parents_self[0] is parents_other[0]
         common_parent = None
         for i, p in enumerate(parents_self):
             if i >= len(parents_other) or p != parents_other[i]:
@@ -543,9 +543,9 @@ class Basis:
     # cached. That is accepted here: the cache is bounded and Basis objects are
     # long-lived by design (they are identified by a process-wide ID).
     @lru_cache(_transformation_cache_size)  # noqa: B019
-    def get_transformation(self,
-                           other: Basis,
-                           variance: tuple[int, int] = (_Variance.COVARIANT, _Variance.COVARIANT)) -> Tensor:
+    def get_transformation(
+        self, other: Basis, variance: tuple[int, int] = (_Variance.COVARIANT, _Variance.COVARIANT)
+    ) -> Tensor:
         """Get transformation matrix to another basis as a Tensor with general variance.
 
         Args:
@@ -592,4 +592,3 @@ class Basis:
             Transformation matrix with variance (-1, 1).
         """
         return other.get_transformation(self, variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
-

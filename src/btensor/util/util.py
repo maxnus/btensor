@@ -27,15 +27,15 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'array_like',
-    'atleast_1d',
-    'check_input',
-    'expand_axis',
-    'is_int',
-    'is_sequence',
-    'ndot',
-    'replace_attr',
-    'text_enumeration',
+    "array_like",
+    "atleast_1d",
+    "check_input",
+    "expand_axis",
+    "is_int",
+    "is_sequence",
+    "ndot",
+    "replace_attr",
+    "text_enumeration",
 ]
 
 
@@ -50,6 +50,7 @@ def is_sequence(obj: Any) -> bool:
     except TypeError:
         return False
     return True
+
 
 def array_like(obj):
     # The attribute and item accesses below are probes: they raise for objects
@@ -69,7 +70,7 @@ def atleast_1d(obj):
 
 def ndot(*args) -> np.ndarray | Number:
     args = [x for x in args if not isinstance(x, IdentityMatrix)]
-    args = [a.to_numpy() if hasattr(a, 'to_numpy') else a for a in args]
+    args = [a.to_numpy() if hasattr(a, "to_numpy") else a for a in args]
     return np.linalg.multi_dot(args)
 
 
@@ -89,13 +90,13 @@ def expand_axis(a, size, indices=None, axis=-1):
     return b
 
 
-def text_enumeration(words: Sequence[Any], conjunction: str = 'and', quotes: bool = False) -> str:
+def text_enumeration(words: Sequence[Any], conjunction: str = "and", quotes: bool = False) -> str:
     if quotes:
         words = [f"'{word}'" for word in words]
     return f"{', '.join(words[:-1])} {conjunction} {words[-1]}"
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def check_input(value: T, valid_values: Sequence[Any]) -> T:

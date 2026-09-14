@@ -21,8 +21,7 @@ basis1 = Basis(2)
 # Rotated basis (x', y') with
 # x' = x
 # y' = 1\sqrt(2) (x + y)
-r = np.asarray([[1, 1/np.sqrt(2)],
-                [0, 1/np.sqrt(2)]])
+r = np.asarray([[1, 1 / np.sqrt(2)], [0, 1 / np.sqrt(2)]])
 basis2 = Basis(r, parent=basis1)
 
 point1 = Tensor([-1.0, 0.0], basis=basis1)

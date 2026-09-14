@@ -20,9 +20,7 @@ rootbasis = Basis(3)
 
 # --- A derived basis can be constructed in terms of
 # 1) A general transformation matrix
-tm = np.asarray([[1, 0],
-                 [0, 0],
-                 [0, 1]])
+tm = np.asarray([[1, 0], [0, 0], [0, 1]])
 basis1 = Basis(tm, parent=rootbasis)
 # 2) an indexing array
 basis2 = Basis([0, 2], parent=rootbasis)
