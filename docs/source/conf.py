@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ sys.path.insert(1, str(Path(__file__).resolve().parents[2] / "src"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "BTensor"
-copyright = "2023, Max Nusspickel"
+copyright = "2023-2026, Max Nusspickel"
 author = "Max Nusspickel"
 
 # -- General configuration ---------------------------------------------------
