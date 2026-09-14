@@ -65,8 +65,9 @@ DOCSTRING_TEMPLATE = """
         numpy_compatible: If True, the tensor can be used in standard NumPy function
             calls. The basis of the tensor will however not be taken into consideration
             and no automatic basis transformations will be performed. Default: True.
-        copy_data: If False, no copy of the NumPy data will be created.
-            Default: True.
+        copy_data: If False, the input data is wrapped directly instead of being
+            copied, where possible. A copy is still made if the input is not already
+            a NumPy array. Default: True.
     """
 
 
@@ -85,7 +86,10 @@ class Tensor:
         copy_data: bool = True,
     ) -> None:
         """Create new Tensor instance."""
-        data = np.array(data, copy=copy_data)
+        # np.asarray rather than np.array(copy=copy_data): since NumPy 2, copy=False
+        # means "never copy, or raise" instead of "copy only if unavoidable", so
+        # forwarding the flag raises for any input that is not already an ndarray.
+        data = np.array(data) if copy_data else np.asarray(data)
         if data.dtype not in self._SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
         self._data = data
@@ -676,7 +680,7 @@ def Cotensor(
     numpy_compatible: bool = True,
     copy_data: bool = True,
 ) -> Tensor:
-    data = np.array(data, copy=copy_data)
+    data = np.array(data) if copy_data else np.asarray(data)
     if variance is None:
         variance = data.ndim * [_Variance.COVARIANT]
     return Tensor(data, basis=basis, variance=variance, name=name, numpy_compatible=numpy_compatible, copy_data=False)

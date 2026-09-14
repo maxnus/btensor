@@ -21,7 +21,7 @@ import pytest
 from conftest import subbasis_definition_to_matrix
 from helper import TestCase
 
-from btensor import Tensor
+from btensor import Cotensor, Tensor
 from btensor.exceptions import BTensorError
 
 
@@ -45,6 +45,28 @@ class TestTensor(TestCase):
         data.flags.writeable = True
         data[:] = 0
         assert np.all(tensor.to_numpy() == 0)
+
+    # The test above only covers ndarray input, for which a copy is never needed.
+    # Anything else has to be converted, and NumPy 2 turned copy=False from "copy
+    # only if unavoidable" into "never copy, or raise", so these inputs used to
+    # raise ValueError instead of building a tensor.
+    @pytest.mark.parametrize("tensor_cls", [Tensor, Cotensor], ids=["Tensor", "Cotensor"])
+    @pytest.mark.parametrize(
+        "data",
+        [[1.0, 2.0], (1.0, 2.0), [[1.0, 2.0], [3.0, 4.0]], 1.0],
+        ids=["list", "tuple", "nested_list", "scalar"],
+    )
+    def test_data_nocopy_from_non_array(self, tensor_cls, data):
+        tensor = tensor_cls(data, copy_data=False)
+        assert np.all(tensor.to_numpy() == np.asarray(data))
+
+    # copy_data=False is only best-effort, but it must still avoid the copy in the
+    # case it can, so that fixing the above by always copying would not pass.
+    @pytest.mark.parametrize("tensor_cls", [Tensor, Cotensor], ids=["Tensor", "Cotensor"])
+    def test_data_nocopy_shares_memory(self, tensor_cls, np_array):
+        data = np_array.copy()
+        tensor = tensor_cls(data, copy_data=False)
+        assert np.shares_memory(tensor.to_numpy(copy=False), data)
 
     def test_tensor_for_loop_raises(self, np_array):
         tensor = Tensor(np_array)
