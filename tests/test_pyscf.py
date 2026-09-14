@@ -221,11 +221,13 @@ class TestCC(TestCase):
         self.assert_allclose(bdm._data, dm)
 
     @pytest.fixture(scope='class')
-    def t2s(self, cc, mo_occ, mo_vir):
+    @staticmethod
+    def t2s(cc, mo_occ, mo_vir):
         return btensor.Tensor(cc.t2, basis=(mo_occ, mo_occ, mo_vir, mo_vir))
 
     @pytest.fixture(scope='class')
-    def t2b(self, t2s, mo):
+    @staticmethod
+    def t2b(t2s, mo):
         return t2s[mo, mo, mo, mo]
 
     def test_addition(self, t2s, t2b):

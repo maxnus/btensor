@@ -27,6 +27,9 @@ from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermuta
 from btensor.exceptions import BasisError
 from btensor.space import Space
 
+if TYPE_CHECKING:
+    from btensor.tensor import Tensor
+
 
 def _is_nobasis(obj):
     return obj is nobasis
@@ -540,6 +543,8 @@ class Basis:
         Returns:
             Transformation matrix.
         """
+        from btensor.tensor import Tensor
+
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
         return Tensor(values, basis=(self, other), variance=variance, copy_data=False)
 
@@ -576,5 +581,3 @@ class Basis:
         """
         return other.get_transformation(self, variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
 
-
-from btensor.tensor import Tensor

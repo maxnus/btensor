@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import *
 
 import numpy as np
+from numpy.lib.array_utils import normalize_axis_tuple
 from numpy.typing import ArrayLike
 
 import btensor
@@ -150,8 +151,8 @@ def moveaxis(a: ArrayLike | Tensor,
              destination: int | Sequence[int],
              name: str | None = None) -> Tensor:
     a = _to_tensor(a)
-    source = np.core.numeric.normalize_axis_tuple(source, a.ndim, 'source')
-    destination = np.core.numeric.normalize_axis_tuple(destination, a.ndim, 'destination')
+    source = normalize_axis_tuple(source, a.ndim, 'source')
+    destination = normalize_axis_tuple(destination, a.ndim, 'destination')
     values_orig = a.to_numpy(copy=False)
     values = np.moveaxis(values_orig, source=source, destination=destination)
     order = [n for n in range(a.ndim) if n not in source]

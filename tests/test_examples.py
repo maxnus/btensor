@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from pathlib import Path
-import importlib
+import importlib.util
 import pytest
 
 
