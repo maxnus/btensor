@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
 import typing
 
 import numpy as np
@@ -20,6 +21,7 @@ import scipy
 import scipy.linalg
 
 from btensor import Basis
+
 if typing.TYPE_CHECKING:
     from btensor import Tensor
 

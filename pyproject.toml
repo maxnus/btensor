@@ -9,27 +9,41 @@ authors = [
 ]
 description = "A library for basis transformation of tensors"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 dynamic = ["version"]
 dependencies = [
-    "numpy",
+    "numpy>=2.0",
     "scipy",
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
-
 [project.urls]
 source = "https://github.com/maxnus/btensor"
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "pytest-xdist",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "docs"},
+    "ruff",
+]
 
 [tool.hatch.version]
 path = "src/btensor/__about__.py"
@@ -38,5 +52,51 @@ path = "src/btensor/__about__.py"
 addopts = ["--import-mode=importlib"]
 pythonpath = "tests"
 
+[tool.coverage.run]
+source = ["btensor"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "@overload",
+    "raise NotImplementedError",
+]
+
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # Pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # Ruff-specific rules
+    "NPY",  # NumPy-specific rules
+]
+ignore = [
+    # `not (a == b)` -> `a != b` is not equivalence-preserving here: Tensor.__eq__
+    # and Tensor.__ne__ are elementwise and return a Tensor, not a bool. The basis
+    # and space comparison tests also assert on each operator deliberately, so
+    # rewriting them would change what is under test.
+    "SIM201",
+    "SIM202",
+    # `a + [x] + b` -> `[*a, x, *b]` silently changes the type where `a` is a
+    # MatrixProductList, whose __add__ returns a MatrixProductList while a list
+    # literal does not. The result no longer has .evaluate().
+    "RUF005",
+    # TODO: add an explicit strict= to each zip(). Whether the operands are
+    # guaranteed to be the same length needs deciding per call site, so this is
+    # left for a separate change rather than applied wholesale.
+    "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# TODO: migrate to numpy's Generator API. The legacy np.random functions draw
+# from a different stream, so this changes the generated test data and has to be
+# revalidated rather than applied mechanically.
+"tests/**" = ["NPY002"]
+"examples/**" = ["NPY002"]

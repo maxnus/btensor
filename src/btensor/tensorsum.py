@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from numbers import Number
-from typing import *
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -37,16 +38,16 @@ class TensorSum:
         return f"{type(self).__name__}(size= {self.size})"
 
     def info(self) -> str:
-        info = f"{repr(self)} ["
+        info = f"{self!r} ["
         if len(self.tensors):
             info += "\n"
         for tensor in self.tensors:
-            info += f"    {repr(tensor)},\n"
+            info += f"    {tensor!r},\n"
         info += "]\n"
         return info
 
     @property
-    def tensors(self) -> List[Tensor]:
+    def tensors(self) -> list[Tensor]:
         return self._tensors
 
     @property
@@ -56,13 +57,12 @@ class TensorSum:
     def append(self, tensor: Tensor, allow_combine: bool | None = None) -> None:
         if allow_combine is None:
             allow_combine = self._allow_combine
-        if self.size:
-            if self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
-                raise ValueError
+        if self.size and self.tensors[0].basis.get_root_basistuple() != tensor.basis.get_root_basistuple():
+            raise ValueError
         if allow_combine:
             for idx, tensor_super in enumerate(self.tensors):
                 if tensor_super.basis.is_spanning(tensor.basis):
-                    self.tensors[idx] = (tensor_super + tensor)
+                    self.tensors[idx] = tensor_super + tensor
                     return
         self.tensors.append(tensor)
 
@@ -86,7 +86,7 @@ class TensorSum:
             raise RuntimeError(f"{type(self).__name__} is empty")
         return self.evaluate().to_numpy()
 
-    def to_list(self) -> List[Tensor]:
+    def to_list(self) -> list[Tensor]:
         return self.tensors.copy()
 
     def dot(self, other: Tensor | TensorSum) -> TensorSum:
@@ -112,9 +112,9 @@ class TensorSum:
     def __mul__(self, other: Number) -> TensorSum:
         if not isinstance(other, Number):
             return NotImplemented
-        return TensorSum([t*other for t in self.tensors])
+        return TensorSum([t * other for t in self.tensors])
 
     def __truediv__(self, other: Number) -> TensorSum:
         if not isinstance(other, Number):
             return NotImplemented
-        return TensorSum([t/other for t in self.tensors])
+        return TensorSum([t / other for t in self.tensors])

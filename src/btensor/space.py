@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,7 +13,9 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
+
+from typing import TYPE_CHECKING
+
 try:
     from functools import cache
 except ImportError:
@@ -29,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class Space:
-
     #: Default tolerance applied to eigendecompositions
     DEFAULT_TOL = 1e-12
 
@@ -63,13 +64,13 @@ class Space:
         """Required for caching."""
         return self._basis.id
 
-    @cache
+    @cache  # noqa: B019
     def _distance_from_zero_singular_value(self, other: Space) -> float:
         ovlp = self.basis.get_transformation_to(other.basis).to_numpy()
         sv = scipy.linalg.svd(ovlp, compute_uv=False)
         return abs(sv).max()
 
-    @cache
+    @cache  # noqa: B019
     def _distance_from_one_eigenvalue(self, other: Space) -> float:
         ovlp = self.basis.get_overlap(other.basis).to_numpy()
         if other.basis.is_orthonormal:
@@ -133,11 +134,11 @@ class Space:
         if (eq := self.trivially_equal(other)) is not None:
             return eq
         # Perform SVD to determine relationship
-        #sv = self._singular_values_of_overlap(other)
+        # sv = self._singular_values_of_overlap(other)
         dist = self._distance_from_one_eigenvalue(other)
         return dist < self._tol
 
-    def __neq__(self, other: Space) -> bool:
+    def __ne__(self, other: Space) -> bool:
         """True, if self is not the same space as other."""
         return not (self == other)
 
@@ -146,7 +147,7 @@ class Space:
         if (lt := self.trivially_less_than(other)) is not None:
             return lt
         # Perform SVD to determine relationship
-        #sv = self._singular_values_of_overlap(other)
+        # sv = self._singular_values_of_overlap(other)
         dist = self._distance_from_one_eigenvalue(other)
         return dist < self._tol
 

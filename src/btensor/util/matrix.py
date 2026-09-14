@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,42 +13,41 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import *
-from collections import UserList
-from collections.abc import MutableSequence
+
+import itertools
+from collections.abc import MutableSequence, Sequence
+from typing import overload
 
 import numpy as np
 import scipy
 import scipy.linalg
 
-
 __all__ = [
-    'Matrix',
-    'GeneralMatrix',
-    'SymmetricMatrix',
-    'InverseMatrix',
-    'IdentityMatrix',
-    'PermutationMatrix',
-    'RowPermutationMatrix',
-    'ColumnPermutationMatrix',
-    'MatrixProductList',
-    'to_numpy',
+    "ColumnPermutationMatrix",
+    "GeneralMatrix",
+    "IdentityMatrix",
+    "InverseMatrix",
+    "Matrix",
+    "MatrixProductList",
+    "PermutationMatrix",
+    "RowPermutationMatrix",
+    "SymmetricMatrix",
+    "to_numpy",
 ]
 
 
 def to_numpy(obj):
-    if hasattr(obj, 'to_numpy'):
+    if hasattr(obj, "to_numpy"):
         return obj.to_numpy()
     return obj
 
 
 class Matrix:
-
     def __init__(self) -> None:
         self._inverse = None
 
     def __repr__(self) -> str:
-        return '%s%r' % (type(self).__name__, self.shape)
+        return f"{type(self).__name__}{self.shape!r}"
 
     @property
     def ndim(self) -> int:
@@ -78,7 +77,6 @@ class Matrix:
 
 
 class GeneralMatrix(Matrix):
-
     def __init__(self, values):
         super().__init__()
         self._transpose = None
@@ -98,7 +96,6 @@ class GeneralMatrix(Matrix):
 
 
 class Symmetric:
-
     def transpose(self):
         return self
 
@@ -108,7 +105,6 @@ class SymmetricMatrix(Symmetric, GeneralMatrix):
 
 
 class InverseMatrix(Matrix):
-
     def __init__(self, matrix) -> None:
         super().__init__()
         self.matrix = matrix
@@ -135,7 +131,6 @@ class InverseMatrix(Matrix):
 
 
 class IdentityMatrix(Symmetric, Matrix):
-
     def __init__(self, size: int) -> None:
         super().__init__()
         self.size = size
@@ -153,7 +148,6 @@ class IdentityMatrix(Symmetric, Matrix):
 
 
 class PermutationMatrix(Matrix):
-
     def __init__(self, size: int, permutation: slice | Sequence[int]) -> None:
         super().__init__()
         if isinstance(permutation, slice):
@@ -174,7 +168,6 @@ class PermutationMatrix(Matrix):
 
 
 class ColumnPermutationMatrix(PermutationMatrix):
-
     def to_numpy(self):
         return np.identity(self.shape[0])[:, self.permutation]
 
@@ -189,7 +182,6 @@ class ColumnPermutationMatrix(PermutationMatrix):
 
 
 class RowPermutationMatrix(PermutationMatrix):
-
     def __init__(self, size, permutation):
         super().__init__(size, permutation)
         self._shape = self._shape[::-1]
@@ -209,16 +201,17 @@ class RowPermutationMatrix(PermutationMatrix):
 
 def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, remove_permutation=True):
     if a.shape[1] != b.shape[0]:
-        raise RuntimeError("Cannot take matrix product between matrices with shape: %r x %r" % (a.shape, b.shape))
+        raise RuntimeError(f"Cannot take matrix product between matrices with shape: {a.shape!r} x {b.shape!r}")
     if remove_identity:
         if isinstance(a, IdentityMatrix):
             return [b]
         if isinstance(b, IdentityMatrix):
             return [a]
-    if remove_inverse:
-        if (isinstance(a, InverseMatrix) and a.inverse is b) or (isinstance(b, InverseMatrix) and b.inverse is a):
-            assert(a.shape[0] == b.shape[1])
-            return [IdentityMatrix(a.shape[0])]
+    if remove_inverse and (
+        (isinstance(a, InverseMatrix) and a.inverse is b) or (isinstance(b, InverseMatrix) and b.inverse is a)
+    ):
+        assert a.shape[0] == b.shape[1]
+        return [IdentityMatrix(a.shape[0])]
     if remove_permutation:
         # Combine permutation matrices
         if isinstance(a, ColumnPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
@@ -229,7 +222,7 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
             return [RowPermutationMatrix(permutation=permutation, size=b.shape[1])]
         # TODO
         # Combine Row with Column permutation matrices
-        #if isinstance(a, RowPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
+        # if isinstance(a, RowPermutationMatrix) and isinstance(b, ColumnPermutationMatrix):
         #    if a.shape[0] >= b.shape1[1]:
         #        #permutation = np.argsort(a.permutation)[b.permutation]
         #        print(a.permutation)
@@ -238,7 +231,7 @@ def _simplify_matrix_product(a, b, remove_identity=True, remove_inverse=True, re
         #        print(permutation)
         #        print(a.shape, b.shape)
         #        return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
-        #if isinstance(a, ColumnPermutationMatrix) and isinstance(b, RowPermutationMatrix):
+        # if isinstance(a, ColumnPermutationMatrix) and isinstance(b, RowPermutationMatrix):
         #    permutation = a.permutation[np.argsort(b.permutation)]
         #    return [ColumnPermutationMatrix(permutation=permutation, size=a.shape[0])]
         #    #permutation = b.permutation[np.argsort(a.permutation)]
@@ -263,18 +256,17 @@ def _simplify_n_matrix_products(matrices, remove_permutation=True):
         result = _simplify_matrix_product(m, matrices[i + 1], remove_permutation=remove_permutation)
         if result:
             matrices_out.append(result[0])
-        if len(result) == 2 and (i == len(matrices)-2):
+        if len(result) == 2 and (i == len(matrices) - 2):
             matrices_out.append(result[1])
         # Restart:
         if len(result) < 2:
-            matrices_out.extend(matrices[i+2:])
+            matrices_out.extend(matrices[i + 2 :])
             return _simplify_n_matrix_products(matrices_out, remove_permutation=remove_permutation)
     return matrices_out
 
 
-#class MatrixProductList(UserList):
+# class MatrixProductList(UserList):
 class MatrixProductList(list):
-
     def __init__(self, matrices: MutableSequence[Matrix]) -> None:
         self.check_if_matrix(*matrices)
         self.check_valid_shapes(matrices)
@@ -286,7 +278,7 @@ class MatrixProductList(list):
                 raise TypeError(f"only type {Matrix.__name__} allowed in {type(self).__name__} (not {matrix})")
 
     def check_valid_shapes(self, matrices: MutableSequence[Matrix]) -> None:
-        for m1, m2 in zip(matrices[:-1], matrices[1:]):
+        for m1, m2 in itertools.pairwise(matrices):
             if m1.shape[1] != m2.shape[0]:
                 raise ValueError(f"Invalid matrix product in {self}: {m1.shape} x {m2.shape}")
 
@@ -345,13 +337,13 @@ class MatrixProductList(list):
             if isinstance(matrices[0], InverseMatrix):
                 a = matrices[0].inverse
                 b = matrices[1:].evaluate()
-                assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+                assume_a = "sym" if isinstance(a, Symmetric) else "gen"
                 return scipy.linalg.solve(a.to_numpy(), b, assume_a=assume_a)
             # If last matrix Z^-1 in ...Y Z^-1 = X is an inverse, solve (...Y)^T = Z^T X^T instead
             if isinstance(matrices[-1], InverseMatrix):
                 a = matrices[-1].inverse
                 b = matrices[:-1].evaluate()
-                assume_a = 'sym' if isinstance(a, Symmetric) else 'gen'
+                assume_a = "sym" if isinstance(a, Symmetric) else "gen"
                 return scipy.linalg.solve(a.to_numpy(), b.T, assume_a=assume_a, transposed=True).T
 
         matrices = [to_numpy(m) for m in matrices]

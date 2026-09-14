@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,16 +13,14 @@
 #     limitations under the License.
 
 import numpy as np
-from btensor import Basis
 
+from btensor import Basis
 
 rootbasis = Basis(3)
 
 # --- A derived basis can be constructed in terms of
 # 1) A general transformation matrix
-tm = np.asarray([[1, 0],
-                 [0, 0],
-                 [0, 1]])
+tm = np.asarray([[1, 0], [0, 0], [0, 1]])
 basis1 = Basis(tm, parent=rootbasis)
 # 2) an indexing array
 basis2 = Basis([0, 2], parent=rootbasis)

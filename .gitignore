@@ -1,0 +1,34 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+reports/
+
+# Tool caches
+.ruff_cache/
+.mypy_cache/
+
+# Sphinx
+docs/build/
+docs/source/api/_autosummary/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

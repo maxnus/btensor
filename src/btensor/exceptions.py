@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -26,6 +26,5 @@ class VarianceError(BTensorError):
 
 
 class BasisDependentOperationError(BasisError):
-
     def __init__(self, msg: str = "basis dependent operation not allowed for mode 'tensor'", *args) -> None:
         super().__init__(msg, *args)

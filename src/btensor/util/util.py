@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,8 +13,10 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import *
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -25,16 +27,16 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-        'is_int',
-        'is_sequence',
-        'array_like',
-        'atleast_1d',
-        'ndot',
-        'expand_axis',
-        'replace_attr',
-        'text_enumeration',
-        'check_input',
-        ]
+    "array_like",
+    "atleast_1d",
+    "check_input",
+    "expand_axis",
+    "is_int",
+    "is_sequence",
+    "ndot",
+    "replace_attr",
+    "text_enumeration",
+]
 
 
 def is_int(obj):
@@ -49,10 +51,13 @@ def is_sequence(obj: Any) -> bool:
         return False
     return True
 
+
 def array_like(obj):
+    # The attribute and item accesses below are probes: they raise for objects
+    # that do not look like arrays, which is exactly what is being tested.
     try:
-        obj.shape
-        obj.ndim
+        obj.shape  # noqa: B018
+        obj.ndim  # noqa: B018
         obj[()]
         return True
     except (AttributeError, TypeError):
@@ -65,7 +70,7 @@ def atleast_1d(obj):
 
 def ndot(*args) -> np.ndarray | Number:
     args = [x for x in args if not isinstance(x, IdentityMatrix)]
-    args = [a.to_numpy() if hasattr(a, 'to_numpy') else a for a in args]
+    args = [a.to_numpy() if hasattr(a, "to_numpy") else a for a in args]
     return np.linalg.multi_dot(args)
 
 
@@ -85,13 +90,13 @@ def expand_axis(a, size, indices=None, axis=-1):
     return b
 
 
-def text_enumeration(words: Sequence[Any], conjunction: str = 'and', quotes: bool = False) -> str:
+def text_enumeration(words: Sequence[Any], conjunction: str = "and", quotes: bool = False) -> str:
     if quotes:
         words = [f"'{word}'" for word in words]
     return f"{', '.join(words[:-1])} {conjunction} {words[-1]}"
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def check_input(value: T, valid_values: Sequence[Any]) -> T:

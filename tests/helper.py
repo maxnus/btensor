@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,14 +13,16 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
 import itertools
+from collections.abc import Collection
 from contextlib import contextmanager
 from numbers import Number
 from time import perf_counter
-from typing import *
+from typing import Any
 
-import pytest
 import numpy as np
+import pytest
 import scipy
 import scipy.stats
 
@@ -40,11 +42,10 @@ def powerset(iterable, include_empty=True):
     """powerset([1, 2, 3]) --> [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]"""
     s = list(iterable)
     start = 0 if include_empty else 1
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s) + 1))
 
 
 class TestTimings:
-
     def __init__(self, test=None):
         self._test = test
         self._timings = {}
@@ -58,8 +59,10 @@ class TestTimings:
             self._timings[timer_name] = (0, 0.0)
         start = perf_counter()
         yield
-        self._timings[timer_name] = (self._timings[timer_name][0] + 1,
-                                     self._timings[timer_name][1] + (perf_counter() - start))
+        self._timings[timer_name] = (
+            self._timings[timer_name][0] + 1,
+            self._timings[timer_name][1] + (perf_counter() - start),
+        )
         return
 
     def print_report(self) -> None:
@@ -68,31 +71,34 @@ class TestTimings:
             header = f"{header} {type(self._test).__name__}"
         print()
         print(header)
-        print(len(header)*'=')
+        print(len(header) * "=")
         key_width = max(map(len, self._timings.keys()))
         for key, (count, time) in self._timings.items():
             print(f"{key + ':':{key_width + 1}} {count:4d} calls  in  {time:.3f} s")
 
 
 class TestCase:
-
     allclose_atol = 1e-14
     allclose_rtol = 1e-10
 
-    @pytest.fixture(scope='module')
+    @pytest.fixture(scope="module")
     def timings(self) -> TestTimings:
         return TestTimings(self)
 
-    @pytest.fixture(scope='module', autouse=True)
+    @pytest.fixture(scope="module", autouse=True)
     def report_timings(self, timings) -> None:
         yield
         if len(timings):
             timings.print_report()
 
-    def assert_allclose(self,
-                        actual: np.ndarray | btensor.Tensor | Collection,
-                        desired: np.ndarray | btensor.Tensor | Collection,
-                        rtol: float | None = None, atol: float | None = None, **kwargs: Any) -> None:
+    def assert_allclose(
+        self,
+        actual: np.ndarray | btensor.Tensor | Collection,
+        desired: np.ndarray | btensor.Tensor | Collection,
+        rtol: float | None = None,
+        atol: float | None = None,
+        **kwargs: Any,
+    ) -> None:
         if rtol is None:
             rtol = self.allclose_rtol
         if atol is None:
@@ -122,7 +128,6 @@ class TestCase:
 
 
 class TestCase1Array(TestCase):
-
     @pytest.fixture(autouse=True)
     def init_tensors(self, array):
         self.array, self.data = array

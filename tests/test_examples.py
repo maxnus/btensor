@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -12,17 +12,17 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import importlib.util
 from pathlib import Path
-import importlib
+
 import pytest
 
-
-example_path = Path(__file__).parent.parent / 'examples'
-examples_files = [f for f in example_path.glob('*.py') if 'pyscf' not in f.name]
+example_path = Path(__file__).parent.parent / "examples"
+examples_files = [f for f in example_path.glob("*.py") if "pyscf" not in f.name]
 
 
 @pytest.mark.timeout(300)
-@pytest.mark.parametrize('example_file', examples_files, ids=lambda x: x.name)
+@pytest.mark.parametrize("example_file", examples_files, ids=lambda x: x.name)
 def test_example(example_file):
     spec = importlib.util.spec_from_file_location(example_file.name, str(example_file))
     example = importlib.util.module_from_spec(spec)

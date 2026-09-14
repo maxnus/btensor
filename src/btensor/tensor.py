@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -15,25 +15,34 @@
 """Module defining the Tensor class and related functions."""
 
 from __future__ import annotations
-from numbers import Number
-import string
+
 import operator
-from typing import *
+import string
+from collections.abc import Callable, Sequence
+from numbers import Number
+from typing import Any, ClassVar, NoReturn, Self, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from btensor.util import (expand_axis, is_sequence, IdentityMatrix, PermutationMatrix, ColumnPermutationMatrix,
-                          RowPermutationMatrix, MatrixProductList, check_input)
-from btensor.exceptions import BasisError, BasisDependentOperationError
-from btensor.basis import Basis, _is_basis_or_nobasis, _is_nobasis, compatible_basis, nobasis, IBasis, NBasis, _Variance
-from btensor.basistuple import BasisTuple
 from btensor import numpy_functions
+from btensor.basis import Basis, IBasis, NBasis, _is_basis_or_nobasis, _is_nobasis, _Variance, compatible_basis, nobasis
+from btensor.basistuple import BasisTuple
+from btensor.exceptions import BasisDependentOperationError, BasisError
+from btensor.util import (
+    ColumnPermutationMatrix,
+    IdentityMatrix,
+    MatrixProductList,
+    PermutationMatrix,
+    RowPermutationMatrix,
+    check_input,
+    expand_axis,
+    is_sequence,
+)
 
 
 class _ChangeBasisInterface:
-
-    _T = TypeVar('_T')
+    _T = TypeVar("_T")
 
     def __init__(self, obj: _T) -> None:
         self._obj = obj
@@ -45,8 +54,7 @@ class _ChangeBasisInterface:
         return self._obj.change_basis(key)
 
 
-DOCSTRING_TEMPLATE = \
-    """
+DOCSTRING_TEMPLATE = """
     Args:
         data: NumPy array containing the representation of the {name}.
         basis: Basis object or tuple of Basis objects, representing the Basis along
@@ -57,28 +65,31 @@ DOCSTRING_TEMPLATE = \
         numpy_compatible: If True, the tensor can be used in standard NumPy function
             calls. The basis of the tensor will however not be taken into consideration
             and no automatic basis transformations will be performed. Default: True.
-        copy_data: If False, no copy of the NumPy data will be created.
-            Default: True.
+        copy_data: If False, the input data is wrapped directly instead of being
+            copied, where possible. A copy is still made if the input is not already
+            a NumPy array. Default: True.
     """
 
 
 class Tensor:
-
-    __doc__ = \
-        """A numerical container class with support for automatic basis transformation.
+    __doc__ = """A numerical container class with support for automatic basis transformation.
         """ + DOCSTRING_TEMPLATE.format(name="tensor", default_variance=_Variance.CONTRAVARIANT)
-    _SUPPORTED_DTYPE = [np.int8, np.int16, np.int32, np.int64,
-                        np.float16, np.float32, np.float64]
+    _SUPPORTED_DTYPE: ClassVar[list[type]] = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32, np.float64]
 
-    def __init__(self,
-                 data: ArrayLike,
-                 basis: NBasis | None = None,
-                 variance: Sequence[int] | None = None,
-                 name: str | None = None,
-                 numpy_compatible: bool = True,
-                 copy_data: bool = True) -> None:
+    def __init__(
+        self,
+        data: ArrayLike,
+        basis: NBasis | None = None,
+        variance: Sequence[int] | None = None,
+        name: str | None = None,
+        numpy_compatible: bool = True,
+        copy_data: bool = True,
+    ) -> None:
         """Create new Tensor instance."""
-        data = np.array(data, copy=copy_data)
+        # np.asarray rather than np.array(copy=copy_data): since NumPy 2, copy=False
+        # means "never copy, or raise" instead of "copy only if unavoidable", so
+        # forwarding the flag raises for any input that is not already an ndarray.
+        data = np.array(data) if copy_data else np.asarray(data)
         if data.dtype not in self._SUPPORTED_DTYPE:
             raise ValueError(f"dtype {data.dtype} is not supported")
         self._data = data
@@ -96,13 +107,14 @@ class Tensor:
         self._numpy_compatible = self._check_numpy_compatible_input(numpy_compatible)
 
     def __repr__(self) -> str:
-        basis_names = (', '.join([bas.name if not _is_nobasis(bas) else 'None' for bas in self.basis])
-                       + (',' if self.ndim == 1 else ''))
+        basis_names = ", ".join([bas.name if not _is_nobasis(bas) else "None" for bas in self.basis]) + (
+            "," if self.ndim == 1 else ""
+        )
         attrs = dict(basis=f"({basis_names})", variance=self.variance, dtype=self.dtype)
         if self.name is not None:
-            attrs['name'] = self.name
-        attrs = ', '.join([f"{key}= {val}" for (key, val) in attrs.items()])
-        return f'{type(self).__name__}({attrs})'
+            attrs["name"] = self.name
+        attrs = ", ".join([f"{key}= {val}" for (key, val) in attrs.items()])
+        return f"{type(self).__name__}({attrs})"
 
     def copy(self, name: str | None = None, copy_data: bool = True) -> Self:
         """Create a copy of the tensor.
@@ -115,8 +127,14 @@ class Tensor:
         Returns:
             Copy of tensor.
         """
-        return type(self)(self._data, basis=self.basis, variance=self.variance, name=name, copy_data=copy_data,
-                          numpy_compatible=self.numpy_compatible)
+        return type(self)(
+            self._data,
+            basis=self.basis,
+            variance=self.variance,
+            name=name,
+            copy_data=copy_data,
+            numpy_compatible=self.numpy_compatible,
+        )
 
     # --- Basis
 
@@ -164,8 +182,9 @@ class Tensor:
 
     def _check_variance(self, variance: Sequence[int]) -> None:
         if len(variance) != self.ndim:
-            raise ValueError(f"{self.ndim}-dimensional Array requires {self.ndim} variance elements "
-                             f"({len(variance)} given)")
+            raise ValueError(
+                f"{self.ndim}-dimensional Array requires {self.ndim} variance elements ({len(variance)} given)"
+            )
         for var in variance:
             if var not in {-1, 1}:
                 raise ValueError(f"variance can only contain elements -1 and 1 (not {var})")
@@ -203,10 +222,10 @@ class Tensor:
         if self.basis[axis].is_orthonormal:
             values = self._data.copy()
         else:
-            labels_in = string.ascii_lowercase[:self.ndim]
+            labels_in = string.ascii_lowercase[: self.ndim]
             labels_out = list(labels_in)
-            labels_out[axis] = 'Z'
-            labels_out = ''.join(labels_out)
+            labels_out[axis] = "Z"
+            labels_out = "".join(labels_out)
             contraction = f"{labels_in},{labels_in[axis]}{labels_out[axis]}->{labels_out}"
             # to lower index:
             metric = self.basis[axis].metric
@@ -214,8 +233,14 @@ class Tensor:
             if variance == -1:
                 metric = metric.inverse
             values = np.einsum(contraction, self._data, metric.to_numpy())
-        variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis+1:]
-        return type(self)(values, basis=self.basis, variance=variance_tuple, numpy_compatible=self.numpy_compatible, copy_data=False)
+        variance_tuple = self.variance[:axis] + (variance,) + self.variance[axis + 1 :]
+        return type(self)(
+            values,
+            basis=self.basis,
+            variance=variance_tuple,
+            numpy_compatible=self.numpy_compatible,
+            copy_data=False,
+        )
 
     def replace_variance(self, variance: Sequence[int, ...], inplace: bool = False) -> Self:
         """Replace variance of tensor without corresponding transformation of the representation.
@@ -244,8 +269,9 @@ class Tensor:
         if isinstance(key, Basis):
             key = (key,)
 
-        type_error_msg = (f'only instances of Basis, slice(None), and Ellipsis are valid indices for the'
-                          f'{type(self).__name__} class.')
+        type_error_msg = (
+            f"only instances of Basis, slice(None), and Ellipsis are valid indices for the{type(self).__name__} class."
+        )
         if not isinstance(key, tuple):
             raise TypeError(type_error_msg)
         for bas in key:
@@ -273,7 +299,7 @@ class Tensor:
         if basis == self.basis:
             return self
 
-        subscripts = string.ascii_lowercase[:self.ndim]
+        subscripts = string.ascii_lowercase[: self.ndim]
         operands = [self._data]
         result = list(subscripts)
         basis_out = list(self.basis)
@@ -301,13 +327,19 @@ class Tensor:
                 ovlp = ovlp.evaluate()
             operands.append(ovlp)
             subnew = sub.upper()
-            subscripts += f',{sub}{subnew}'
+            subscripts += f",{sub}{subnew}"
             result[i] = subnew
 
         basis_out = tuple(basis_out)
-        subscripts += '->' + (''.join(result))
+        subscripts += "->" + ("".join(result))
         value = np.einsum(subscripts, *operands, optimize=True)
-        return type(self)(value, basis=basis_out, variance=self.variance, numpy_compatible=self.numpy_compatible, copy_data=False)
+        return type(self)(
+            value,
+            basis=basis_out,
+            variance=self.variance,
+            numpy_compatible=self.numpy_compatible,
+            copy_data=False,
+        )
 
     # --- Change of basis
 
@@ -356,7 +388,7 @@ class Tensor:
         if not is_sequence(axis):
             if axis < 0:
                 axis += self.ndim
-            basis_new = self.basis[:axis] + (basis,) + self.basis[axis + 1:]
+            basis_new = self.basis[:axis] + (basis,) + self.basis[axis + 1 :]
             return self.change_basis(basis_new)
 
         # Recursive implementation for multiple axes:
@@ -379,10 +411,10 @@ class Tensor:
     def _compatible_axes(self, other: Tensor) -> list[bool]:
         """Returns a boolean array, indicating for each axis whether the bases are compatible."""
         axes = []
-        for i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
+        for _i, (b1, b2) in enumerate(zip(self.basis, other.basis)):
             axes.append(bool(compatible_basis(b1, b2)))
         if self.ndim > other.ndim:
-            axes += (self.ndim-other.ndim)*[False]
+            axes += (self.ndim - other.ndim) * [False]
         return axes
 
     def get_common_basis(self, other: Tensor) -> BasisTuple:
@@ -413,9 +445,7 @@ class Tensor:
         """Current shape of the tensor."""
         return self._data.shape
 
-    def to_numpy(self,
-                 basis: NBasis | None = None,
-                 copy: bool = True) -> np.ndarray:
+    def to_numpy(self, basis: NBasis | None = None, copy: bool = True) -> np.ndarray:
         """Get representation of tensor as a NumPy ndarray.
 
         Args:
@@ -460,7 +490,7 @@ class Tensor:
         """
         return self.transpose()
 
-    def sum(self, axis: int | Tuple[int] | None = None, out: np.ndarray | None = None) -> Self | Number:
+    def sum(self, axis: int | tuple[int] | None = None, out: np.ndarray | None = None) -> Self | Number:
         """Sum of tensor elements over a given axis or tuple of axes.
 
         Args:
@@ -536,8 +566,9 @@ class Tensor:
     def numpy_compatible(self, value: bool) -> None:
         self._numpy_compatible = self._check_numpy_compatible_input(value)
 
-    def _operator_check_same_basis(self, op: Callable, other: Number | Tensor | None = None,
-                                   reverse: bool = False) -> Self:
+    def _operator_check_same_basis(
+        self, op: Callable, other: Number | Tensor | None = None, reverse: bool = False
+    ) -> Self:
 
         if other is None:
             return self._operator(op, reverse=reverse)
@@ -548,7 +579,7 @@ class Tensor:
         return self._operator(op, other, reverse=reverse)
 
     @property
-    def __array_interface__(self) -> Dict[str, Any]:
+    def __array_interface__(self) -> dict[str, Any]:
         if not self.numpy_compatible:
             raise BasisDependentOperationError("not allowed, if numpy_compatible is set to False")
         return self._data.__array_interface__
@@ -641,18 +672,19 @@ class Tensor:
         return self._operator_check_same_basis(operator.abs)
 
 
-def Cotensor(data: ArrayLike,
-             basis: NBasis | None = None,
-             variance: Sequence[int] | None = None,
-             name: str | None = None,
-             numpy_compatible: bool = True,
-             copy_data: bool = True) -> Tensor:
-    data = np.array(data, copy=copy_data)
+def Cotensor(
+    data: ArrayLike,
+    basis: NBasis | None = None,
+    variance: Sequence[int] | None = None,
+    name: str | None = None,
+    numpy_compatible: bool = True,
+    copy_data: bool = True,
+) -> Tensor:
+    data = np.array(data) if copy_data else np.asarray(data)
     if variance is None:
         variance = data.ndim * [_Variance.COVARIANT]
     return Tensor(data, basis=basis, variance=variance, name=name, numpy_compatible=numpy_compatible, copy_data=False)
 
 
-Cotensor.__doc__ = \
-    """A helper function to create tensors with default variance 1 (covariant).
+Cotensor.__doc__ = """A helper function to create tensors with default variance 1 (covariant).
     """ + DOCSTRING_TEMPLATE.format(name=Cotensor.__name__.lower(), default_variance=_Variance.COVARIANT)

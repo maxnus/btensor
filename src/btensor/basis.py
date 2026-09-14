@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -15,17 +15,30 @@
 """Module defining the Basis class and related functions."""
 
 from __future__ import annotations
-from functools import lru_cache
+
 import weakref
-from typing import *
+from collections.abc import Sequence
+from functools import lru_cache
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, Union
 
 import numpy as np
 import scipy
 
-from btensor.util import (Matrix, IdentityMatrix, SymmetricMatrix, ColumnPermutationMatrix, GeneralMatrix,
-                          MatrixProductList, is_int, array_like)
 from btensor.exceptions import BasisError
 from btensor.space import Space
+from btensor.util import (
+    ColumnPermutationMatrix,
+    GeneralMatrix,
+    IdentityMatrix,
+    Matrix,
+    MatrixProductList,
+    SymmetricMatrix,
+    array_like,
+    is_int,
+)
+
+if TYPE_CHECKING:
+    from btensor.tensor import Tensor
 
 
 def _is_nobasis(obj):
@@ -51,9 +64,9 @@ class _NoBasis:
 
 nobasis = _NoBasis()
 
-IBasis: TypeAlias = Union['Basis', _NoBasis]
-NBasis: TypeAlias = Union[IBasis, Sequence[IBasis]]
-BasisArgument: TypeAlias = Union[Sequence[int], Sequence[bool], slice, np.ndarray]
+IBasis: TypeAlias = Union["Basis", _NoBasis]
+NBasis: TypeAlias = IBasis | Sequence[IBasis]
+BasisArgument: TypeAlias = Sequence[int] | Sequence[bool] | slice | np.ndarray
 
 
 def compatible_basis(basis1: IBasis, basis2: IBasis):
@@ -106,19 +119,22 @@ class Basis:
             with an orthonormal parent basis, defined in terms of a permutation + selection (slice or 1D sequence).
             Default: None.
     """
+
     # Private (inheriting classes will have their own version)
     # ID used for next created Basis object:
     __next_id = 1
     # Keep a weak reference of all created bases:
     __basis_by_id = weakref.WeakValueDictionary()
 
-    def __init__(self,
-                 argument: int | BasisArgument,
-                 *,
-                 parent: Basis | None = None,
-                 metric: np.ndarray | None = None,
-                 name: str | None = None,
-                 orthonormal: bool | None = None) -> None:
+    def __init__(
+        self,
+        argument: int | BasisArgument,
+        *,
+        parent: Basis | None = None,
+        metric: np.ndarray | None = None,
+        name: str | None = None,
+        orthonormal: bool | None = None,
+    ) -> None:
         """Initialize new Basis object."""
         super().__init__()
         self._parent = parent
@@ -130,28 +146,31 @@ class Basis:
             self._root = parent.root
         self._id = self._get_next_id()
         if name is None:
-            name = f'Basis{self._id}'
+            name = f"Basis{self._id}"
         self._name = name
         self._matrix = self._argument_to_matrix(argument)
         if orthonormal is None:
-            orthonormal = (self.is_root() and metric is None) or (not self.is_root() and self.parent.is_orthonormal
-                                                                  and isinstance(self._matrix, ColumnPermutationMatrix))
+            orthonormal = (self.is_root() and metric is None) or (
+                not self.is_root() and self.parent.is_orthonormal and isinstance(self._matrix, ColumnPermutationMatrix)
+            )
         if metric is None:
             if orthonormal:
                 metric = IdentityMatrix(self.size)
             else:
-                metric = SymmetricMatrix(MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate())
+                metric = SymmetricMatrix(
+                    MatrixProductList([self._matrix.T, self.parent.metric, self._matrix]).evaluate()
+                )
         elif orthonormal:
-            raise ValueError(f"orthonormal basis cannot have a metric")
+            raise ValueError("orthonormal basis cannot have a metric")
         elif isinstance(metric, np.ndarray):
             metric = SymmetricMatrix(metric)
         self._metric = metric
         self._space = Space(self)
-        self._union_cache: Dict[Tuple[float | int, ...], int] = {}
-        self._intersect_cache: Dict[Tuple[float | int, ...], int] = {}
+        self._union_cache: dict[tuple[float | int, ...], int] = {}
+        self._intersect_cache: dict[tuple[float | int, ...], int] = {}
         self.__basis_by_id[self.id] = self
 
-    _T = TypeVar('T')
+    _T = TypeVar("T")
 
     @classmethod
     def get_by_id(cls, id: int, default: _T = None) -> Basis | _T:
@@ -175,8 +194,9 @@ class Basis:
         # Permutation + selection
         elif isinstance(argument, (tuple, list, slice)) or (array_like(argument) and argument.ndim == 1):
             # Convert boolean iterable to indices:
-            if ((isinstance(argument, (tuple, list)) or array_like(argument)) and
-                    any([isinstance(x, (bool, np.bool_)) for x in argument])):
+            if (isinstance(argument, (tuple, list)) or array_like(argument)) and any(
+                [isinstance(x, (bool, np.bool_)) for x in argument]
+            ):
                 argument = np.arange(self.parent.size)[argument]
             matrix = ColumnPermutationMatrix(self.parent.size, argument)
         elif array_like(argument) and argument.ndim == 2:
@@ -210,7 +230,7 @@ class Basis:
         return next_id
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})'
+        return f"{type(self).__name__}(id= {self.id}, size= {self.size}, name= {self.name})"
 
     @property
     def name(self) -> str:
@@ -252,12 +272,14 @@ class Basis:
 
     # --- Make new basis
 
-    def make_subbasis(self,
-                      argument: BasisArgument,
-                      *,
-                      metric: np.ndarray | None = None,
-                      name: str | None = None,
-                      orthonormal: bool = False) -> Basis:
+    def make_subbasis(
+        self,
+        argument: BasisArgument,
+        *,
+        metric: np.ndarray | None = None,
+        name: str | None = None,
+        orthonormal: bool = False,
+    ) -> Basis:
         """Make a new basis with coefficients or indices in reference to the current basis.
 
         Args:
@@ -271,11 +293,7 @@ class Basis:
         """
         return type(self)(argument, parent=self, metric=metric, name=name, orthonormal=orthonormal)
 
-    def make_union_basis(self,
-                         *other: Basis,
-                         tol: float = 1e-12,
-                         name: str | None = None,
-                         cache: bool = True) -> Basis:
+    def make_union_basis(self, *other: Basis, tol: float = 1e-12, name: str | None = None, cache: bool = True) -> Basis:
         """Make the smallest orthonormal basis, which spans both the basis and one or more other bases.
 
         Args:
@@ -302,8 +320,8 @@ class Basis:
         m = self._projector_in_basis(common_parent)
         for other_basis in other:
             m += other_basis._projector_in_basis(common_parent)
-        #metric = common_parent.metric.to_numpy() if not common_parent.is_orthonormal else None
-        #e, v = scipy.linalg.eigh(m, b=metric)
+        # metric = common_parent.metric.to_numpy() if not common_parent.is_orthonormal else None
+        # e, v = scipy.linalg.eigh(m, b=metric)
         # metric should not be here?
         e, v = np.linalg.eigh(m)
         v = v[:, e >= tol]
@@ -313,12 +331,9 @@ class Basis:
             self._union_cache[cache_key] = union.id
         return union
 
-    def make_intersect_basis(self,
-                             *other: Basis,
-                             tol: float = 1e-12,
-                             name: str | None = None,
-                             use_svd: bool = True,
-                             cache: bool = True) -> Basis:
+    def make_intersect_basis(
+        self, *other: Basis, tol: float = 1e-12, name: str | None = None, use_svd: bool = True, cache: bool = True
+    ) -> Basis:
         """Make the smallest orthonormal basis, which spans the intersecting space of both the basis and another basis.
 
         Args:
@@ -349,7 +364,7 @@ class Basis:
         # Via SVD (works only if bases are orthonormal? It might only require one basis to be orthonormal):
         if use_svd and (self.is_orthonormal and other.is_orthonormal):
             m = self.get_transformation_to(other).to_numpy()
-            vl, s, vr = scipy.linalg.svd(m, full_matrices=False)
+            vl, s, _vr = scipy.linalg.svd(m, full_matrices=False)
             v = vl[:, s**2 >= tol]
         # Via eigendecomposition:
         else:
@@ -473,15 +488,15 @@ class Basis:
         if len(other) > 1:
             parent = self.get_common_parent(other[0])
             return parent.get_common_parent(*other[1:])
-            #common_parent = other[-2].get_common_parent(other[-1])
-            #return self.get_common_parent(*(other[:-2] + (common_parent,)))
+            # common_parent = other[-2].get_common_parent(other[-1])
+            # return self.get_common_parent(*(other[:-2] + (common_parent,)))
         if len(other) != 1:
             raise ValueError
         other = other[0]
         self._check_same_root(other)
         parents_self = self.get_parents(include_self=True)[::-1]
         parents_other = other.get_parents(include_self=True)[::-1]
-        assert (parents_self[0] is parents_other[0])
+        assert parents_self[0] is parents_other[0]
         common_parent = None
         for i, p in enumerate(parents_self):
             if i >= len(parents_other) or p != parents_other[i]:
@@ -515,10 +530,7 @@ class Basis:
             variance = (_Variance.COVARIANT, _Variance.COVARIANT)
         # Find first common ancestor and express coefficients in corresponding basis
         parent = self.get_common_parent(other)
-        if variance[0] == _Variance.CONTRAVARIANT:
-            mpl = [self.metric.inverse]
-        else:
-            mpl = []
+        mpl = [self.metric.inverse] if variance[0] == _Variance.CONTRAVARIANT else []
         mpl = MatrixProductList(mpl)
         mpl += self._coeff_in_basis(parent).T + [parent.metric] + other._coeff_in_basis(parent)
         if variance[1] == _Variance.CONTRAVARIANT:
@@ -527,10 +539,13 @@ class Basis:
 
     _transformation_cache_size = 128
 
-    @lru_cache(_transformation_cache_size)
-    def get_transformation(self,
-                           other: Basis,
-                           variance: tuple[int, int] = (_Variance.COVARIANT, _Variance.COVARIANT)) -> Tensor:
+    # B019: lru_cache on a method keeps `self` alive for as long as the entry is
+    # cached. That is accepted here: the cache is bounded and Basis objects are
+    # long-lived by design (they are identified by a process-wide ID).
+    @lru_cache(_transformation_cache_size)  # noqa: B019
+    def get_transformation(
+        self, other: Basis, variance: tuple[int, int] = (_Variance.COVARIANT, _Variance.COVARIANT)
+    ) -> Tensor:
         """Get transformation matrix to another basis as a Tensor with general variance.
 
         Args:
@@ -540,6 +555,8 @@ class Basis:
         Returns:
             Transformation matrix.
         """
+        from btensor.tensor import Tensor
+
         values = self._get_overlap_mpl(other, variance=variance).evaluate()
         return Tensor(values, basis=(self, other), variance=variance, copy_data=False)
 
@@ -575,6 +592,3 @@ class Basis:
             Transformation matrix with variance (-1, 1).
         """
         return other.get_transformation(self, variance=(_Variance.CONTRAVARIANT, _Variance.COVARIANT))
-
-
-from btensor.tensor import Tensor

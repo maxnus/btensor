@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
 #     limitations under the License.
 
 import numpy as np
+
 from btensor import Basis, Tensor
 
-
 basis1 = (Basis(2), Basis(3))
-basis2 = (basis1[0].make_subbasis([1, 0]),
-          basis1[1].make_subbasis([0, 2]))
+basis2 = (basis1[0].make_subbasis([1, 0]), basis1[1].make_subbasis([0, 2]))
 
 data1 = np.arange(6).reshape(2, 3)
 data2 = np.arange(4).reshape(2, 2)

@@ -1,17 +1,16 @@
 import numpy as np
+
+# PySCF scenario:
+import pyscf
+import pyscf.cc
 import scipy
 import scipy.stats
 
 import btensor
 
-# PySCF scenario:
-
-import pyscf
-import pyscf.cc
-
 mol = pyscf.gto.Mole()
-mol.atom = 'H 0 0 0; H 0 0 0.7'
-mol.basis = '6-31G'
+mol.atom = "H 0 0 0; H 0 0 0.7"
+mol.basis = "6-31G"
 mol.build()
 
 hf = pyscf.scf.HF(mol)
@@ -73,15 +72,15 @@ print()
 
 # To perform a pure change of basis and raise an exception, if a projection would occur, the .cob (change of basis)
 # interface can be used.
-dm.cob[mo, mo]           # OK - pure basis transformation
+dm.cob[mo, mo]  # OK - pure basis transformation
 try:
-    dm.cob[occ, occ]     # Not OK - transformation and projection onto occupied subspace
+    dm.cob[occ, occ]  # Not OK - transformation and projection onto occupied subspace
 except Exception as e:
     print(f"Exception encountered:\n{e.__class__.__name__}: {e}\n")
 
 
 # Scalar operations work as expected:
-error = np.linalg.norm((2*fock).to_numpy() - 2*(fock.to_numpy()))
+error = np.linalg.norm((2 * fock).to_numpy() - 2 * (fock.to_numpy()))
 print(f"Scalar multiplication error = {error}\n")
 
 
@@ -100,7 +99,7 @@ dm_cc = btensor.Tensor(cc.make_rdm1(), basis=(mo, mo))
 dm_oo = dm_cc[occ, occ]
 dm_ov = dm_cc[occ, vir]
 dm_vv = dm_cc[vir, vir]
-dm_cc_reassembled = dm_oo + dm_ov + dm_ov.T + dm_vv     # Note the direct addition between the tensors
+dm_cc_reassembled = dm_oo + dm_ov + dm_ov.T + dm_vv  # Note the direct addition between the tensors
 error = np.linalg.norm(dm_cc.to_numpy() - dm_cc_reassembled.to_numpy())
 print(f"Error in reassembled matrix = {error}\n")
 
@@ -109,10 +108,10 @@ print(f"Error in reassembled matrix = {error}\n")
 # are only permitted, if both tensors have the same basis along each axis. The reason for this is that the result of
 # these operations depends on the basis that they are carried out in, hence it is required to be explicit about this
 # choice:
-dm_oo[mo, mo] * dm_vv[mo, mo]         # OK: same basis
-dm_oo[mo, mo] + dm_vv[ao, ao]         # also OK: addition
+dm_oo[mo, mo] * dm_vv[mo, mo]  # OK: same basis
+dm_oo[mo, mo] + dm_vv[ao, ao]  # also OK: addition
 try:
-    dm_oo[mo, mo] * dm_vv[ao, ao]     # not OK
+    dm_oo[mo, mo] * dm_vv[ao, ao]  # not OK
 except Exception as e:
     print(f"Exception encountered:\n{e.__class__.__name__}: {e}\n")
 
@@ -140,9 +139,8 @@ x2y = vir_x.get_transformation_to(vir_y).to_numpy()
 t2x = btensor.Tensor(np.random.random((nocc, nocc, nvir_x, nvir_y)), basis=(occ, occ, vir_x, vir_x))
 t2y = btensor.Tensor(np.random.random((nocc, nocc, nvir_x, nvir_y)), basis=(occ, occ, vir_y, vir_y))
 # Usually a contraction would look like this:
-expected = np.einsum('ijab,kjAB,aA,bB->ik', t2x.to_numpy(), t2y.to_numpy(), x2y, x2y)
+expected = np.einsum("ijab,kjAB,aA,bB->ik", t2x.to_numpy(), t2y.to_numpy(), x2y, x2y)
 # Using btensor.einsum, the basis transformation matrices are not necessary:
-result = btensor.einsum('ijab,kjab->ik', t2x, t2y)
+result = btensor.einsum("ijab,kjab->ik", t2x, t2y)
 error = np.linalg.norm(result.to_numpy() - expected)
 print(f"Error of btensor.einsum = {error}\n")
-

@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,18 +13,32 @@
 #     limitations under the License.
 
 from __future__ import annotations
-import operator
 
 import itertools
+import operator
+
+import numpy as np
+import pytest
 import scipy
 
 import btensor
-from btensor import TensorSum
-from fixtures import *
+from btensor import Basis, Tensor, TensorSum
+
+# Fixtures are shared through pytest's plugin mechanism rather than a star
+# import, so the names conftest itself uses stay explicit.
+pytest_plugins = [
+    "fixtures.basic_fixtures",
+    "fixtures.basis_fixtures",
+    "fixtures.tensor_fixtures",
+]
+
+# Shared default generator for helpers that accept an optional rng. Built once
+# here rather than in each signature's default, which would be evaluated at
+# import time and shared implicitly.
+_DEFAULT_RNG = np.random.default_rng()
 
 
 class UserSlice:
-
     def __init__(self, start=None, stop=None, step=None):
         self.start = start
         self.stop = stop
@@ -46,9 +60,9 @@ def variable_sized_product(values, minsize=1, maxsize=None):
         maxsize = len(values)
     values = [UserSlice.from_slice(v) if isinstance(v, slice) else v for v in values]
     output = []
-    for size in range(minsize, maxsize+1):
-        #combinations = list(itertools.combinations_with_replacement(values, size))
-        #for comb in combinations:
+    for size in range(minsize, maxsize + 1):
+        # combinations = list(itertools.combinations_with_replacement(values, size))
+        # for comb in combinations:
         #    perms = set(itertools.permutations(comb))
         #    output += list(perms)
         output += list(itertools.product(values, repeat=size))
@@ -56,7 +70,7 @@ def variable_sized_product(values, minsize=1, maxsize=None):
     return output
 
 
-def random_orthogonal_matrix(n, ncolumn=None, rng=np.random.default_rng()):
+def random_orthogonal_matrix(n, ncolumn=None, rng=_DEFAULT_RNG):
     if n == 1:
         return np.asarray([[1.0]])[:, :ncolumn]
     m = scipy.stats.ortho_group.rvs(n, random_state=rng)
@@ -69,68 +83,71 @@ def powerset(iterable, include_empty=True):
     """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
     s = list(iterable)
     start = 0 if include_empty else 1
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s)+1))
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(start, len(s) + 1))
 
 
 def get_ndims_and_axes(mindim=1, maxdim=4):
     ndims_and_axes = []
-    for dim in range(mindim, maxdim+1):
+    for dim in range(mindim, maxdim + 1):
         axes = list(powerset(range(dim), include_empty=False))
-        ndims_and_axes += list(zip(len(axes)*[dim], axes))
+        ndims_and_axes += list(zip(len(axes) * [dim], axes))
     return ndims_and_axes
 
 
 def get_ndims_and_same_size_axes(mindim=1, maxdim=4):
     ndims_and_axes = []
-    for dim in range(mindim, maxdim+1):
+    for dim in range(mindim, maxdim + 1):
         axes = list(itertools.permutations(range(dim)))
-        ndims_and_axes += list(zip(len(axes)*[dim], axes))
+        ndims_and_axes += list(zip(len(axes) * [dim], axes))
     return ndims_and_axes
 
 
 def get_ndims_and_axis12(mindim=1, maxdim=4):
     ndims_and_axis12 = []
-    for dim in range(mindim, maxdim+1):
+    for dim in range(mindim, maxdim + 1):
         axes = itertools.permutations(range(dim), 2)
         axes = list(zip(*axes))
         axes1 = axes[0] if axes else []
         axes2 = axes[1] if axes else []
-        ndims_and_axis12 += list(zip(len(axes1)*[dim], axes1, axes2))
+        ndims_and_axis12 += list(zip(len(axes1) * [dim], axes1, axes2))
     return ndims_and_axis12
 
 
 # --- Root fixtures
 
-@pytest.fixture(params=get_ndims_and_axes(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+
+@pytest.fixture(params=get_ndims_and_axes(), scope="module", ids=lambda x: f"ndim{x[0]}-axes{x[1]}")
 def ndim_and_axis(request):
     return request.param
 
 
-@pytest.fixture(params=get_ndims_and_same_size_axes(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+@pytest.fixture(params=get_ndims_and_same_size_axes(), scope="module", ids=lambda x: f"ndim{x[0]}-axes{x[1]}")
 def ndim_and_same_size_axis(request):
     return request.param
 
 
-@pytest.fixture(params=get_ndims_and_axis12(), scope='module', ids=lambda x: f'ndim{x[0]}-axes{x[1]}')
+@pytest.fixture(params=get_ndims_and_axis12(), scope="module", ids=lambda x: f"ndim{x[0]}-axes{x[1]}")
 def ndim_axis1_axis2(request):
     return request.param
 
 
-@pytest.fixture(params=[operator.add, operator.sub, operator.mul, operator.truediv, operator.floordiv, operator.pow],
-                scope='module')
+@pytest.fixture(
+    params=[operator.add, operator.sub, operator.mul, operator.truediv, operator.floordiv, operator.pow], scope="module"
+)
 def binary_operator(request):
     return request.param
 
 
 # --- Derived fixtures
 
-@pytest.fixture(params=[0, -1], scope='module')
+
+@pytest.fixture(params=[0, -1], scope="module")
 def subbasis(request, basis_large):
     size = max(basis_large.size + request.param, 1)
     return basis_large.make_subbasis(random_orthogonal_matrix(basis_large.size, ncolumn=size))
 
 
-@pytest.fixture(params=[(0, 0), (-1, 0), (0, -1), (-1, -1)], scope='module')
+@pytest.fixture(params=[(0, 0), (-1, 0), (0, -1), (-1, -1)], scope="module")
 def subbasis_2x(request, basis_large):
     n = basis_large.size
     size1 = n + request.param[0]
@@ -140,25 +157,25 @@ def subbasis_2x(request, basis_large):
     return basis1, basis2
 
 
-@pytest.fixture(params=['rotation', 'indices', 'slice', 'mask'], scope='module')
+@pytest.fixture(params=["rotation", "indices", "slice", "mask"], scope="module")
 def subbasis_type(request):
     return request.param
 
 
-@pytest.fixture(params=['rotation', 'indices', 'slice', 'mask'], scope='module')
+@pytest.fixture(params=["rotation", "indices", "slice", "mask"], scope="module")
 def subbasis_type_2x(request, subbasis_type):
     return request.param, subbasis_type
 
 
-def get_random_subbasis_definition(rootsize, subsize, subtype, rng=np.random.default_rng()):
-    if subtype == 'rotation':
+def get_random_subbasis_definition(rootsize, subsize, subtype, rng=_DEFAULT_RNG):
+    if subtype == "rotation":
         return random_orthogonal_matrix(rootsize, ncolumn=subsize, rng=rng)
-    if subtype in ('indices', 'mask'):
+    if subtype in ("indices", "mask"):
         r = rng.permutation(range(rootsize))[:subsize]
-        if subtype == 'mask':
+        if subtype == "mask":
             r = np.isin(np.arange(rootsize), r)
         return r
-    if subtype == 'slice':
+    if subtype == "slice":
         size = rootsize - subsize + 1
         assert size > 0
         start = rng.integers(0, size)
@@ -168,12 +185,12 @@ def get_random_subbasis_definition(rootsize, subsize, subtype, rng=np.random.def
 
 
 def subbasis_definition_to_matrix(subarg, rootsize):
-    if getattr(subarg, 'ndim', None) == 2:
+    if getattr(subarg, "ndim", None) == 2:
         return subarg
     return np.identity(rootsize)[:, subarg]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def get_rootbasis_subbasis():
     def get_rootbasis_subbasis(rootsize, subsize, subtype, subsize2=None, subtype2=None):
         if subsize > rootsize:
@@ -186,44 +203,55 @@ def get_rootbasis_subbasis():
             subbasis2 = rootbasis.make_subbasis(subarg2)
             return rootbasis, (subbasis, subarg), (subbasis2, subarg2)
         return rootbasis, (subbasis, subarg)
+
     return get_rootbasis_subbasis
 
 
-@pytest.fixture(params=variable_sized_product([0, 1, 3]), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+@pytest.fixture(
+    params=variable_sized_product([0, 1, 3]), scope="module", ids=lambda x: "shape" + "".join([str(y) for y in x])
+)
 def shape_incl_empty(request):
     return request.param
 
 
-@pytest.fixture(params=variable_sized_product([1, 3], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+@pytest.fixture(
+    params=variable_sized_product([1, 3], maxsize=4),
+    scope="module",
+    ids=lambda x: "shape" + "".join([str(y) for y in x]),
+)
 def shape(request):
     return request.param
 
 
-@pytest.fixture(params=variable_sized_product([4, 5], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+@pytest.fixture(
+    params=variable_sized_product([4, 5], maxsize=4),
+    scope="module",
+    ids=lambda x: "shape" + "".join([str(y) for y in x]),
+)
 def shape_large(request):
     return request.param
 
 
-@pytest.fixture(params=variable_sized_product([4, 5], minsize=2, maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+@pytest.fixture(
+    params=variable_sized_product([4, 5], minsize=2, maxsize=4),
+    scope="module",
+    ids=lambda x: "shape" + "".join([str(y) for y in x]),
+)
 def shape_large_atleast2d(request):
     return request.param
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def np_array(shape):
     return np.random.random(shape)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def np_array_large(shape_large):
     return np.random.random(shape_large)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def np_array_large_atleast2d(shape_large_atleast2d):
     return np.random.random(shape_large_atleast2d)
 
@@ -233,8 +261,11 @@ def basis_for_shape(shape):
     return tuple(Basis(size) for size in shape)
 
 
-@pytest.fixture(params=variable_sized_product([1, 3, -1, -3], maxsize=4), scope='module',
-                ids=lambda x: f'shape' + ''.join([str(y) for y in x]))
+@pytest.fixture(
+    params=variable_sized_product([1, 3, -1, -3], maxsize=4),
+    scope="module",
+    ids=lambda x: "shape" + "".join([str(y) for y in x]),
+)
 def shape_and_basis(request):
     shape = tuple(abs(size) for size in request.param)
     basis = tuple(Basis(size) if size > 0 else btensor.nobasis for size in request.param)
@@ -245,35 +276,38 @@ def shape_and_basis(request):
 def basis_for_shape_large_atleast2d(shape_large_atleast2d):
     return tuple(Basis(size) for size in shape_large_atleast2d)
 
+
 # --- Tensor
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def get_tensor(basis_large):
     def get_tensor(ndim: int, number: int = 1, hermitian: bool = False) -> list[tuple] | tuple:
         np.random.seed(0)
         basis = tuple(ndim * [basis_large])
         result = []
-        for n in range(number):
+        for _n in range(number):
             data = np.random.random(tuple([b.size for b in basis]))
             if hermitian:
-                data = (data + data.T)/2
+                data = (data + data.T) / 2
             tensor = Tensor(data, basis=basis)
             result.append((tensor, data))
         if number == 1:
             return result[0]
         return result
+
     return get_tensor
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def tensor(ndim, get_tensor):
     return get_tensor(ndim)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def tensor_2x(tensor_cls_2x, ndim, basis_large):
     np.random.seed(0)
-    tensor_cls1, tensor_cls2 = tensor_cls_2x
+    tensor_cls1, _tensor_cls2 = tensor_cls_2x
     basis = tuple(ndim * [basis_large])
     data1 = np.random.random(tuple([b.size for b in basis]))
     data2 = np.random.random(tuple([b.size for b in basis]))
@@ -282,9 +316,10 @@ def tensor_2x(tensor_cls_2x, ndim, basis_large):
     return (tensor1, data1), (tensor2, data2)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def get_tensorsum(get_tensor):
     def get_tensorsum(ndim: int, size: int):
         tensors = [t[0] for t in get_tensor(ndim, number=size)]
         return TensorSum(tensors)
+
     return get_tensorsum

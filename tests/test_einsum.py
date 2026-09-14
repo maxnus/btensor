@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,34 +13,34 @@
 #     limitations under the License.
 
 from __future__ import annotations
-import pytest
+
+import contextlib
 import itertools
 import string
+
 import numpy as np
+import pytest
+from helper import TestCase
 
 import btensor as bt
 from btensor import Basis, Tensor, TensorSum
-from helper import TestCase
 
 
 def loop_einsum_subscripts(ndim: int, nsum: int = 2, start_label: int = 0):
-    indices = list(string.ascii_lowercase)[start_label:start_label+ndim]
+    indices = list(string.ascii_lowercase)[start_label : start_label + ndim]
     for sumindices in itertools.combinations(range(ndim), nsum):
         subscripts = indices.copy()
         for sumidx in sumindices:
-            subscripts[sumidx] = 'X'
-        subscripts = ''.join(subscripts)
+            subscripts[sumidx] = "X"
+        subscripts = "".join(subscripts)
         yield subscripts
 
 
 def generate_einsum_summation(maxdim: int):
-    for ndim in range(1, maxdim+1):
+    for ndim in range(1, maxdim + 1):
         for sub in loop_einsum_subscripts(ndim):
             for include_result in [True, False]:
-                if include_result:
-                    summation = sub + '->' + sub.replace('X', '')
-                else:
-                    summation = sub
+                summation = sub + "->" + sub.replace("X", "") if include_result else sub
                 yield summation
 
 
@@ -49,13 +49,10 @@ def generate_einsum_contraction(maxdim: int):
         for nsum1 in range(3):
             for sub1 in loop_einsum_subscripts(ndim1, nsum=nsum1):
                 for ndim2 in range(1, maxdim + 1):
-                    for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2-nsum1):
-                        sub = ','.join([sub1, sub2])
+                    for sub2 in loop_einsum_subscripts(ndim2, start_label=ndim1, nsum=2 - nsum1):
+                        sub = ",".join([sub1, sub2])
                         for include_result in [True, False]:
-                            if include_result:
-                                contraction = sub + '->' + (sub1 + sub2).replace('X', '')
-                            else:
-                                contraction = sub
+                            contraction = sub + "->" + (sub1 + sub2).replace("X", "") if include_result else sub
                             yield contraction
 
 
@@ -75,41 +72,36 @@ def intersect_tol(request):
 
 
 class TestEinsum(TestCase):
-
-    @pytest.mark.parametrize('optimize', [False])
+    @pytest.mark.parametrize("optimize", [False])
     def test_summation(self, einsum_summation, get_tensor, optimize, intersect_tol, timings):
-        ndim = len(einsum_summation.split('->')[0])
+        ndim = len(einsum_summation.split("->")[0])
         array, data = get_tensor(ndim)
-        with timings('NumPy'):
+        with timings("NumPy"):
             expected = np.einsum(einsum_summation, data, optimize=optimize)
-        with timings('BTensor'):
+        with timings("BTensor"):
             result = bt.einsum(einsum_summation, array, optimize=optimize, intersect_tol=intersect_tol)
-            try:
+            with contextlib.suppress(AttributeError):
                 result = result.to_numpy()
-            except AttributeError:
-                pass
         self.assert_allclose(result, expected)
 
-    @pytest.mark.parametrize('optimize', [False])
+    @pytest.mark.parametrize("optimize", [False])
     def test_contraction(self, einsum_contraction, get_tensor, optimize, intersect_tol, timings):
-        ndim1, ndim2 = [len(x) for x in einsum_contraction.split('->')[0].split(',')]
+        ndim1, ndim2 = [len(x) for x in einsum_contraction.split("->")[0].split(",")]
         array1, data1 = get_tensor(ndim1)
         array2, data2 = get_tensor(ndim2)
-        with timings('NumPy'):
+        with timings("NumPy"):
             expected = np.einsum(einsum_contraction, data1, data2, optimize=optimize)
-        with timings('BTensor'):
+        with timings("BTensor"):
             result = bt.einsum(einsum_contraction, array1, array2, optimize=optimize, intersect_tol=intersect_tol)
-            try:
+            with contextlib.suppress(AttributeError):
                 result = result.to_numpy()
-            except AttributeError:
-                pass
         self.assert_allclose(result, expected)
 
     def test_matmul(self):
         n, m, k = 30, 40, 50
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
-        contract = 'ij,jk->ik'
+        contract = "ij,jk->ik"
         c = np.einsum(contract, a, b)
         bn = Basis(n)
         bm = Basis(m)
@@ -120,16 +112,16 @@ class TestEinsum(TestCase):
         self.assert_allclose(ac, c)
 
     def test_double_matmul(self):
-        n, m, k, l = 30, 40, 50, 60
+        n, m, k, nl = 30, 40, 50, 60
         a = np.random.rand(n, m)
         b = np.random.rand(m, k)
-        c = np.random.rand(k, l)
-        contract = 'ij,jk,kl->il'
+        c = np.random.rand(k, nl)
+        contract = "ij,jk,kl->il"
         d = np.einsum(contract, a, b, c)
         bn = Basis(n)
         bm = Basis(m)
         bk = Basis(k)
-        bl = Basis(l)
+        bl = Basis(nl)
         aa = Tensor(a, basis=(bn, bm))
         ab = Tensor(b, basis=(bm, bk))
         ac = Tensor(c, basis=(bk, bl))
@@ -140,7 +132,7 @@ class TestEinsum(TestCase):
         n, m = 30, 40
         a = np.random.rand(n, m)
         b = np.random.rand(m, n)
-        contract = 'ij,ji->'
+        contract = "ij,ji->"
         c = np.einsum(contract, a, b)
         bn = Basis(n)
         bm = Basis(m)
@@ -150,40 +142,40 @@ class TestEinsum(TestCase):
         self.assert_allclose(ac, c)
 
     def test_ijk_kl_ijl(self):
-        n, m, k, l = 30, 40, 50, 60
+        n, m, k, nl = 30, 40, 50, 60
         a = np.random.rand(n, m, k)
-        b = np.random.rand(k, l)
-        contract = 'ijk,kl->ijl'
+        b = np.random.rand(k, nl)
+        contract = "ijk,kl->ijl"
         c = np.einsum(contract, a, b)
         bn = Basis(n)
         bm = Basis(m)
         bk = Basis(k)
-        bl = Basis(l)
+        bl = Basis(nl)
         aa = Tensor(a, basis=(bn, bm, bk))
         ab = Tensor(b, basis=(bk, bl))
         ac = bt.einsum(contract, aa, ab)
         self.assert_allclose(ac, c)
 
     def test_tensorsum_2x1(self, get_tensor, timings):
-        tensors, arrays = zip(*get_tensor(ndim=2, number=3))
+        tensors, _arrays = zip(*get_tensor(ndim=2, number=3))
         ts1 = TensorSum(tensors[:2])
         t2 = tensors[2]
-        subscripts = 'ij,jk->ik'
-        with timings('NumPy'):
+        subscripts = "ij,jk->ik"
+        with timings("NumPy"):
             expected = np.einsum(subscripts, ts1.evaluate().to_numpy(), t2.to_numpy())
-        with timings('BTensor'):
-            result = bt.einsum('ij,jk->ik', ts1, t2).to_numpy()
+        with timings("BTensor"):
+            result = bt.einsum("ij,jk->ik", ts1, t2).to_numpy()
         self.assert_allclose(result, expected)
 
     def test_tensorsum_2x2(self, get_tensor, timings):
-        tensors, arrays = zip(*get_tensor(ndim=2, number=4))
+        tensors, _arrays = zip(*get_tensor(ndim=2, number=4))
         for i, t in enumerate(tensors):
-            t.name = f'Tensor{i}'
+            t.name = f"Tensor{i}"
         ts1 = TensorSum(tensors[:2])
         ts2 = TensorSum(tensors[2:])
-        subscripts = 'ij,jk->ik'
-        with timings('NumPy'):
+        subscripts = "ij,jk->ik"
+        with timings("NumPy"):
             expected = np.einsum(subscripts, ts1.to_numpy(), ts2.to_numpy())
-        with timings('BTensor'):
-            result = bt.einsum('ij,jk->ik', ts1, ts2).to_numpy()
+        with timings("BTensor"):
+            result = bt.einsum("ij,jk->ik", ts1, ts2).to_numpy()
         self.assert_allclose(result, expected)

@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -17,50 +17,54 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import inspect
 import os
 import sys
-import inspect
 from operator import attrgetter
+from pathlib import Path
 
-sys.path.insert(1, os.path.abspath('../../src'))
+# Resolved relative to this file rather than the working directory sphinx-build
+# happens to be invoked from, so the path is correct however the build starts.
+sys.path.insert(1, str(Path(__file__).resolve().parents[2] / "src"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BTensor'
-copyright = '2023, Max Nusspickel'
-author = 'Max Nusspickel'
+project = "BTensor"
+copyright = "2023-2026, Max Nusspickel"
+author = "Max Nusspickel"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.coverage',
-              'sphinx.ext.napoleon',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.autosectionlabel',
-              'sphinx.ext.linkcode',
-              ]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.linkcode",
+]
 
-templates_path = ['_templates']
-exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
-html_css_files = ['css/custom.css']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
 
 # Autodoc
 
 autodoc_default_options = {
-    'undoc-members': True,
+    "undoc-members": True,
 }
 
-autodoc_member_order = 'groupwise'
-autodoc_typehints = 'description'
+autodoc_member_order = "groupwise"
+autodoc_typehints = "description"
 
 # Autosummary
 
@@ -72,8 +76,9 @@ autosectionlabel_prefix_document = True
 
 # Linkcode
 
+
 def linkcode_resolve(domain, info):
-    package = 'btensor'
+    package = "btensor"
     if domain not in ("py", "pyx"):
         return
     if not info.get("module") or not info.get("fullname"):
@@ -100,10 +105,10 @@ def linkcode_resolve(domain, info):
         return
 
     fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
-    url_fmt = 'https://github.com/maxnus/btensor/blob/main/src/{package}/{path}'
+    url_fmt = "https://github.com/maxnus/btensor/blob/main/src/{package}/{path}"
     try:
         lineno = inspect.getsourcelines(obj)[1]
-        url_fmt += '#L{lineno}'
+        url_fmt += "#L{lineno}"
         return url_fmt.format(package=package, path=fn, lineno=lineno)
     except OSError:
         return url_fmt.format(package=package, path=fn)

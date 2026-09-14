@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,28 +13,27 @@
 #     limitations under the License.
 
 from __future__ import annotations
+
 import copy
-import string
 import itertools
+import string
+from collections.abc import Callable
 from numbers import Number
-from typing import *
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import numpy as np
 
-from btensor.tensorsum import TensorSum
 from btensor.exceptions import BasisDependentOperationError
+from btensor.tensorsum import TensorSum
 
 if TYPE_CHECKING:
-    from btensor import Tensor, IBasis
-    EinsumOperandT: TypeAlias = Union[Tensor, TensorSum]
+    from btensor import IBasis, Tensor
+
+    EinsumOperandT: TypeAlias = Tensor | TensorSum
 
 
 class Einsum:
-
-    def __init__(self,
-                 subscripts: str,
-                 einsumfunc: Callable = np.einsum,
-                 optimize: str | bool = True) -> None:
+    def __init__(self, subscripts: str, einsumfunc: Callable = np.einsum, optimize: str | bool = True) -> None:
         # Setup
         self._labels_per_operand, self._result_labels = self._get_labels_per_operand_and_result(subscripts)
         # List of ordered, unique labels
@@ -48,46 +47,45 @@ class Einsum:
         return f"{type(self).__name__}({self.get_contraction()})"
 
     @staticmethod
-    def _get_labels_per_operand_and_result(subscripts: str) -> Tuple[List[List[str]], str]:
+    def _get_labels_per_operand_and_result(subscripts: str) -> tuple[list[list[str]], str]:
         # TODO
-        if '...' in subscripts:
+        if "..." in subscripts:
             raise NotImplementedError("'...' in subscripts not yet supported")
-        subscripts = subscripts.replace(' ', '')
-        if '->' in subscripts:
-            labels, result = subscripts.split('->')
+        subscripts = subscripts.replace(" ", "")
+        if "->" in subscripts:
+            labels, result = subscripts.split("->")
         else:
             labels = subscripts
             # Generate result subscripts automatically: all non-repeated subcripts in alphabetical order
-            result = ''.join([s for s in sorted(set(subscripts.replace(',', ''))) if labels.count(s) == 1])
-        labels = [list(label) for label in labels.split(',')]
+            result = "".join([s for s in sorted(set(subscripts.replace(",", ""))) if labels.count(s) == 1])
+        labels = [list(label) for label in labels.split(",")]
         return labels, result
 
     @property
     def noperands(self) -> int:
         return len(self._labels_per_operand)
 
-    def get_contraction(self, separator: str = ',', with_result: bool = True) -> str:
+    def get_contraction(self, separator: str = ",", with_result: bool = True) -> str:
         contraction = f"{separator.join([''.join(x) for x in self._labels_per_operand])}"
         if with_result:
             contraction += f"->{self._result_labels}"
         return contraction
 
     def _contraction_is_basis_independent(self) -> bool:
-        joined_labels = self.get_contraction(separator='').replace('->', '')
-        for label in self._unique_labels:
-            if joined_labels.count(label) != 2:
-                return False
-        return True
+        joined_labels = self.get_contraction(separator="").replace("->", "")
+        return all(joined_labels.count(label) == 2 for label in self._unique_labels)
 
     @staticmethod
-    def _get_free_labels(used_labels: List[str]) -> List[str]:
+    def _get_free_labels(used_labels: list[str]) -> list[str]:
         return sorted(set(string.ascii_letters).difference(set(used_labels)))
 
-    def _resolve_tensorsums(self,
-                            operands: Tuple[EinsumOperandT, ...],
-                            tensorsums: List[Tuple[int, List[Tensor]]],
-                            intersect_tol: Number | None = None,
-                            **kwargs: Any) -> TensorSum:
+    def _resolve_tensorsums(
+        self,
+        operands: tuple[EinsumOperandT, ...],
+        tensorsums: list[tuple[int, list[Tensor]]],
+        intersect_tol: Number | None = None,
+        **kwargs: Any,
+    ) -> TensorSum:
         tensorsums_positions, tensor_lists = zip(*tensorsums)
         result = []
         # Loop over all combinations of tensors from the various TensorSums:
@@ -101,10 +99,10 @@ class Einsum:
     def _label_is_contracted(self, label: str) -> bool:
         return label in self._result_labels
 
-    def _get_unique_contracted_labels(self) -> List[str]:
+    def _get_unique_contracted_labels(self) -> list[str]:
         return [label for label in self._unique_labels if self._label_is_contracted(label)]
 
-    def _get_positions_of_label(self, label: str) -> List[Tuple[int, int]]:
+    def _get_positions_of_label(self, label: str) -> list[tuple[int, int]]:
         positions = []
         for iop, labels in enumerate(self._labels_per_operand):
             for ilab, loop_label in enumerate(labels):
@@ -113,23 +111,23 @@ class Einsum:
         return positions
 
     @overload
-    def __call__(self,
-                 *operands: Tensor,
-                 intersect_tol: Number | None = None,
-                 optimize: str | bool | None = None,
-                 **kwargs: Any) -> Tensor | Number: ...
+    def __call__(
+        self, *operands: Tensor, intersect_tol: Number | None = None, optimize: str | bool | None = None, **kwargs: Any
+    ) -> Tensor | Number: ...
 
-    def __call__(self,
-                 *operands: EinsumOperandT,
-                 intersect_tol: Number | None = None,
-                 optimize: str | bool | None = None,
-                 **kwargs: Any) -> EinsumOperandT | Number:
+    def __call__(
+        self,
+        *operands: EinsumOperandT,
+        intersect_tol: Number | None = None,
+        optimize: str | bool | None = None,
+        **kwargs: Any,
+    ) -> EinsumOperandT | Number:
         if len(operands) != self.noperands:
             raise ValueError(f"{len(operands)} operands provided, but {self.noperands} specified in subscript string")
 
         if optimize is None:
             optimize = self.optimize
-        kwargs['optimize'] = optimize
+        kwargs["optimize"] = optimize
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
@@ -142,8 +140,8 @@ class Einsum:
         # Loop over all indices
         transformations = []
 
-        basis_out = len(self._result_labels)*[None]
-        variance_out = len(self._result_labels)*[None]
+        basis_out = len(self._result_labels) * [None]
+        variance_out = len(self._result_labels) * [None]
         for label in self._unique_labels:
             is_contracted = self._label_is_contracted(label)
             positions = self._get_positions_of_label(label)
@@ -197,8 +195,8 @@ class Einsum:
                 transformations.append(trafo.to_numpy(copy=False))
 
         # Return
-        subscripts_out = ','.join([''.join(label) for label in labels_out])
-        subscripts_out = '->'.join((subscripts_out, self._result_labels))
+        subscripts_out = ",".join(["".join(label) for label in labels_out])
+        subscripts_out = "->".join((subscripts_out, self._result_labels))
         operands_out = [op.to_numpy(copy=False) for op in operands]
         operands_out.extend(transformations)
         values = self.einsumfunc(subscripts_out, *operands_out, **kwargs)
@@ -208,20 +206,21 @@ class Einsum:
                 assert values.size == 1
                 values = values[()]
             return values
-        assert (None not in basis_out)
-        assert (None not in variance_out)
+        assert None not in basis_out
+        assert None not in variance_out
         cls = type(operands[0])
         return cls(values, basis=tuple(basis_out), variance=tuple(variance_out), copy_data=False)
 
-    def _get_basis_per_label(self, operands: Tuple[EinsumOperandT, ...],
-                             intersect_tol: Number | None = None) -> Dict[str, IBasis]:
+    def _get_basis_per_label(
+        self, operands: tuple[EinsumOperandT, ...], intersect_tol: Number | None = None
+    ) -> dict[str, IBasis]:
         basis_per_label = {}
         for unique_label in self._unique_labels:
             basis: IBasis | None = None
             is_output = unique_label in self._result_labels
             for operand, operand_labels in zip(operands, self._labels_per_operand):
                 # The index might appear multiple times per label -> loop over positions
-                positions: List[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
+                positions: list[int] = np.asarray(np.asarray(operand_labels) == unique_label).nonzero()[0]
                 for position in positions:
                     current_basis = operand.basis[position]
                     if basis is None:
@@ -237,18 +236,18 @@ class Einsum:
                         elif current_basis.size < basis.size:
                             # Use smallest basis
                             basis = current_basis
-            assert (basis is not None)
+            assert basis is not None
             basis_per_label[unique_label] = basis
         return basis_per_label
 
-    def __kernel_general(self,
-                 *operands: EinsumOperandT,
-                 intersect_tol: Number | None = None,
-                 **kwargs: Any) -> EinsumOperandT | Number:
+    def __kernel_general(
+        self, *operands: EinsumOperandT, intersect_tol: Number | None = None, **kwargs: Any
+    ) -> EinsumOperandT | Number:
         """Older kernel. Slower and does not support non-orthogonal bases, but supports basis dependent operations."""
         if len(self._labels_per_operand) != len(operands):
-            raise ValueError(f"{len(operands)} operands provided, but {len(self._labels_per_operand)} "
-                             f"specified in subscript string")
+            raise ValueError(
+                f"{len(operands)} operands provided, but {len(self._labels_per_operand)} specified in subscript string"
+            )
 
         # Support for TensorSums in operands via recursion.
         # This will result in len(TensorSum1) * len(TensorSum2) * ... recursive calls to Einsum
@@ -279,8 +278,8 @@ class Einsum:
                     transformations.append(trafo)
 
         # Return
-        subscripts_out = ','.join([''.join(label) for label in labels_out])
-        subscripts_out = '->'.join((subscripts_out, self._result_labels))
+        subscripts_out = ",".join(["".join(label) for label in labels_out])
+        subscripts_out = "->".join((subscripts_out, self._result_labels))
         operands_out = [op.to_numpy(copy=False) for op in operands]
         operands_out.extend(transformations)
         values = self.einsumfunc(subscripts_out, *operands_out, **kwargs)
@@ -296,18 +295,22 @@ class Einsum:
 
 
 @overload
-def einsum(subscripts: str,
-           *operands: Tensor,
-           intersect_tol: Number | None = None,
-           einsumfunc: Callable = np.einsum,
-           **kwargs: Any) -> Tensor | Number: ...
+def einsum(
+    subscripts: str,
+    *operands: Tensor,
+    intersect_tol: Number | None = None,
+    einsumfunc: Callable = np.einsum,
+    **kwargs: Any,
+) -> Tensor | Number: ...
 
 
-def einsum(subscripts: str,
-           *operands: EinsumOperandT,
-           intersect_tol: Number | None = None,
-           einsumfunc: Callable = np.einsum,
-           **kwargs: Any) -> EinsumOperandT | Number:
+def einsum(
+    subscripts: str,
+    *operands: EinsumOperandT,
+    intersect_tol: Number | None = None,
+    einsumfunc: Callable = np.einsum,
+    **kwargs: Any,
+) -> EinsumOperandT | Number:
     """Evaluates the Einstein summation on the operands while performing required basis transformations automatically.
 
     Only basis independent summations are supported. A summation is basis independent, if each label either:

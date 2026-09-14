@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
 #     limitations under the License.
 
 import pytest
-
 from helper import TestCase
+
 from btensor import decomp
 
 
 class TestDecomp(TestCase):
-
-    @pytest.mark.parametrize('dim', [3, 4, 5])
+    @pytest.mark.parametrize("dim", [3, 4, 5])
     def test_hosvd(self, get_tensor, dim):
-        tensor, nparray = get_tensor(ndim=dim)
+        tensor, _nparray = get_tensor(ndim=dim)
         hosvd = decomp.hosvd(tensor)
         delta = (hosvd - tensor).to_numpy()
         self.assert_allclose(delta, 0)

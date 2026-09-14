@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
 #     limitations under the License.
 
 import numpy as np
-from btensor import Basis, Tensor
 
+from btensor import Basis, Tensor
 
 # The standard euclidian 2D basis:
 basis1 = Basis(2)
 # Rotated basis (x', y') with
 # x' = x
 # y' = 1\sqrt(2) (x + y)
-r = np.asarray([[1, 1/np.sqrt(2)],
-                [0, 1/np.sqrt(2)]])
+r = np.asarray([[1, 1 / np.sqrt(2)], [0, 1 / np.sqrt(2)]])
 basis2 = Basis(r, parent=basis1)
 
 point1 = Tensor([-1.0, 0.0], basis=basis1)

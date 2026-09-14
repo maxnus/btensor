@@ -1,4 +1,4 @@
-#     Copyright 2023 Max Nusspickel
+#     Copyright 2023-2026 Max Nusspickel
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -19,21 +19,21 @@ import pytest
 from btensor import Basis
 
 
-@pytest.fixture(params=[1, 5], scope='module')
+@pytest.fixture(params=[1, 5], scope="module")
 def basis_size(request):
     return request.param
 
 
-@pytest.fixture(params=[10], scope='module')
+@pytest.fixture(params=[10], scope="module")
 def basis_size_large(request):
     return request.param
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def basis(basis_size):
     return Basis(basis_size)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def basis_large(basis_size_large):
     return Basis(basis_size_large)
