@@ -9,27 +9,41 @@ authors = [
 ]
 description = "A library for basis transformation of tensors"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 dynamic = ["version"]
 dependencies = [
-    "numpy",
+    "numpy>=2.0",
     "scipy",
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
-
 [project.urls]
 source = "https://github.com/maxnus/btensor"
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "pytest-xdist",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "docs"},
+    "ruff",
+]
 
 [tool.hatch.version]
 path = "src/btensor/__about__.py"
@@ -38,5 +52,28 @@ path = "src/btensor/__about__.py"
 addopts = ["--import-mode=importlib"]
 pythonpath = "tests"
 
+[tool.coverage.run]
+source = ["btensor"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "@overload",
+    "raise NotImplementedError",
+]
+
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # Pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # Ruff-specific rules
+    "NPY",  # NumPy-specific rules
+]
